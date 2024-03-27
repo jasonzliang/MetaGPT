@@ -188,3 +188,5 @@ cov.xml
 *-structure.json
 *.dot
 .python-version
+.tags
+.tags_*
