@@ -116,6 +116,50 @@ class SimpleWriteCode4(SimpleWriteCode):
     ```
     """
 
+class SimpleWriteCode5(SimpleWriteCode):
+    PROMPT_TEMPLATE: str = '''
+    # Objective:
+    # Write a Python function that accomplishes the following task: {instruction}.
+    # Your function should adhere to best practices in coding, ensuring it is modular, readable, and maintainable.
+    # Please include comments where necessary to explain sections of your code or logic used.
+
+    # Instructions:
+    # 1. Clearly define the function's purpose and the problem it solves.
+    # 2. Use descriptive variable names that make the code easy to understand.
+    # 3. Break down the problem into smaller, manageable components if necessary.
+    # 4. Include error handling to manage potential exceptions or unexpected input.
+    # 5. Write a brief docstring for your function, explaining what it does, its parameters, and its return value.
+
+    # Return Format:
+    # Return your code snippet in the following format:
+    # ```python
+    # [your_code_here]
+    # ```
+    # Ensure there is no additional text outside the code block.
+
+    # Example:
+    # If the instruction is "calculate the factorial of a number," your response should be structured as follows:
+
+    ```python
+    def calculate_factorial(number):
+        """
+        Calculate the factorial of a given number.
+
+        Parameters:
+        number (int): The number to calculate the factorial of.
+
+        Returns:
+        int: The factorial of the number.
+        """
+        if not isinstance(number, int) or number < 0:
+            raise ValueError("The number must be a non-negative integer.")
+        factorial = 1
+        for i in range(1, number + 1):
+            factorial *= i
+        return factorial
+    ```
+    '''
+
 class SimpleCoder(Role):
     name: str = "Alice"
     profile: str = "SimpleCoder"
@@ -123,7 +167,7 @@ class SimpleCoder(Role):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._watch([UserRequirement])
-        self.set_actions([SimpleWriteCode3])
+        self.set_actions([SimpleWriteCode5])
 
     def get_code_text(self):
         return self.actions[0].code_text

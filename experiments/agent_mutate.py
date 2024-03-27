@@ -20,23 +20,41 @@ MULTI_ACTION_AGENT_CODE_EXAMPLE = EXAMPLE_CODE_FILE.read_text()
 class CreateAgent(Action):
     PROMPT_TEMPLATE: str = """
     ### BACKGROUND
-    You are using an agent framework called metagpt to write agents capable of different actions,
-    the usage of metagpt can be illustrated by the following example:
+    You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The PROMPT_TEMPLATE that you use for writing the code can be illustrated by the following example:
+
     ### EXAMPLE STARTS AT THIS LINE
-    {example}
+    PROMPT_TEMPLATE: str = '''
+    Write a python function that can {instruction}.
+    Return ```python your_code_here ``` with NO other texts,
+    your code:
+    '''
     ### EXAMPLE ENDS AT THIS LINE
+
     ### TASK
-    Now you should create an agent with appropriate actions based on the instruction, consider carefully about
-    the PROMPT_TEMPLATE of all actions and when to call self._aask()
-    ### INSTRUCTION
-    {instruction}
-    ### YOUR CODE
-    Return ```python your_code_here ``` with NO other texts, your code:
+    Return an improved version of the example PROMPT_TEMPLATE that allows better, higher quality, and more accurate code to be written.
+
+    ### OUTPUT
+    PROMPT_TEMPLATE: str = '''
     """
+    # PROMPT_TEMPLATE: str = """
+    # ### BACKGROUND
+    # You are using an agent framework called metagpt to write agents capable of different actions,
+    # the usage of metagpt can be illustrated by the following example:
+    # ### EXAMPLE STARTS AT THIS LINE
+    # {example}
+    # ### EXAMPLE ENDS AT THIS LINE
+    # ### TASK
+    # Now you should create an agent with appropriate actions based on the instruction, consider carefully about
+    # the PROMPT_TEMPLATE of all actions and when to call self._aask()
+    # ### INSTRUCTION
+    # {instruction}
+    # ### YOUR CODE
+    # Return ```python your_code_here ``` with NO other texts, your code:
+    # """
 
     async def run(self, example: str, instruction: str):
-        prompt = self.PROMPT_TEMPLATE.format(example=example, instruction=instruction)
-        # logger.info(prompt)
+        # prompt = self.PROMPT_TEMPLATE.format(example=example, instruction=instruction)
+        prompt = self.PROMPT_TEMPLATE
 
         rsp = await self._aask(prompt)
 
@@ -109,23 +127,19 @@ PROMPT_TEMPLATE:
 if __name__ == "__main__":
     asyncio.run(mutate())
 
-#     import asyncio
+    # import asyncio
 
-#     async def main():
-#         agent_template = MULTI_ACTION_AGENT_CODE_EXAMPLE
-#         creator = AgentCreator(agent_template=agent_template)
+    # async def main():
+    #     agent_template = MULTI_ACTION_AGENT_CODE_EXAMPLE
 
-#         msg = \
-# """
-# Role: You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. Here is the PROMPT_TEMPLATE you use for writing the code.
+    #     creator = AgentCreator(agent_template=agent_template)
 
-# PROMPT_TEMPLATE:
-# Write a python function that can {instruction}.
-# Return ```python your_code_here ``` with NO other texts,
-# your code:
+    #     msg = """
+    #     Write an agent called SimpleTester that will take any code snippet (str) and do the following:
+    #     1. write a testing code (str) for testing the given code snippet, save the testing code as a .py file in the current working directory;
+    #     2. run the testing code.
+    #     You can use pytest as the testing framework.
+    #     """
+    #     await creator.run(msg)
 
-# Return an improved version of the current PROMPT_TEMPLATE that will allow for better, higher quality, and more accurate code to be written. Return NO other texts.
-# """
-#         await creator.run(msg)
-
-#     asyncio.run(main())
+    # asyncio.run(main())
