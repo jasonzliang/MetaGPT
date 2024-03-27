@@ -48,6 +48,74 @@ class SimpleWriteCode(Action):
         return self.code_text
 
 
+class SimpleWriteCode2(SimpleWriteCode):
+    PROMPT_TEMPLATE: str = """
+    ### TASK
+    Write a Python function that {instruction}. Your function should adhere to the following guidelines:
+    - Follow Google Python Style Guide: Use descriptive names, and comment generously.
+    - Ensure modularity: Break down the task into smaller, reusable components if possible.
+    - Prioritize readability: Write code that is easy for others to read and understand.
+    - Focus on maintainability: Use clear logic and avoid unnecessary complexity.
+
+    ### EXAMPLE
+    Provide an example call to your function and its expected output.
+
+    ### YOUR CODE
+    Return your code snippet within the triple backticks below. Include any necessary comments to explain the logic and functionality of your code. Ensure there are no texts outside the backticks other than your code.
+
+    ```python
+    # your_code_here
+    ```
+    """
+
+class SimpleWriteCode3(SimpleWriteCode):
+    PROMPT_TEMPLATE: str = """
+    Write a Python function following Google's Python style guide that accomplishes the following task: {instruction}. Ensure the code is modular, easy to read, and maintainable. Include docstrings to describe the function's purpose, parameters, and return value. Also, consider edge cases and error handling in your implementation.
+
+    Your code should adhere to the following principles:
+    - Use descriptive names for functions and variables.
+    - Follow PEP 8 style guidelines for code formatting.
+    - Write modular code that could be easily extended or modified.
+    - Include comprehensive docstrings following Google's style guide.
+    - Implement error handling where necessary.
+
+    Return your code enclosed in triple backticks with the 'python' specifier, like so:
+    ```python
+    your_code_here
+    ```
+    Ensure there are NO other texts outside the code block. Your code:
+    """
+
+class SimpleWriteCode4(SimpleWriteCode):
+    PROMPT_TEMPLATE: str = """
+    ### TASK
+    Write a Python function following Google's Python style guide that accomplishes the following task: {instruction}. Your function should be modular, easy to read, and maintainable. Consider edge cases and input validation as part of your implementation.
+
+    ### REQUIREMENTS
+    - Follow [Google's Python Style Guide](https://google.github.io/styleguide/pyguide.html).
+    - Ensure the code is modular and can be easily extended or modified.
+    - Write clean, readable code with appropriate variable names and comments.
+    - Include error handling and input validation.
+    - Consider efficiency and avoid unnecessary computations.
+
+    ### OUTPUT
+    Return your code enclosed in triple backticks with the 'python' specifier, like so:
+    ```python
+    # your_code_here
+    ```
+    Ensure there are no texts outside the code block. Provide a brief comment within the code to describe the functionality and any important considerations.
+
+    ### EXAMPLE
+    If your task is to 'calculate the sum of a list of numbers', your submission should look like this:
+    ```python
+    def sum_of_list(numbers):
+        # This function calculates the sum of a list of numbers, ensuring input is a list.
+        if not isinstance(numbers, list):
+            raise ValueError("Input must be a list of numbers.")
+        return sum(numbers)
+    ```
+    """
+
 class SimpleCoder(Role):
     name: str = "Alice"
     profile: str = "SimpleCoder"
@@ -55,10 +123,13 @@ class SimpleCoder(Role):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._watch([UserRequirement])
-        self.set_actions([SimpleWriteCode])
+        self.set_actions([SimpleWriteCode3])
 
     def get_code_text(self):
         return self.actions[0].code_text
+
+    def get_prompt_template(self):
+        return self.actions[0].PROMPT_TEMPLATE
 
 
 class SimpleWriteTest(Action):
@@ -162,6 +233,8 @@ async def eval_humaneval(
 ):
     team = Team()
     coder = SimpleCoder()
+    logger.info(coder.get_prompt_template())
+    # exit()
     team.hire(
         [
             coder
@@ -170,7 +243,9 @@ async def eval_humaneval(
     team.invest(investment=1e308)
 
     problems = get_human_eval_plus()
+    eval_name = "humaneval"
     results = []
+
     for task_id, problem in problems.items():
         sample = {"instruction": problem['prompt'],
             "input": problem['base_input']}
@@ -182,23 +257,22 @@ async def eval_humaneval(
         output = coder.get_code_text()
         logger.info("#### MetaGPT Output:\n%s" % output)
 
+        task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
+        os.makedirs(task_id_dir, exist_ok=True)
+        result_file = os.path.join(task_id_dir, "0.py")
+        with open(result_file, 'w') as f:
+            f.write(output)
+
         results.append({'task_id': task_id, 'solution': output})
 
-    def write_to_dir(result_dir, results):
-        for result_dict in results:
-            task_id_dir = os.path.join(result_dir,
-                result_dict['task_id'].replace("/", "_"))
-            os.makedirs(task_id_dir, exist_ok=True)
-            result_file = os.path.join(task_id_dir, "0.py")
-            with open(result_file, 'w') as f:
-                f.write(result_dict['solution'])
-        os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
-            % (eval_name, result_dir, os.path.join(result_dir, "evalplus.txt")))
-
-    write_to_dir(result_dir, results)
-    with open(os.path.join(result_dir, "config.txt"), 'w') as f:
-        f.write(pprint.pprint(locals(), compact=True))
+    os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
+        % (eval_name, result_dir, os.path.join(result_dir, "evalplus.txt")))
+    # with open(os.path.join(result_dir, "config.txt"), "w") as f:
+    #     f.write(pprint.pformat(locals(), compact=True))
+    with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
+        f.write(coder.get_prompt_template())
 
 if __name__ == "__main__":
+    # eval_humaneval()
     fire.Fire(eval_humaneval)
     # fire.Fire(main)

@@ -1,0 +1,206 @@
+PROMPT_TEMPLATE: str = """
+### TASK
+Write a Python function following Google's Python style guide that accomplishes the following task: {instruction}. Ensure the code is modular, easy to read, and maintainable. Consider edge cases and include appropriate comments to explain complex logic or assumptions.
+
+### REQUIREMENTS
+- Follow [Google's Python Style Guide](https://google.github.io/styleguide/pyguide.html).
+- The code should be modular, allowing for easy modification and extension.
+- Include docstrings for the function and any complex logic.
+- Consider edge cases and input validation.
+- Use descriptive variable names and keep functions focused on a single task.
+- Include two examples of how to call the function with expected outputs in comments.
+
+### YOUR CODE
+Return the code snippet within the following format:
+```python
+# your_code_here
+```
+Ensure there are NO other texts outside the code block provided above.
+
+Your code:
+"""
+
+
+
+PROMPT_TEMPLATE: str = """
+### TASK
+Write a Python function following Google's Python style guide that accomplishes the following task: {instruction}. Ensure the code is modular, easy to read, and maintainable. Include docstrings to describe the function's purpose, parameters, and return value. Use type annotations to improve code readability and maintenance.
+
+### REQUIREMENTS
+- Follow Google's Python style guide for formatting and code structure.
+- Write modular code: separate the task into smaller functions if necessary.
+- Ensure the code is easy to read: use meaningful variable names and keep functions concise.
+- Include a docstring at the beginning of the function, explaining what the function does, its parameters, and its return value.
+- Use type annotations for function parameters and return types to enhance readability and maintenance.
+- Provide two test cases that demonstrate the function's correct operation.
+
+### YOUR CODE
+Return the code snippet within triple backticks, using the format ```python your_code_here ```, with no other texts. Your code:
+"""
+
+
+
+PROMPT_TEMPLATE: str = """
+### TASK
+Write a Python function following Google's Python style guide that accomplishes the following task: {instruction}. Your function should be modular, easy to read, and maintainable. Consider edge cases and input validation as part of your implementation.
+
+### REQUIREMENTS
+- Follow [Google's Python Style Guide](https://google.github.io/styleguide/pyguide.html).
+- Ensure your code is modular, allowing for easy modification and extension.
+- Write clean, readable code with appropriate variable names and concise comments explaining the logic where necessary.
+- Include error handling and input validation to manage unexpected inputs gracefully.
+- Consider efficiency and avoid unnecessary computations.
+
+### OUTPUT
+Return your code enclosed in triple backticks with the 'python' specifier, like so:
+```python
+your_code_here
+```
+Ensure there are no texts outside the code block. Your code:
+"""
+
+
+
+PROMPT_TEMPLATE: str = """
+Write a Python function following Google's Python style guide that accomplishes the following task: {instruction}. Ensure your code is modular, easy to read, and maintainable. Include a brief docstring at the beginning of your function to describe its purpose, parameters, and return value. Also, add inline comments to explain complex or non-obvious parts of your code.
+
+Your code should adhere to the following principles:
+- Use meaningful function and variable names.
+- Keep functions short and focused on a single task.
+- Avoid global variables unless necessary.
+- Handle exceptions gracefully where applicable.
+
+Return your code enclosed in triple backticks with the 'python' specifier, like so:
+```python
+# Your code here
+```
+Ensure there are NO other texts outside the code block. Your code:
+"""
+
+
+
+PROMPT_TEMPLATE: str = """
+### TASK
+Write a Python function that {instruction}. Your function should adhere to the following guidelines:
+- Follow Google Python Style Guide: Use descriptive names, and comment generously.
+- Ensure modularity: Break down the task into smaller, reusable components if possible.
+- Prioritize readability: Write code that is easy for others to read and understand.
+- Focus on maintainability: Use clear logic and avoid unnecessary complexity.
+
+### EXAMPLE
+Provide an example call to your function and its expected output.
+
+### YOUR CODE
+Return your code snippet within the triple backticks below. Include any necessary comments to explain the logic and functionality of your code. Ensure there are no texts outside the backticks other than your code.
+
+```python
+# your_code_here
+```
+"""
+
+
+
+PROMPT_TEMPLATE: str = """
+Write a Python function following Google's Python style guide that accomplishes the following task: {instruction}. Ensure the code is modular, easy to read, and maintainable. Include docstrings to describe the function's purpose, parameters, and return value. Also, consider edge cases and error handling in your implementation.
+
+Your code should adhere to the following principles:
+- Use descriptive names for functions and variables.
+- Follow PEP 8 style guidelines for code formatting.
+- Write modular code that could be easily extended or modified.
+- Include comprehensive docstrings following Google's style guide.
+- Implement error handling where necessary.
+
+Return your code enclosed in triple backticks with the 'python' specifier, like so:
+```python
+your_code_here
+```
+Ensure there are NO other texts outside the code block. Your code:
+"""
+
+
+
+PROMPT_TEMPLATE: str = """
+### TASK
+Write a Python function following Google's Python style guide that accomplishes the following task: {instruction}. Your function should be modular, easy to read, and maintainable. Consider edge cases and input validation as part of your implementation.
+
+### REQUIREMENTS
+- Follow [Google's Python Style Guide](https://google.github.io/styleguide/pyguide.html).
+- Ensure the code is modular and can be easily extended or modified.
+- Write clean, readable code with appropriate variable names and comments.
+- Include error handling and input validation.
+- Consider efficiency and avoid unnecessary computations.
+
+### OUTPUT
+Return your code enclosed in triple backticks with the 'python' specifier, like so:
+```python
+# your_code_here
+```
+Ensure there are no texts outside the code block. Provide a brief comment within the code to describe the functionality and any important considerations.
+
+### EXAMPLE
+If your task is to 'calculate the sum of a list of numbers', your submission should look like this:
+```python
+def sum_of_list(numbers):
+    # This function calculates the sum of a list of numbers, ensuring input is a list.
+    if not isinstance(numbers, list):
+        raise ValueError("Input must be a list of numbers.")
+    return sum(numbers)
+```
+"""
+
+
+
+PROMPT_TEMPLATE: str = """
+    ### TASK
+    Write a Python function following Google's Python style guide that accomplishes the following task: {instruction}. Ensure the code is modular, easy to read, and maintainable. Include docstrings to describe the function's purpose, parameters, and return value. Use type hints to improve code readability and maintainability.
+
+    ### REQUIREMENTS
+    - Follow Google's Python style guide.
+    - Ensure the code is modular, making use of functions or classes as necessary.
+    - Write clear and concise docstrings for all functions and classes.
+    - Use type hints for function parameters and return types.
+    - The code should be efficient and straightforward, avoiding unnecessary complexity.
+    - Include error handling to manage potential exceptions.
+
+    ### YOUR CODE
+    Return the code snippet enclosed in triple backticks with the language identifier 'python', like so:
+    ```python
+    # your code here
+    ```
+    Ensure there are NO other texts outside the code block.
+"""
+
+
+
+PROMPT_TEMPLATE: str = """
+Write a Python function following Google's Python style guide that can {instruction}. Ensure the code is modular, easy to read, and maintainable. Include docstrings to describe the function's purpose, parameters, and return value. Use type hints to improve code readability and maintainability.
+
+Your code should:
+- Be well-commented to explain complex logic.
+- Follow PEP 8 style guidelines for naming conventions and formatting.
+- Include error handling to manage potential exceptions.
+
+Return your code enclosed in triple backticks with the 'python' specifier, like so:
+```python
+# your code here
+```
+Ensure there are NO other texts outside the code block.
+
+Your code:
+"""
+
+
+
+PROMPT_TEMPLATE: str = """
+Write a Python function following Google's Python style guide that accomplishes the following task: {instruction}. Ensure the code is modular, easy to read, and maintainable. Include docstrings to describe the function's purpose, parameters, and return value. Use type hints to improve code readability and maintainability.
+
+Your code should be efficient and elegant, demonstrating professional engineering practices. Avoid unnecessary complexity and ensure the function is thoroughly tested with at least two examples demonstrating its correct operation.
+
+Return your code enclosed in triple backticks with the 'python' language specifier, like so:
+```python
+# your code here
+```
+Ensure there are no additional texts outside the code block. Your code:
+"""
+
+
