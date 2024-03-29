@@ -47,7 +47,36 @@ class SimpleWriteCode(Action):
 
         return self.code_text
 
-class SimpleWriteCodeImproved(SimpleWriteCode):
+
+class SimpleWriteCodeWC(SimpleWriteCode):
+    PROMPT_TEMPLATE: str = '''
+    Write a python function that can {instruction}.
+
+    The function should follow Google's Python Style Guide (https://google.github.io/styleguide/pyguide.html) and be modular, easy to read and maintain. The function should return the result of the operation in a clear and understandable way.
+
+    Here is an example of how your function might look like:
+
+    ```python
+    def my_function(parameter):
+        """This is a one-line description of what this function does.
+
+        Args:
+            parameter: This is the explanation of the parameter.
+
+        Returns:
+            The return value and its explanation.
+
+        Raises:
+            Any exceptions that are raised and why they might occur.
+        """
+        # Your code here
+    ```
+
+    Please replace `my_function`, `parameter`, `This is a one-line description of what this function does.`, `This is the explanation of the parameter.`, `The return value and its explanation.`, `Any exceptions that are raised and why they might occur.` with your actual function name, parameters, descriptions, return values, and exception handling respectively.
+    '''
+
+
+class SimpleWriteCodeGPT(SimpleWriteCode):
     PROMPT_TEMPLATE: str = '''
     ### Task Description
     Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
@@ -94,17 +123,11 @@ class SimpleCoder(Role):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._watch([UserRequirement])
-        self.set_actions([SimpleWriteCode])
+        self.set_actions([SimpleWriteCodeWC])
 
-    def set_env(self, env: "Environment"):
-        """Set the environment in which the role works. The role can talk to the environment and can also receive
-        messages by observing."""
-        self.rc.env = env
-        if env:
-            env.set_addresses(self, self.addresses)
-            self.llm.system_prompt = "Below is an instruction that describes a task. Write a response that appropriately completes the request."
-            self.llm.cost_manager = self.context.cost_manager
-            self.set_actions(self.actions)  # reset actions to update llm and prefix
+    # System prompt override for wizardcoder LLM
+    def _get_prefix(self):
+        return "Below is an instruction that describes a task. Write a response that appropriately completes the request."
 
     def get_code_text(self):
         return self.actions[0].code_text
@@ -226,7 +249,6 @@ async def eval_humaneval(
     result_dir="humaneval_results_%s" % int(time.time())
 ):
 
-
     problems = get_human_eval_plus()
     eval_name = "humaneval"
     results = []
@@ -253,6 +275,8 @@ async def eval_humaneval(
 
     os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
         % (eval_name, result_dir, os.path.join(result_dir, "evalplus.txt")))
+    os.system("cp %s %s" % (__file__, result_dir))
+    os.system("cp ~/.metagpt/config2.yaml %s" % result_dir)
     # with open(os.path.join(result_dir, "config.txt"), "w") as f:
     #     f.write(pprint.pformat(locals(), compact=True))
     with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:

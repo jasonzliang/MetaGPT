@@ -18,39 +18,37 @@ MULTI_ACTION_AGENT_CODE_EXAMPLE = EXAMPLE_CODE_FILE.read_text()
 
 
 class CreateAgent(Action):
+    # PROMPT_TEMPLATE: str = """
+    # ### BACKGROUND
+    # You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The PROMPT_TEMPLATE that you use for writing the code can be illustrated by the following example:
+
+    # ### EXAMPLE STARTS AT THIS LINE
+    # PROMPT_TEMPLATE: str = '''
+    # Write a python function that can {instruction}.
+    # Return ```python your_code_here ``` with NO other texts,
+    # your code:
+    # '''
+    # ### EXAMPLE ENDS AT THIS LINE
+
+    # ### TASK
+    # Return an improved version of the example PROMPT_TEMPLATE that allows better, higher quality, and more accurate code to be written.
+
+    # ### OUTPUT
+    # PROMPT_TEMPLATE: str = '''
+    # """
+
+    # System prompt override for wizardcoder LLM
     PROMPT_TEMPLATE: str = """
-    ### BACKGROUND
     You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The PROMPT_TEMPLATE that you use for writing the code can be illustrated by the following example:
 
-    ### EXAMPLE STARTS AT THIS LINE
     PROMPT_TEMPLATE: str = '''
     Write a python function that can {instruction}.
     Return ```python your_code_here ``` with NO other texts,
     your code:
     '''
-    ### EXAMPLE ENDS AT THIS LINE
 
-    ### TASK
-    Return an improved version of the example PROMPT_TEMPLATE that allows better, higher quality, and more accurate code to be written.
-
-    ### OUTPUT
-    PROMPT_TEMPLATE: str = '''
+    Return an improved version of the example PROMPT_TEMPLATE that allows better, higher quality, and more accurate code to be written. Your response must start with PROMPT_TEMPLATE: str = ''' and end with '''.
     """
-    # PROMPT_TEMPLATE: str = """
-    # ### BACKGROUND
-    # You are using an agent framework called metagpt to write agents capable of different actions,
-    # the usage of metagpt can be illustrated by the following example:
-    # ### EXAMPLE STARTS AT THIS LINE
-    # {example}
-    # ### EXAMPLE ENDS AT THIS LINE
-    # ### TASK
-    # Now you should create an agent with appropriate actions based on the instruction, consider carefully about
-    # the PROMPT_TEMPLATE of all actions and when to call self._aask()
-    # ### INSTRUCTION
-    # {instruction}
-    # ### YOUR CODE
-    # Return ```python your_code_here ``` with NO other texts, your code:
-    # """
 
     async def run(self, example: str, instruction: str):
         # prompt = self.PROMPT_TEMPLATE.format(example=example, instruction=instruction)
@@ -83,13 +81,17 @@ class AgentCreator(Role):
         super().__init__(**kwargs)
         self.set_actions([CreateAgent])
 
+
     async def _act(self) -> Message:
         logger.info(f"{self._setting}: to do {self.rc.todo}({self.rc.todo.name})")
         todo = self.rc.todo
         msg = self.rc.memory.get()[-1]
 
         instruction = msg.content
-        self.code_text = await CreateAgent().run(example=self.agent_template,
+        create_agent_action = CreateAgent()
+        # System prompt override for wizardcoder LLM
+        create_agent_action.set_prefix("Below is an instruction that describes a task. Write a response that appropriately completes the request.")
+        self.code_text = await create_agent_action.run(example=self.agent_template,
             instruction=instruction)
         msg = Message(content=self.code_text, role=self.profile, cause_by=todo)
 
@@ -99,7 +101,7 @@ class AgentCreator(Role):
         return self.code_text
 
 
-async def mutate(n=10):
+async def mutate(n=1):
     for i in range(n):
         agent_template = MULTI_ACTION_AGENT_CODE_EXAMPLE
         creator = AgentCreator(agent_template=agent_template)
