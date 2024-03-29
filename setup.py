@@ -36,7 +36,8 @@ extras_require = {
         "llama-index-readers-file==0.1.4",
         "llama-index-retrievers-bm25==0.1.3",
         "llama-index-vector-stores-faiss==0.1.1",
-        "chromadb==0.4.23",
+        "llama-index-vector-stores-elasticsearch==0.1.6",
+        "llama-index-vector-stores-chroma==0.1.6",
     ],
 }
 
@@ -87,4 +88,5 @@ setup(
             "metagpt=metagpt.software_company:app",
         ],
     },
+    include_package_data=True,
 )
