@@ -94,7 +94,17 @@ class SimpleCoder(Role):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._watch([UserRequirement])
-        self.set_actions([SimpleWriteCode6])
+        self.set_actions([SimpleWriteCode])
+
+    def set_env(self, env: "Environment"):
+        """Set the environment in which the role works. The role can talk to the environment and can also receive
+        messages by observing."""
+        self.rc.env = env
+        if env:
+            env.set_addresses(self, self.addresses)
+            self.llm.system_prompt = "Below is an instruction that describes a task. Write a response that appropriately completes the request."
+            self.llm.cost_manager = self.context.cost_manager
+            self.set_actions(self.actions)  # reset actions to update llm and prefix
 
     def get_code_text(self):
         return self.actions[0].code_text
@@ -198,20 +208,24 @@ def generate_code_prompt(example: dict) -> str:
     return example['instruction']
 
 
-async def eval_humaneval(
-    n_round=5,
-    result_dir="humaneval_results_%s" % int(time.time())
-):
+def create_new_team():
     team = Team()
     coder = SimpleCoder()
     logger.info(coder.get_prompt_template())
-    # exit()
     team.hire(
         [
             coder
         ]
     )
     team.invest(investment=1e308)
+    return team, coder
+
+
+async def eval_humaneval(
+    n_round=5,
+    result_dir="humaneval_results_%s" % int(time.time())
+):
+
 
     problems = get_human_eval_plus()
     eval_name = "humaneval"
@@ -223,6 +237,7 @@ async def eval_humaneval(
         prompt = generate_code_prompt(sample)
         logger.info("\n\n#### Task ID: %s, Prompt:\n%s" % (task_id, prompt))
 
+        team, coder = create_new_team()
         team.run_project(prompt)
         await team.run(n_round=n_round)
         output = coder.get_code_text()
