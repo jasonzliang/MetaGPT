@@ -123,7 +123,7 @@ class SimpleCoder(Role):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._watch([UserRequirement])
-        self.set_actions([SimpleWriteCodeWC])
+        self.set_actions([SimpleWriteCodeGPT])
 
     # System prompt override for wizardcoder LLM
     def _get_prefix(self):
