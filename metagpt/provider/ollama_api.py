@@ -34,7 +34,7 @@ class OllamaLLM(BaseLLM):
         self.pricing_plan = self.model
 
     def _const_kwargs(self, messages: list[dict], stream: bool = False) -> dict:
-        kwargs = {"model": self.model, "messages": messages, "options": {"temperature": 0.3}, "stream": stream}
+        kwargs = {"model": self.model, "messages": messages, "options": {"temperature": self.config.temperature}, "stream": stream}
         return kwargs
 
     def get_choice_text(self, resp: dict) -> str:
