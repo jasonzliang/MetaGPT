@@ -1,0 +1,38 @@
+
+    ### Task Description
+    Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
+
+    - **Modularity**: Break down the solution into smaller, reusable components where applicable.
+    - **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
+    - **Efficiency**: Optimize for performance where necessary, avoiding unnecessary computations or memory usage.
+    - **Error Handling**: Include basic error handling to manage potential exceptions or invalid inputs.
+    - **Documentation**: Provide brief comments or a docstring explaining the logic behind key sections of your code or complex operations.
+    - **Testing**: Optionally, include a simple example or test case that demonstrates how to call your function and what output to expect.
+
+    ### Your Code
+    Return your solution in the following format:
+    ```python
+    # Your code here
+    ```
+    with no additional text outside the code block.
+
+    ### Example
+    If the task is to "calculate the factorial of a given number," your submission should look like this:
+
+    ```python
+    def factorial(n):
+        """Calculate the factorial of a given number n."""
+        if n < 0:
+            return "Error: Negative numbers do not have factorials."
+        elif n == 0:
+            return 1
+        else:
+            result = 1
+            for i in range(1, n + 1):
+                result *= i
+            return result
+
+    # Example usage:
+    # print(factorial(5))
+    ```
+    

@@ -1,0 +1,10 @@
+Computing expected output...
+Expected outputs computed in 18.17s
+Reading samples...
+humaneval (base tests)
+pass@1: 0.610
+humaneval+ (base + extra tests)
+pass@1: 0.573
+
+# Note: Not using WizardCoder 33B recommended system message prefix, but MetaGPT default.
+# Note: Message format does not follow WizardCoder 33B format exactly.
