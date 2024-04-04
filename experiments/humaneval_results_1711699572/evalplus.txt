@@ -1,8 +1,0 @@
-Load from ground-truth from /Users/jason1/Library/Caches/evalplus/84f4b93a1270b492e4c54d5212da7a5b.pkl
-Reading samples...
-humaneval (base tests)
-pass@1:	0.634
-humaneval+ (base + extra tests)
-pass@1:	0.585
-
-# Note: Message format does not follow WizardCoder 33B format exactly.
