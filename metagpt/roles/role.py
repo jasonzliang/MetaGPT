@@ -335,6 +335,11 @@ class Role(SerializationMixin, ContextMixin, BaseModel):
             self.llm.cost_manager = self.context.cost_manager
             self.set_actions(self.actions)  # reset actions to update llm and prefix
 
+    @property
+    def name(self):
+        """Get the role name"""
+        return self._setting.name
+
     def _get_prefix(self):
         """Get the role prefix"""
         if self.desc:
@@ -401,7 +406,7 @@ class Role(SerializationMixin, ContextMixin, BaseModel):
         elif isinstance(response, Message):
             msg = response
         else:
-            msg = Message(content=response, role=self.profile, cause_by=self.rc.todo, sent_from=self)
+            msg = Message(content=response or "", role=self.profile, cause_by=self.rc.todo, sent_from=self)
         self.rc.memory.add(msg)
 
         return msg

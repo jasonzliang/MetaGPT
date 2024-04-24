@@ -1,14 +1,17 @@
 """RAG schemas."""
 
 from pathlib import Path
-from typing import Any, Literal, Union
+from typing import Any, ClassVar, Literal, Optional, Union
 
+from chromadb.api.types import CollectionMetadata
 from llama_index.core.embeddings import BaseEmbedding
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
+from metagpt.config2 import config
+from metagpt.configs.embedding_config import EmbeddingType
 from metagpt.rag.interface import RAGObject
 
 
@@ -31,7 +34,19 @@ class IndexRetrieverConfig(BaseRetrieverConfig):
 class FAISSRetrieverConfig(IndexRetrieverConfig):
     """Config for FAISS-based retrievers."""
 
-    dimensions: int = Field(default=1536, description="Dimensionality of the vectors for FAISS index construction.")
+    dimensions: int = Field(default=0, description="Dimensionality of the vectors for FAISS index construction.")
+
+    _embedding_type_to_dimensions: ClassVar[dict[EmbeddingType, int]] = {
+        EmbeddingType.GEMINI: 768,
+        EmbeddingType.OLLAMA: 4096,
+    }
+
+    @model_validator(mode="after")
+    def check_dimensions(self):
+        if self.dimensions == 0:
+            self.dimensions = self._embedding_type_to_dimensions.get(config.embedding.api_type, 1536)
+
+        return self
 
 
 class BM25RetrieverConfig(IndexRetrieverConfig):
@@ -45,6 +60,9 @@ class ChromaRetrieverConfig(IndexRetrieverConfig):
 
     persist_path: Union[str, Path] = Field(default="./chroma_db", description="The directory to save data.")
     collection_name: str = Field(default="metagpt", description="The name of the collection.")
+    metadata: Optional[CollectionMetadata] = Field(
+        default=None, description="Optional metadata to associate with the collection"
+    )
 
 
 class ElasticsearchStoreConfig(BaseModel):
@@ -130,6 +148,9 @@ class ChromaIndexConfig(VectorIndexConfig):
     """Config for chroma-based index."""
 
     collection_name: str = Field(default="metagpt", description="The name of the collection.")
+    metadata: Optional[CollectionMetadata] = Field(
+        default=None, description="Optional metadata to associate with the collection"
+    )
 
 
 class BM25IndexConfig(BaseIndexConfig):

@@ -32,12 +32,15 @@ extras_require = {
         "llama-index-core==0.10.15",
         "llama-index-embeddings-azure-openai==0.1.6",
         "llama-index-embeddings-openai==0.1.5",
+        "llama-index-embeddings-gemini==0.1.6",
+        "llama-index-embeddings-ollama==0.1.2",
         "llama-index-llms-azure-openai==0.1.4",
         "llama-index-readers-file==0.1.4",
         "llama-index-retrievers-bm25==0.1.3",
         "llama-index-vector-stores-faiss==0.1.1",
         "llama-index-vector-stores-elasticsearch==0.1.6",
         "llama-index-vector-stores-chroma==0.1.6",
+        "docx2txt==0.8",
     ],
     "android_assistant": ["pyshine==0.0.9", "opencv-python==4.6.0.66"],
 }
@@ -68,7 +71,7 @@ extras_require["dev"] = (["pylint~=3.0.3", "black~=23.3.0", "isort~=5.12.0", "pr
 
 setup(
     name="metagpt",
-    version="0.8.0",
+    version="0.8.1",
     description="The Multi-Agent Framework",
     long_description=long_description,
     long_description_content_type="text/markdown",
