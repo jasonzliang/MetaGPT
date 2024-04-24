@@ -18,44 +18,47 @@ MULTI_ACTION_AGENT_CODE_EXAMPLE = EXAMPLE_CODE_FILE.read_text()
 
 
 class CreateAgent(Action):
-    # PROMPT_TEMPLATE: str = """
-    # ### BACKGROUND
-    # You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The PROMPT_TEMPLATE that you use for writing the code can be illustrated by the following example:
-
-    # ### EXAMPLE STARTS AT THIS LINE
-    # PROMPT_TEMPLATE: str = '''
-    # Write a python function that can {instruction}.
-    # Return ```python your_code_here ``` with NO other texts,
-    # your code:
-    # '''
-    # ### EXAMPLE ENDS AT THIS LINE
-
-    # ### TASK
-    # Return an improved version of the example PROMPT_TEMPLATE that allows better, higher quality, and more accurate code to be written.
-
-    # ### OUTPUT
-    # PROMPT_TEMPLATE: str = '''
-    # """
-
-    # System prompt override for wizardcoder LLM
     PROMPT_TEMPLATE: str = """
+    ### BACKGROUND
     You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The PROMPT_TEMPLATE that you use for writing the code can be illustrated by the following example:
 
+    ### EXAMPLE STARTS AT THIS LINE
     PROMPT_TEMPLATE: str = '''
     Write a python function that can {instruction}.
     Return ```python your_code_here ``` with NO other texts,
     your code:
     '''
+    ### EXAMPLE ENDS AT THIS LINE
 
-    Return an improved version of the example PROMPT_TEMPLATE that allows better, higher quality, and more accurate code to be written. Your response must start with PROMPT_TEMPLATE: str = ''' and end with '''.
+    ### TASK
+    Return an improved version of the example PROMPT_TEMPLATE that allows better, higher quality, and more accurate code to be written.
+
+    ### OUTPUT
+    PROMPT_TEMPLATE: str = '''
     """
 
+    # System prompt override for wizardcoder LLM
+    # PROMPT_TEMPLATE: str = """
+    # You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The PROMPT_TEMPLATE that you use for writing the code can be illustrated by the following example:
+
+    # PROMPT_TEMPLATE: str = '''
+    # Write a python function that can {instruction}.
+    # Return ```python your_code_here ``` with NO other texts,
+    # your code:
+    # '''
+
+    # Create an improved, more useful and effective version of the example PROMPT_TEMPLATE that allows better, higher quality, and more accurate code to be written.
+
+    # Your response must start with PROMPT_TEMPLATE: str = ''' and end with ''' with NO other texts.
+    # """
+
     async def run(self, example: str, instruction: str):
-        # prompt = self.PROMPT_TEMPLATE.format(example=example, instruction=instruction)
-        prompt = self.PROMPT_TEMPLATE
+        if len(instruction) > 0:
+            prompt = instruction
+        else:
+            prompt = self.PROMPT_TEMPLATE
 
         rsp = await self._aask(prompt)
-
         code_text = CreateAgent.parse_code(rsp)
 
         return code_text
@@ -90,7 +93,7 @@ class AgentCreator(Role):
         instruction = msg.content
         create_agent_action = CreateAgent()
         # System prompt override for wizardcoder LLM
-        create_agent_action.set_prefix("Below is an instruction that describes a task. Write a response that appropriately completes the request.")
+        # create_agent_action.set_prefix("Below is an instruction that describes a task. Write a response that appropriately completes the request.")
         self.code_text = await create_agent_action.run(example=self.agent_template,
             instruction=instruction)
         msg = Message(content=self.code_text, role=self.profile, cause_by=todo)
@@ -101,25 +104,108 @@ class AgentCreator(Role):
         return self.code_text
 
 
+async def crossover(n=10):
+
+    PROMPT_TEMPLATE_1 = '''
+Write a python function that can {instruction}.
+
+The function should follow Google's Python Style Guide (https://google.github.io/styleguide/pyguide.html) and be modular, easy to read and maintain. The function should return the result of the operation in a clear and understandable way.
+
+Here is an example of how your function might look like:
+
+```python
+def my_function(parameter):
+    """This is a one-line description of what this function does.
+
+    Args:
+        parameter: This is the explanation of the parameter.
+
+    Returns:
+        The return value and its explanation.
+
+    Raises:
+        Any exceptions that are raised and why they might occur.
+    """
+    # Your code here
+```
+
+Please replace `my_function`, `parameter`, `This is a one-line description of what this function does.`, `This is the explanation of the parameter.`, `The return value and its explanation.`, `Any exceptions that are raised and why they might occur.` with your actual function name, parameters, descriptions, return values, and exception handling respectively.
+    '''
+
+    PROMPT_TEMPLATE_2 = '''
+### Task Description
+Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
+
+- **Modularity**: Break down the solution into smaller, reusable components where applicable.
+- **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
+- **Efficiency**: Optimize for performance where necessary, avoiding unnecessary computations or memory usage.
+- **Error Handling**: Include basic error handling to manage potential exceptions or invalid inputs.
+- **Documentation**: Provide brief comments or a docstring explaining the logic behind key sections of your code or complex operations.
+- **Testing**: Optionally, include a simple example or test case that demonstrates how to call your function and what output to expect.
+
+### Your Code
+Return your solution in the following format:
+```python
+# Your code here
+```
+with no additional text outside the code block.
+
+### Example
+If the task is to "calculate the factorial of a given number," your submission should look like this:
+
+```python
+def factorial(n):
+    """Calculate the factorial of a given number n."""
+    if n < 0:
+        return "Error: Negative numbers do not have factorials."
+    elif n == 0:
+        return 1
+    else:
+        result = 1
+        for i in range(1, n + 1):
+            result *= i
+        return result
+
+# Example usage:
+# print(factorial(5))
+```
+    '''
+
+    for i in range(n):
+        agent_template = MULTI_ACTION_AGENT_CODE_EXAMPLE
+        creator = AgentCreator(agent_template=agent_template)
+
+        crossover_prompt = """
+Here are two prompts for code generation:
+
+###### PROMPT 1
+{prompt_1}
+
+###### PROMPT 2
+{prompt_2}
+
+Combine and mix these two prompts to create a more effective, useful, and powerful prompt for coder generation. Output the combined prompt below with NO other texts:
+
+PROMPT_TEMPLATE = '''
+your_output_here
+'''
+        """
+        crossover_prompt.format(prompt_1=PROMPT_TEMPLATE_1, prompt_2=PROMPT_TEMPLATE_2)
+
+        await creator.run("")
+        improved_prompt = creator.get_code_text()
+        with open("improved_crossover_prompt.txt", "a") as f:
+            f.write(improved_prompt)
+            f.write("\n\n")
+
+
 async def mutate(n=1):
     for i in range(n):
         agent_template = MULTI_ACTION_AGENT_CODE_EXAMPLE
         creator = AgentCreator(agent_template=agent_template)
 
-        msg = \
-"""
-Role: You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. Here is the PROMPT_TEMPLATE you use for writing the code.
 
-PROMPT_TEMPLATE:
-Write a python function that can {instruction}.
-Return ```python your_code_here ``` with NO other texts,
-your code:
-
-Return an improved version of the current PROMPT_TEMPLATE that will allow for better, higher quality, and more accurate code to be written.
-
-PROMPT_TEMPLATE:
-"""
-        await creator.run(msg)
+        await creator.run("")
         improved_prompt = creator.get_code_text()
         with open("improved_prompt.txt", "a") as f:
             f.write(improved_prompt)

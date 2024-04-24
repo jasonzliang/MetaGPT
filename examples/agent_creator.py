@@ -69,7 +69,8 @@ class AgentCreator(Role):
         msg = self.rc.memory.get()[-1]
 
         instruction = msg.content
-        code_text = await CreateAgent().run(example=self.agent_template, instruction=instruction)
+        # code_text = await CreateAgent().run(example=self.agent_template, instruction=instruction)
+        code_text = await CreateAgent().run(instruction=instruction)
         msg = Message(content=code_text, role=self.profile, cause_by=todo)
 
         return msg

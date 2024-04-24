@@ -48,6 +48,17 @@ class SimpleWriteCode(Action):
         return self.code_text
 
 
+class SimpleWriteCodeLLama3(SimpleWriteCode):
+    PROMPT_TEMPLATE: str = '''
+    Write a Python function that can {instruction}.
+    Consider the following constraints and requirements:
+    The function should be efficient, scalable, and easy to understand.
+    Use meaningful variable names, proper docstrings, and follow PEP 8 guidelines.
+    Return ```python your_code_here ``` with NO other texts,
+    your code:
+    '''
+
+
 class SimpleWriteCodeWC(SimpleWriteCode):
     PROMPT_TEMPLATE: str = '''
     Write a python function that can {instruction}.
@@ -123,7 +134,8 @@ class SimpleCoder(Role):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._watch([UserRequirement])
-        self.set_actions([SimpleWriteCode])
+        # self.set_actions([SimpleWriteCode])
+        self.set_actions([SimpleWriteCodeGPT])
 
     # System prompt override for wizardcoder LLM
     def _get_prefix(self):
