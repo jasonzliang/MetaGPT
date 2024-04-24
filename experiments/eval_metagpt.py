@@ -31,9 +31,9 @@ def parse_code(rsp):
 
 class SimpleWriteCode(Action):
     PROMPT_TEMPLATE: str = """
-    Write a python function that can {instruction}.
-    Return ```python your_code_here ``` with NO other texts,
-    your code:
+Write a python function that can {instruction}.
+Return ```python your_code_here ``` with NO other texts,
+your code:
     """
     name: str = "SimpleWriteCode"
     code_text: str = ""
@@ -48,84 +48,140 @@ class SimpleWriteCode(Action):
         return self.code_text
 
 
-class SimpleWriteCodeLLama3(SimpleWriteCode):
-    PROMPT_TEMPLATE: str = '''
-    Write a Python function that can {instruction}.
-    Consider the following constraints and requirements:
-    The function should be efficient, scalable, and easy to understand.
-    Use meaningful variable names, proper docstrings, and follow PEP 8 guidelines.
-    Return ```python your_code_here ``` with NO other texts,
-    your code:
-    '''
-
-
 class SimpleWriteCodeWC(SimpleWriteCode):
     PROMPT_TEMPLATE: str = '''
-    Write a python function that can {instruction}.
+Write a python function that can {instruction}.
 
-    The function should follow Google's Python Style Guide (https://google.github.io/styleguide/pyguide.html) and be modular, easy to read and maintain. The function should return the result of the operation in a clear and understandable way.
+The function should follow Google's Python Style Guide (https://google.github.io/styleguide/pyguide.html) and be modular, easy to read and maintain. The function should return the result of the operation in a clear and understandable way.
 
-    Here is an example of how your function might look like:
+Here is an example of how your function might look like:
 
-    ```python
-    def my_function(parameter):
-        """This is a one-line description of what this function does.
+```python
+def my_function(parameter):
+    """This is a one-line description of what this function does.
 
-        Args:
-            parameter: This is the explanation of the parameter.
+    Args:
+        parameter: This is the explanation of the parameter.
 
-        Returns:
-            The return value and its explanation.
+    Returns:
+        The return value and its explanation.
 
-        Raises:
-            Any exceptions that are raised and why they might occur.
-        """
-        # Your code here
-    ```
+    Raises:
+        Any exceptions that are raised and why they might occur.
+    """
+    # Your code here
+```
 
-    Please replace `my_function`, `parameter`, `This is a one-line description of what this function does.`, `This is the explanation of the parameter.`, `The return value and its explanation.`, `Any exceptions that are raised and why they might occur.` with your actual function name, parameters, descriptions, return values, and exception handling respectively.
+Please replace `my_function`, `parameter`, `This is a one-line description of what this function does.`, `This is the explanation of the parameter.`, `The return value and its explanation.`, `Any exceptions that are raised and why they might occur.` with your actual function name, parameters, descriptions, return values, and exception handling respectively.
     '''
 
 
 class SimpleWriteCodeGPT(SimpleWriteCode):
     PROMPT_TEMPLATE: str = '''
-    ### Task Description
-    Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
+### Task Description
+Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
 
-    - **Modularity**: Break down the solution into smaller, reusable components where applicable.
-    - **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
-    - **Efficiency**: Optimize for performance where necessary, avoiding unnecessary computations or memory usage.
-    - **Error Handling**: Include basic error handling to manage potential exceptions or invalid inputs.
-    - **Documentation**: Provide brief comments or a docstring explaining the logic behind key sections of your code or complex operations.
-    - **Testing**: Optionally, include a simple example or test case that demonstrates how to call your function and what output to expect.
+- **Modularity**: Break down the solution into smaller, reusable components where applicable.
+- **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
+- **Efficiency**: Optimize for performance where necessary, avoiding unnecessary computations or memory usage.
+- **Error Handling**: Include basic error handling to manage potential exceptions or invalid inputs.
+- **Documentation**: Provide brief comments or a docstring explaining the logic behind key sections of your code or complex operations.
+- **Testing**: Optionally, include a simple example or test case that demonstrates how to call your function and what output to expect.
 
-    ### Your Code
-    Return your solution in the following format:
-    ```python
-    # Your code here
-    ```
-    with no additional text outside the code block.
+### Your Code
+Return your solution in the following format:
+```python
+# Your code here
+```
+with no additional text outside the code block.
 
-    ### Example
-    If the task is to "calculate the factorial of a given number," your submission should look like this:
+### Example
+If the task is to "calculate the factorial of a given number," your submission should look like this:
 
-    ```python
-    def factorial(n):
-        """Calculate the factorial of a given number n."""
-        if n < 0:
-            return "Error: Negative numbers do not have factorials."
-        elif n == 0:
-            return 1
-        else:
-            result = 1
-            for i in range(1, n + 1):
-                result *= i
-            return result
+```python
+def factorial(n):
+    """Calculate the factorial of a given number n."""
+    if n < 0:
+        return "Error: Negative numbers do not have factorials."
+    elif n == 0:
+        return 1
+    else:
+        result = 1
+        for i in range(1, n + 1):
+            result *= i
+        return result
 
-    # Example usage:
-    # print(factorial(5))
-    ```
+# Example usage:
+# print(factorial(5))
+```
     '''
+
+
+class SimpleWriteCodeGPTCrossover(SimpleWriteCode):
+    PROMPT_TEMPLATE: str = '''
+### Task Description
+Write a Python function that {instruction}. The function should adhere to Google's Python Style Guide (https://google.github.io/styleguide/pyguide.html) and incorporate the following principles for quality and maintainability:
+
+- **Modularity**: Break down the solution into smaller, reusable components where applicable.
+- **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
+- **Efficiency**: Optimize for performance where necessary, avoiding unnecessary computations or memory usage.
+- **Error Handling**: Include basic error handling to manage potential exceptions or invalid inputs.
+- **Documentation**: Provide a comprehensive docstring explaining the purpose of the function, its arguments, the return values, and any exceptions that might be raised.
+- **Testing**: Optionally, include a simple example or test case that demonstrates how to call your function and what output to expect.
+
+### Your Code
+Return your solution in the following format:
+```python
+def your_function_name(your_parameters):
+    """One-line description of what the function does.
+
+    Args:
+        your_parameters: Explanation of each parameter.
+
+    Returns:
+        Explanation of the return value.
+
+    Raises:
+        Explanation of any exceptions that are raised and why they might occur.
+    """
+    # Your code here
+
+# Example usage:
+# print(your_function_name(your_test_input))
+```
+
+### Example
+If the task is to "calculate the factorial of a given number," your submission should look like this:
+
+```python
+def factorial(n):
+    """Calculate the factorial of a given number n.
+
+    Args:
+        n: The non-negative integer to calculate the factorial of.
+
+    Returns:
+        The factorial of n, or a string error message if n is negative.
+
+    Raises:
+        ValueError: If n is negative.
+
+    """
+    if n < 0:
+        raise ValueError("Error: Negative numbers do not have factorials.")
+    elif n == 0:
+        return 1
+    else:
+        result = 1
+        for i in range(1, n + 1):
+            result *= i
+        return result
+
+# Example usage:
+# print(factorial(5))
+```
+    '''
+
 
 class SimpleCoder(Role):
     name: str = "Alice"
@@ -135,11 +191,11 @@ class SimpleCoder(Role):
         super().__init__(**kwargs)
         self._watch([UserRequirement])
         # self.set_actions([SimpleWriteCode])
-        self.set_actions([SimpleWriteCodeGPT])
+        self.set_actions([SimpleWriteCodeWC])
 
     # System prompt override for wizardcoder LLM
-    def _get_prefix(self):
-        return "Below is an instruction that describes a task. Write a response that appropriately completes the request."
+    # def _get_prefix(self):
+    #     return "Below is an instruction that describes a task. Write a response that appropriately completes the request."
 
     def get_code_text(self):
         return self.actions[0].code_text

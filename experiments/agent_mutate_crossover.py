@@ -53,14 +53,15 @@ class CreateAgent(Action):
     # """
 
     async def run(self, example: str, instruction: str):
-        if len(instruction) > 0:
-            prompt = instruction
-        else:
+        if instruction == "DEFAULT":
             prompt = self.PROMPT_TEMPLATE
+        else:
+            prompt = instruction
 
+        # print(prompt);exit()
         rsp = await self._aask(prompt)
-        code_text = CreateAgent.parse_code(rsp)
-
+        # code_text = CreateAgent.parse_code(rsp)
+        code_text = rsp
         return code_text
 
     @staticmethod
@@ -184,15 +185,16 @@ Here are two prompts for code generation:
 ###### PROMPT 2
 {prompt_2}
 
-Combine and mix these two prompts to create a more effective, useful, and powerful prompt for coder generation. Output the combined prompt below with NO other texts:
+Combine and merge these two prompts to create a more effective, useful, and powerful prompt for coder generation. Be creative and try to output interesting, original, and unique prompts. Output the combined prompt below with NO other texts:
 
 PROMPT_TEMPLATE = '''
 your_output_here
 '''
         """
-        crossover_prompt.format(prompt_1=PROMPT_TEMPLATE_1, prompt_2=PROMPT_TEMPLATE_2)
+        crossover_prompt = crossover_prompt.format(
+            prompt_1=PROMPT_TEMPLATE_1, prompt_2=PROMPT_TEMPLATE_2)
 
-        await creator.run("")
+        await creator.run(crossover_prompt)
         improved_prompt = creator.get_code_text()
         with open("improved_crossover_prompt.txt", "a") as f:
             f.write(improved_prompt)
@@ -205,7 +207,7 @@ async def mutate(n=1):
         creator = AgentCreator(agent_template=agent_template)
 
 
-        await creator.run("")
+        await creator.run("DEFAULT")
         improved_prompt = creator.get_code_text()
         with open("improved_prompt.txt", "a") as f:
             f.write(improved_prompt)
@@ -213,7 +215,7 @@ async def mutate(n=1):
 
 
 if __name__ == "__main__":
-    asyncio.run(mutate())
+    asyncio.run(crossover())
 
     # import asyncio
 
