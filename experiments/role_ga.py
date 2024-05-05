@@ -71,23 +71,21 @@ class Individual(object):
         return "[Indv] Id: %s, Fitness: %s\n%s" % (self.id, self.fitness,
             self.role)
 
-    def _reset_genes(self):
+    def _reset_roles(self):
         self.role = ""
 
-    def _inherit_genes(self, parent):
+    def _inherit_roles(self, parent):
         self.role = deepcopy(parent.role)
 
     def reset(self):
-        self._reset_genes()
+        self._reset_roles()
         self.fitness = None
         self.true_fitness = None
 
     def create_child(self, gen_created=None):
         child = deepcopy(self)
         child.reset()
-
-        if not reset_genes:
-            child._inherit_genes(self)
+        child._inherit_roles(self)
 
         child.id = child._set_id(gen_created)
         child.fitness = self.fitness
@@ -122,30 +120,18 @@ class Individual(object):
 
     def serialize(self):
         return {'id': self.id,
-            'ancestry': self.ancestry,
-            'fitness': self.fitness,
             'gen_created': self.gen_created,
-            'genes': dict([(x.name, x.serialize()) for x in self.genes]),
-            'model_fp': self.model_fp,
-            'model_meta_info': self.model_meta_info,
-            'training_info': self.training_info,
-            'true_fitness': self.true_fitness}
+            'fitness': self.fitness,
+            'true_fitness': self.true_fitness
+            'role': self.role}
 
     def deserialize(self, indv_dict):
         self.id = indv_dict.get("id", self.id)
-        self.ancestry = indv_dict.get('ancestry', [])
         self.gen_created = indv_dict.get("gen_created", self.gen_created)
         self.fitness = indv_dict.get("fitness", None)
-        self.model_fp = indv_dict.get("model_fp", None)
-        self.model_meta_info = indv_dict.get("model_meta_info", None)
-        self.training_info = indv_dict.get("training_info", {})
         self.true_fitness = indv_dict.get("true_fitness", None)
 
-        genes_dict = indv_dict.get("genes")
-        for gene in self.genes:
-            if gene.name in genes_dict:
-                gene_dict = genes_dict.get(gene.name)
-                gene.deserialize(gene_dict)
+        self.role = indv_dict.get("role", "")
 
 
 class RoleEvolutionGA(object):
@@ -271,20 +257,24 @@ class RoleEvolutionGA(object):
     def get_gen(self):
         return self.gen
 
+    def _tournament_selection(self):
+        chosen_ones = np.random.choice(self.individuals,
+            size=min(len(self.individuals), self.tournament_size),
+            replace=False)
+        return np.max(chosen_ones)
+
     def _generate_individual(self):
         counter = MAX_FILTER_TRIES
         while True:
             parent_a = self._tournament_selection()
             parent_b = self._tournament_selection()
-            # if parent_b > parent_a:
-            #     parent_a, parent_b = parent_b, parent_a
 
             child_a = parent_a.create_child(self.gen)
             child_b = parent_b.create_child(self.gen)
-            if not reset_genes:
-                child_a.crossover(child_b)
-                child = random.choice([child_a, child_b])
-                child.mutate()
+
+            child_a.crossover(child_b)
+            child = random.choice([child_a, child_b])
+            child.mutate()
 
             if counter == 0 or self._check_indv_filters(child):
                 return child
@@ -298,7 +288,7 @@ class RoleEvolutionGA(object):
 
         new_individuals = sorted_individuals[:self.num_elites]
         while len(new_individuals) < self.pop_size:
-            new_individuals.append(self._generate_individual(reset_genes))
+            new_individuals.append(self._generate_individual())
 
         self.individuals = new_individuals
         assert len(self.individuals) == self.pop_size
