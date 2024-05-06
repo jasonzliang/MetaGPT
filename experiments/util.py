@@ -12,6 +12,21 @@ import ruamel.yaml as yaml
 
 from alg_util import is_numpy_type, randomword
 
+def extract_evalplus_score(result_file):
+    try:
+        with open(result_file, 'r') as f:
+            lines = f.readlines()
+        for i, line in enumerate(lines):
+            if "humaneval (base tests)" in line:
+                scoreline = lines[i+1]
+        score = float(scoreline.rstrip().rsplit()[1])
+        assert 0.0 <= score <= 1.0
+        return score
+    except:
+        self.logger.info(
+            "Evalplus score extraction failed: %s" % result_file)
+        return 0.0
+
 def unzip(x):
     return [list(x) for x in zip(*x)]
 

@@ -19,6 +19,8 @@ from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
+from util import extract_evalplus_score
+
 
 def parse_code(rsp):
     pattern = r"```python(.*)```"
@@ -171,26 +173,10 @@ class LLMEvaluator(object):
         return result_dicts
 
     def _eval_humaneval(self, prompt_template, eval_id):
-        def extract_evalplus_score(result_file):
-            try:
-                with open(result_file, 'r') as f:
-                    lines = f.readlines()
-                for i, line in enumerate(lines):
-                    if "humaneval (base tests)" in line:
-                        scoreline = lines[i+1]
-                score = float(scoreline.rstrip().rsplit()[1])
-                assert 0.0 <= score <= 1.0
-                return score
-            except:
-                self.logger.info(
-                    "Evalplus score extraction failed: %s" % result_file)
-                return 0.0
-
-        result_dir = os.path.join(self.evaluator_dir,
-            "humaneval_ID-%s" % eval_id)
-        eval_name = "humaneval"
+        result_dir = os.path.join(
+            self.evaluator_dir, "humaneval_ID-%s" % eval_id)
         problems = get_human_eval_plus()
-        results = []
+        # results = []
 
         for task_id, problem in problems.items():
             prompt = problem['prompt']
@@ -208,18 +194,18 @@ class LLMEvaluator(object):
             result_file = os.path.join(task_id_dir, "0.py")
             with open(result_file, 'w') as f:
                 f.write(output)
-            results.append({'task_id': task_id, 'solution': output})
+            # results.append({'task_id': task_id, 'solution': output})
 
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
-            % (eval_name, result_dir, evalplus_fp))
+            % ("humaneval", result_dir, evalplus_fp))
         with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
             f.write(coder.get_prompt_template())
 
         return extract_evalplus_score(evalplus_fp)
 
 
-### Unit tests ####
+#### Unit tests ####
 def _test_mutation_crossover():
     PROMPT_TEMPLATE_1 = '''
 Write a python function that can {instruction}.
@@ -261,9 +247,16 @@ your code:
 '''
     population = [indv]
     evaluator = LLMEvaluator({}, evaluator_dir='.')
-    evaluator.evaluate(population)
-    print("#### FITNESS ####")
-    print(indv.get_true_fitness())
+    result_dicts = evaluator.evaluate(population)
+    print("#### Evaluation Results ####")
+    print(result_dicts)
+
+
+def _test_evalplus_extractor():
+    score = extract_evalplus_score(
+        "humaneval_ID-G-0_ID-KZJyETCnkrAI/evalplus.txt")
+    print(score, type(score))
+
 
 if __name__ == "__main__":
-    _test_evaluator()
+    _test_evalplus_extractor()
