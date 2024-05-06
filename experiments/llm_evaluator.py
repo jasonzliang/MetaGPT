@@ -1,0 +1,247 @@
+import asyncio
+import copy
+import importlib
+import logging
+import os
+import re
+import sys
+import random
+import time
+
+from metagpt.actions import Action, UserRequirement
+from metagpt.config2 import Config
+from metagpt.logs import logger
+from metagpt.roles import Role
+from metagpt.schema import Message
+from metagpt.team import Team
+
+from evalplus.data.humaneval import get_human_eval_plus
+from evalplus.data.mbpp import get_mbpp_plus
+from evalplus.data import write_jsonl
+
+
+def parse_code(rsp):
+    pattern = r"```python(.*)```"
+    match = re.search(pattern, rsp, re.DOTALL)
+    code_text = match.group(1) if match else rsp
+    return code_text
+
+
+class MutateAction(Action):
+    PROMPT_TEMPLATE: str = """
+You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The PROMPT_TEMPLATE that you use for writing the code can be illustrated by the following example:
+
+{prompt}
+
+Return an improved version of the example PROMPT_TEMPLATE that allows better, higher quality, and more accurate code to be written. Output the improved prompt below with NO other texts:
+
+PROMPT_TEMPLATE: str = '''
+your_output_here
+'''
+"""
+    name: str = "MutateAction"
+    code_text: str = ""
+
+    async def run(self, prompt: str):
+        prompt = self.PROMPT_TEMPLATE.format(prompt=prompt)
+        rsp = await self._aask(prompt)
+        self.code_text = rsp
+        return self.code_text
+
+    def get_code_text(self):
+        return self.code_text
+
+
+class CrossoverAction(Action):
+    PROMPT_TEMPLATE: str = """
+Here are two prompts for code generation:
+
+### PROMPT 1 ###
+{prompt_1}
+
+### PROMPT 2 ###
+{prompt_2}
+
+Combine and merge these two prompts to create a more effective, useful, and powerful prompt for coder generation. Be creative and try to output interesting, original, and unique prompts. Output the combined prompt below with NO other texts:
+
+PROMPT_TEMPLATE: str = '''
+your_output_here
+'''
+"""
+    name: str = "CrossoverAction"
+    code_text: str = ""
+
+    async def run(self, prompt_1: str, prompt_2: str):
+        prompt = self.PROMPT_TEMPLATE.format(
+            prompt_1=prompt_1, prompt_2=prompt_2)
+        rsp = await self._aask(prompt)
+        self.code_text = rsp
+        return self.code_text
+
+    def get_code_text(self):
+        return self.code_text
+
+
+class SimpleWriteCode(Action):
+    PROMPT_TEMPLATE: str = ""
+    name: str = "SimpleWriteCode"
+    code_text: str = ""
+
+    async def run(self, instruction: str):
+        prompt = self.PROMPT_TEMPLATE.format(instruction=instruction)
+        rsp = await self._aask(prompt)
+        self.code_text = parse_code(rsp)
+        return self.code_text
+
+
+class SimpleCoder(Role):
+    name: str = "Alice"
+    profile: str = "prompt optimization engineer"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._watch([UserRequirement])
+        self.set_actions([SimpleWriteCode])
+
+    # System prompt override for wizardcoder LLM
+    # def _get_prefix(self):
+    #     return "Below is an instruction that describes a task. Write a response that appropriately completes the request."
+
+    def get_code_text(self):
+        return self.actions[0].code_text
+
+    def get_prompt_template(self):
+        return self.actions[0].PROMPT_TEMPLATE
+
+    def set_prompt_template(self, new_prompt):
+        self.actions[0].PROMPT_TEMPLATE = new_prompt
+
+
+def create_new_team(llm_model):
+    llm_config = Config.default()
+    llm_config.llm.model = llm_model
+
+    team = Team()
+    coder = SimpleCoder(config=llm_config)
+    team.hire([coder])
+    team.invest(investment=1e308)
+    return team, coder
+
+
+def llm_mutate(prompt):
+    llm_config = Config.default()
+    llm_config.llm.model = "gpt-4-turbo"
+    mutate_operator = MutateAction(config=llm_config)
+
+    asyncio.run(mutate_operator.run(prompt=prompt))
+    improved_prompt = mutate_operator.get_code_text()
+    return improved_prompt
+
+
+def llm_crossover(prompt_1, prompt_2):
+    llm_config = Config.default()
+    llm_config.llm.model = "gpt-4-turbo"
+    crossover_operator = CrossoverAction(config=llm_config)
+
+    asyncio.run(crossover_operator.run(prompt_1=prompt_1, prompt_2=prompt_2))
+    improved_prompt = crossover_operator.get_code_text()
+    return improved_prompt
+
+
+class LLMEvaluator(object):
+    def __init__(self, config, evaluator_dir):
+        self.config = config
+        self.evaluator_dir = evaluator_dir
+        self.dummy_mode = self.config.get("dummy_mode", True)
+        self.llm_model = self.config.get("llm_model", "gpt-3.5-turbo")
+        self.logger = logging.getLogger('root')
+
+    def evaluate(self, population):
+        result_dicts = []
+        for indv in population:
+            fitness = self.eval_humaneval(indv.role, indv.id)
+
+            result_dict = {}
+            result_dict['fitness'] = fitness
+            result_dict['true_fitness'] = fitness
+            result_dicts.append(result_dict)
+        return result_dicts
+
+
+    def eval_humaneval(self, prompt_template, eval_id):
+        def extract_evalplus_score(result_file):
+            try:
+                with open(result_file, 'r') as f:
+                    lines = f.readlines()
+                for i, line in enumerate(lines):
+                    if "humaneval (base tests)" in line:
+                        scoreline = lines[i+1]
+                score = float(scoreline.rstrip().rsplit()[1])
+                assert 0.0 <= score <= 1.0
+                return score
+            except:
+                self.logger.info(
+                    "Evalplus score extraction failed: %s" % result_file)
+                return 0.0
+
+        result_dir = os.path.join(self.evaluator_dir,
+            "humaneval_ID-%s" % eval_id)
+        eval_name = "humaneval"
+        problems = get_human_eval_plus()
+        results = []
+
+        for task_id, problem in problems.items():
+            prompt = problem['prompt']
+            logger.info("\n\n#### Task ID: %s, Prompt:\n%s" % (task_id, prompt))
+
+            team, coder = create_new_team(self.llm_model)
+            coder.set_prompt_template(prompt_template)
+            team.run_project(prompt)
+            asyncio.run(team.run(n_round=1))
+            output = coder.get_code_text()
+            logger.info("#### MetaGPT Output:\n%s" % output)
+
+            task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
+            os.makedirs(task_id_dir, exist_ok=True)
+            result_file = os.path.join(task_id_dir, "0.py")
+            with open(result_file, 'w') as f:
+                f.write(output)
+            results.append({'task_id': task_id, 'solution': output})
+
+        evalplus_fp = os.path.join(result_dir, "evalplus.txt")
+        os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
+            % (eval_name, result_dir, evalplus_fp))
+        with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
+            f.write(coder.get_prompt_template())
+
+        return extract_evalplus_score(evalplus_fp)
+
+if __name__ == "__main__":
+    PROMPT_TEMPLATE_1 = '''
+Write a python function that can {instruction}.
+Return ```python your_code_here ``` with NO other texts,
+your code:
+'''
+    PROMPT_TEMPLATE_2 = '''
+### Task Description
+Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
+
+- **Modularity**: Break down the solution into smaller, reusable components where applicable.
+- **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
+- **Efficiency**: Optimize for performance where necessary, avoiding unnecessary computations or memory usage.
+- **Error Handling**: Include basic error handling to manage potential exceptions or invalid inputs.
+- **Documentation**: Provide brief comments or a docstring explaining the logic behind key sections of your code or complex operations.
+- **Testing**: Optionally, include a simple example or test case that demonstrates how to call your function and what output to expect.
+
+### Your Code
+Return your solution in the following format:
+```python your_code_here ```
+with no additional text outside the code block.
+'''
+    output = llm_mutate(PROMPT_TEMPLATE_1)
+    print("### LLM_MUTATE RETURN VALUE ###")
+    print(output)
+
+    output = llm_crossover(PROMPT_TEMPLATE_1, PROMPT_TEMPLATE_2)
+    print("### LLM_CROSSOVER RETURN VALUE ###")
+    print(output)
