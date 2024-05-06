@@ -31,11 +31,11 @@ def parse_code(rsp):
 
 class MutateAction(Action):
     PROMPT_TEMPLATE: str = """
-You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The PROMPT_TEMPLATE that you use for writing the code can be illustrated by the following example:
+You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The prompt template that you use for writing the code can be illustrated by the following example:
 
 {prompt}
 
-Return an improved version of the example PROMPT_TEMPLATE that allows better, higher quality, and more accurate code to be written. Output the improved prompt below with NO other texts:
+Return an improved version of the example prompt template that allows better, higher quality, and more accurate code to be written. Output the improved prompt below with NO other texts:
 
 PROMPT_TEMPLATE: str = '''
 your_output_here
@@ -63,7 +63,7 @@ Here are two prompt templates that you use for writing code:
 ### PROMPT TEMPLATE 2 ###
 {prompt_2}
 
-Combine and merge these two prompt templates to create a more effective, useful, and powerful one for writing code. Be creative and try to output interesting, original, and unique prompts. Output the combined prompt template below with NO other texts:
+Combine and merge these two prompt templates to create a more effective, useful, and powerful prompt for writing code. Be creative and try to output interesting, original, and unique prompts. Output the combined prompt template below with NO other texts:
 
 PROMPT_TEMPLATE: str = '''
 your_output_here
