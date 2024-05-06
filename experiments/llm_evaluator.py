@@ -44,8 +44,7 @@ your_output_here
 
     async def run(self, prompt: str):
         prompt = self.PROMPT_TEMPLATE.format(prompt=prompt)
-        rsp = await self._aask(prompt)
-        self.code_text = rsp
+        self.code_text = await self._aask(prompt)
         return self.code_text
 
     def get_code_text(self):
@@ -54,15 +53,15 @@ your_output_here
 
 class CrossoverAction(Action):
     PROMPT_TEMPLATE: str = """
-Here are two prompts for code generation:
+Here are two prompt templates that you use for writing code:
 
-### PROMPT 1 ###
+### PROMPT TEMPLATE 1 ###
 {prompt_1}
 
-### PROMPT 2 ###
+### PROMPT TEMPLATE 2 ###
 {prompt_2}
 
-Combine and merge these two prompts to create a more effective, useful, and powerful prompt for coder generation. Be creative and try to output interesting, original, and unique prompts. Output the combined prompt below with NO other texts:
+Combine and merge these two prompt templates to create a more effective, useful, and powerful one for writing code. Be creative and try to output interesting, original, and unique prompts. Output the combined prompt template below with NO other texts:
 
 PROMPT_TEMPLATE: str = '''
 your_output_here
@@ -74,8 +73,7 @@ your_output_here
     async def run(self, prompt_1: str, prompt_2: str):
         prompt = self.PROMPT_TEMPLATE.format(
             prompt_1=prompt_1, prompt_2=prompt_2)
-        rsp = await self._aask(prompt)
-        self.code_text = rsp
+        self.code_text = await self._aask(prompt)
         return self.code_text
 
     def get_code_text(self):
@@ -131,6 +129,7 @@ def create_new_team(llm_model):
 def llm_mutate(prompt):
     llm_config = Config.default()
     llm_config.llm.model = "gpt-4-turbo"
+    llm_config.llm.temperature = 0.7
     mutate_operator = MutateAction(config=llm_config)
 
     asyncio.run(mutate_operator.run(prompt=prompt))
@@ -141,6 +140,7 @@ def llm_mutate(prompt):
 def llm_crossover(prompt_1, prompt_2):
     llm_config = Config.default()
     llm_config.llm.model = "gpt-4-turbo"
+    llm_config.llm.temperature = 0.7
     crossover_operator = CrossoverAction(config=llm_config)
 
     asyncio.run(crossover_operator.run(prompt_1=prompt_1, prompt_2=prompt_2))
@@ -216,7 +216,9 @@ class LLMEvaluator(object):
 
         return extract_evalplus_score(evalplus_fp)
 
-if __name__ == "__main__":
+
+### Unit tests ####
+def _test_mutation_crossover():
     PROMPT_TEMPLATE_1 = '''
 Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
@@ -245,3 +247,10 @@ with no additional text outside the code block.
     output = llm_crossover(PROMPT_TEMPLATE_1, PROMPT_TEMPLATE_2)
     print("### LLM_CROSSOVER RETURN VALUE ###")
     print(output)
+
+
+def _test_evaluator():
+    pass
+
+if __name__ == "__main__":
+    _test_mutation_crossover()
