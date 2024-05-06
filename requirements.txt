@@ -12,13 +12,8 @@ typer==0.9.0
 lancedb==0.4.0
 loguru==0.6.0
 meilisearch==0.21.0
-<<<<<<< HEAD
-numpy
-openai==1.6.1
-=======
 numpy>=1.24.3
 openai>=1.6.1
->>>>>>> upstream/main
 openpyxl
 beautifulsoup4==4.12.3
 pandas==2.1.1
