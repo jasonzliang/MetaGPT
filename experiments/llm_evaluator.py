@@ -262,6 +262,7 @@ your code:
     population = [indv]
     evaluator = LLMEvaluator({}, evaluator_dir='.')
     evaluator.evaluate(population)
+    print("#### FITNESS ####")
     print(indv.get_true_fitness())
 
 if __name__ == "__main__":
