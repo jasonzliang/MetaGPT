@@ -13,27 +13,13 @@ from ruamel.yaml import YAML
 from alg_util import randomword
 from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from llm_evaluator import llm_mutate, llm_crossover
-from llm_evaluator import create_new_team
 from util import get_time, sanitize_result_dict
 
-
-class FitnessLog(object):
-    def __init__(self, name, checkpoint_dir):
-        self.name = name
-        self.checkpoint_dir = checkpoint_dir
-        self.fitness_log = os.path.join(self.checkpoint_dir,
-            "%s.txt" % self.name)
-        with open(self.fitness_log, "a+") as f:
-            f.write("# %s/%s NEW RUN\n" % (int(time.time()),
-                get_time(date=False)))
-
-    def update(self, gen, max_fitness, mean_fitness):
-        with open(self.fitness_log, "a+") as f:
-            f.write("%s/%s %s %s %s\n" % \
-                (int(time.time()), get_time(date=False), gen, max_fitness,
-                    mean_fitness))
-            f.flush()
-            os.fsync(f.fileno())
+DEFAULT_ROLE = """
+Write a python function that can {instruction}.
+Return ```python your_code_here ``` with NO other texts,
+your code:
+"""
 
 
 @total_ordering
@@ -43,7 +29,7 @@ class Individual(object):
         self.logger = logging.getLogger('evolve_role')
 
         self.dummy_mode = self.config.get("dummy_mode", False)
-        self.initial_role = self.config.get("initial_role", "")
+        self.initial_role = self.config.get("initial_role", DEFAULT_ROLE)
         # print(self.initial_role); exit()
         self.id = self._set_id(gen_created) # Ids are unique, names are not
         self.reset()
@@ -136,6 +122,25 @@ class Individual(object):
         self.fitness = indv_dict.get("fitness", None)
         self.true_fitness = indv_dict.get("true_fitness", None)
         self.role = indv_dict.get("role", "")
+
+
+class FitnessLog(object):
+    def __init__(self, name, checkpoint_dir):
+        self.name = name
+        self.checkpoint_dir = checkpoint_dir
+        self.fitness_log = os.path.join(self.checkpoint_dir,
+            "%s.txt" % self.name)
+        with open(self.fitness_log, "a+") as f:
+            f.write("# %s/%s NEW RUN\n" % (int(time.time()),
+                get_time(date=False)))
+
+    def update(self, gen, max_fitness, mean_fitness):
+        with open(self.fitness_log, "a+") as f:
+            f.write("%s/%s %s %s %s\n" % \
+                (int(time.time()), get_time(date=False), gen, max_fitness,
+                    mean_fitness))
+            f.flush()
+            os.fsync(f.fileno())
 
 
 class RoleEvolutionGA(object):
