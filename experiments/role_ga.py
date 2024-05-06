@@ -43,6 +43,8 @@ class Individual(object):
         self.logger = logging.getLogger('evolve_role')
 
         self.dummy_mode = self.config.get("dummy_mode", False)
+        self.initial_role = self.config.get("initial_role", "")
+        # print(self.initial_role); exit()
         self.id = self._set_id(gen_created) # Ids are unique, names are not
         self.reset()
 
@@ -70,10 +72,10 @@ class Individual(object):
             self.role)
 
     def _reset_roles(self):
-        self.role = ""
+        self.role = self.initial_role
 
     def _inherit_roles(self, parent):
-        self.role = deepcopy(parent.role)
+        self.role = parent.role
 
     def reset(self):
         self._reset_roles()
