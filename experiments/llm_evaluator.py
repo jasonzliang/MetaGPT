@@ -259,4 +259,4 @@ def _test_evalplus_extractor():
 
 
 if __name__ == "__main__":
-    _test_evalplus_extractor()
+    _test_evaluator()
