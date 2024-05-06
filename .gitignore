@@ -190,3 +190,5 @@ cov.xml
 .python-version
 .tags
 .tags_*
+
+experiments/results/*

@@ -196,7 +196,7 @@ your_output_here
 
         await creator.run(crossover_prompt)
         improved_prompt = creator.get_code_text()
-        with open("improved_crossover_prompt.txt", "a") as f:
+        with open("results/improved_crossover_prompt.txt", "a") as f:
             f.write(improved_prompt)
             f.write("\n\n")
 
@@ -209,7 +209,7 @@ async def mutate(n=1):
 
         await creator.run("DEFAULT")
         improved_prompt = creator.get_code_text()
-        with open("improved_prompt.txt", "a") as f:
+        with open("results/improved_prompt.txt", "a") as f:
             f.write(improved_prompt)
             f.write("\n\n")
 

@@ -1,27 +1,20 @@
-import os
+from copy import deepcopy
+from functools import total_ordering
 import glob
 import json
 import logging
+import os
 import random
 import time
 
 import numpy as np
-import ruamel.yaml as yaml
+from ruamel.yaml import YAML
 
+from alg_util import randomword
+from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from llm_evaluator import llm_mutate, llm_crossover
 from llm_evaluator import create_new_team
-
-def get_time(space=True, date=True):
-    '''Creates a nicely formated timestamp'''
-    if date:
-        date_str = "%Y-%m-%d %H:%M:%S"
-    else:
-        date_str = "%H:%M:%S"
-
-    if not space:
-        date_str = date_str.replace(":", "-").replace(" ", "_")
-
-    return datetime.datetime.now(timezone('US/Pacific')).strftime(date_str)
+from util import get_time, sanitize_result_dict
 
 
 class FitnessLog(object):
@@ -47,6 +40,9 @@ class FitnessLog(object):
 class Individual(object):
     def __init__(self, config, gen_created=None):
         self.config = config
+        self.logger = logging.getLogger('root')
+
+        self.dummy_mode = self.config.get("dummy_mode", False)
         self.id = self._set_id(gen_created) # Ids are unique, names are not
         self.reset()
 
@@ -114,16 +110,22 @@ class Individual(object):
 
 
     def mutate(self):
-        self.role = llm_mutate(self.role)
+        if self.dummy_mode:
+            self.role += randomword(ID_LENGTH)
+        else:
+            self.role = llm_mutate(self.role)
 
     def crossover(self, other):
-        self.role = llm_crossover(self.role, other.role)
+        if self.dummy_mode:
+            self.role, other.role = other.role, self.role
+        else:
+            self.role = llm_crossover(self.role, other.role)
 
     def serialize(self):
         return {'id': self.id,
             'gen_created': self.gen_created,
             'fitness': self.fitness,
-            'true_fitness': self.true_fitness
+            'true_fitness': self.true_fitness,
             'role': self.role}
 
     def deserialize(self, indv_dict):
@@ -144,12 +146,11 @@ class RoleEvolutionGA(object):
 
         self.checkpoint = self.config.get("checkpoint", False)
         self.pop_size = self.config.get("pop_size", MIN_POP_SIZE)
-        self.num_gen = self.config.get("num_gen", 5)
+        self.num_gen = self.config.get("num_gen", 5); assert self.num_gen > 0
         self.num_elites = self.config.get("num_elites", 1)
         self.reevaluate_elites = self.config.get("reevaluate_elites", True)
+        self.tournament_size = self.config.get("tournament_size", 2)
         self.indv_config = self.config.get("indv_config", {})
-
-        assert self.num_gen > 0
 
         if self.checkpoint:
             self.fitness_logs = \
@@ -173,7 +174,7 @@ class RoleEvolutionGA(object):
         for i in range(self.pop_size):
             individual = Individual(self.indv_config, self.gen)
             self.individuals.append(individual)
-        assert len(self.individuals) == self.pop_size
+        assert self.pop_size == len(self.individuals)
 
     def _find_latest_checkpoint(self):
         checkpoints = glob.glob(os.path.join(self.checkpoint_dir,
@@ -196,7 +197,7 @@ class RoleEvolutionGA(object):
         self.logger.info("Saving gen %s population to %s" % (self.gen,
             file_path))
         with open(file_path, 'w') as f:
-            yaml.dump(sanitize_result_dict(pop_dict), f)
+            YAML().dump(sanitize_result_dict(pop_dict), f)
 
     def _deserialize(self, pop_dict=None, file_path=None):
         assert bool(pop_dict) != bool(file_path)
@@ -204,7 +205,7 @@ class RoleEvolutionGA(object):
             assert pop_dict is None
             self.logger.info("Loading population from %s" % file_path)
             with open(file_path, "r") as f:
-                pop_dict = yaml.load(f)
+                pop_dict = YAML().load(f)
         else:
             assert pop_dict is not None
 
@@ -265,21 +266,16 @@ class RoleEvolutionGA(object):
         return np.max(chosen_ones)
 
     def _generate_individual(self):
-        counter = MAX_FILTER_TRIES
-        while True:
-            parent_a = self._tournament_selection()
-            parent_b = self._tournament_selection()
+        parent_a = self._tournament_selection()
+        parent_b = self._tournament_selection()
 
-            child_a = parent_a.create_child(self.gen)
-            child_b = parent_b.create_child(self.gen)
+        child_a = parent_a.create_child(self.gen)
+        child_b = parent_b.create_child(self.gen)
 
-            child_a.crossover(child_b)
-            child = random.choice([child_a, child_b])
-            child.mutate()
-
-            if counter == 0 or self._check_indv_filters(child):
-                return child
-            counter -= 1
+        child_a.crossover(child_b)
+        child = random.choice([child_a, child_b])
+        child.mutate()
+        return child
 
     def ask(self):
         if self.gen == 0:
@@ -292,18 +288,18 @@ class RoleEvolutionGA(object):
             new_individuals.append(self._generate_individual())
 
         self.individuals = new_individuals
-        assert len(self.individuals) == self.pop_size
+        assert self.pop_size == len(self.individuals)
 
-        if not self.reevaluate_elites:
-            return self.individuals[self.num_elites:]
-        else:
+        if self.reevaluate_elites:
             return self.individuals
+        else:
+            return self.individuals[self.num_elites:]
 
     def tell(self, eval_indvs, fitnesses, true_fitnesses):
         assert self.pop_size == len(self.individuals)
-        assert len(eval_indvs) == len(true_fitnesses)
-        assert len(eval_indvs) == len(fitnesses)
-        assert len(eval_indvs) == len(self.individuals)
+        assert len(eval_indvs) == len(true_fitnesses) == len(fitnesses)
+        if self.reevaluate_elites:
+            assert len(eval_indvs) == len(self.individuals)
 
         for eval_indv, fitness, true_fitness in \
             zip(eval_indvs, fitnesses, true_fitnesses):

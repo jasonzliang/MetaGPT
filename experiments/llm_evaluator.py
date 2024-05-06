@@ -152,14 +152,17 @@ class LLMEvaluator(object):
     def __init__(self, config, evaluator_dir):
         self.config = config
         self.evaluator_dir = evaluator_dir
-        self.dummy_mode = self.config.get("dummy_mode", True)
+        self.dummy_mode = self.config.get("dummy_mode", False)
         self.llm_model = self.config.get("llm_model", "gpt-3.5-turbo")
         self.logger = logging.getLogger('root')
 
     def evaluate(self, population):
         result_dicts = []
         for indv in population:
-            fitness = self.eval_humaneval(indv.role, indv.id)
+            if self.dummy_mode:
+                fitness = random.random()
+            else:
+                fitness = self._eval_humaneval(indv.role, indv.id)
 
             result_dict = {}
             result_dict['fitness'] = fitness
@@ -167,8 +170,7 @@ class LLMEvaluator(object):
             result_dicts.append(result_dict)
         return result_dicts
 
-
-    def eval_humaneval(self, prompt_template, eval_id):
+    def _eval_humaneval(self, prompt_template, eval_id):
         def extract_evalplus_score(result_file):
             try:
                 with open(result_file, 'r') as f:
@@ -250,7 +252,17 @@ with no additional text outside the code block.
 
 
 def _test_evaluator():
-    pass
+    from role_ga import Individual
+    indv = Individual({}, gen_created=0)
+    indv.role = '''
+Write a python function that can {instruction}.
+Return ```python your_code_here ``` with NO other texts,
+your code:
+'''
+    population = [indv]
+    evaluator = LLMEvaluator({}, evaluator_dir='.')
+    evaluator.evaluate(population)
+    print(indv.get_true_fitness())
 
 if __name__ == "__main__":
-    _test_mutation_crossover()
+    _test_evaluator()

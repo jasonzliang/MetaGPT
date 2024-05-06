@@ -1,0 +1,15 @@
+verbosity: info
+
+role_ga_config:
+    indv_config:
+        dummy_mode: False
+    num_gen: 5
+    pop_size: 2
+    num_elites: 1
+    tournament_size: 2
+    checkpoint: True
+    reevaluate_elites: False
+
+llm_evaluator_config:
+    dummy_mode: True
+    llm_model: gpt-3.5-turbo

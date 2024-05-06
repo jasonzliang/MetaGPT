@@ -11,10 +11,15 @@ import traceback
 import time
 
 import numpy as np
-import ruamel.yaml as yaml
+from ruamel.yaml import YAML
 
-from role_ga import RoleEvolutionGA
+from logger import setup_experiment_logging, log_results
 from llm_evaluator import LLMEvaluator
+from role_ga import RoleEvolutionGA
+from util import get_time, sanitize_result_dict
+
+LINE_WIDTH = 80
+MAX_PATH_LENGTH = 256
 
 
 class RoleEvolutionServer(object):
@@ -32,7 +37,7 @@ class RoleEvolutionServer(object):
             self.config_file = os.path.join(self.experiment_dir, "config.yaml")
         assert os.path.exists(self.config_file)
         with open(self.config_file, "rb") as f:
-            self.config = yaml.load(f)
+            self.config = YAML().load(f)
         if self.config is None:
             self.config = {}
 
@@ -63,7 +68,7 @@ class RoleEvolutionServer(object):
         # Setup GA and evaluator
         self.ga = RoleEvolutionGA(self.config.get("role_ga_config", {}),
             os.path.join(self.experiment_dir, "role_ga"))
-        self.evaluator = self.LLMEvaluator(
+        self.evaluator = LLMEvaluator(
             self.config.get("llm_evaluator_config", {}),
             os.path.join(self.experiment_dir, "llm_evaluator"))
 
@@ -95,12 +100,13 @@ class RoleEvolutionServer(object):
             population = self.ga.ask()
 
             result_dicts = self.evaluator.evaluate(population)
+            result_dicts = sanitize_result_dict(result_dicts)
             assert len(result_dicts) == len(population)
 
             fitnesses = [x.get('fitness', None) for x in result_dicts]
             true_fitnesses = [x.get('true_fitness', None) for x in result_dicts]
             self.ga.tell(population, fitnesses, true_fitnesses)
-            self.logger.info("Evaluated fitnesses: %s" % fitnesses)
+            self.logger.debug("Evaluated fitnesses: %s" % fitnesses)
 
             self.ga.end_gen()
             self.logger.info("***END OF GENERATION***\n\n")
