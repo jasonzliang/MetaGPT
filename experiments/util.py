@@ -12,7 +12,7 @@ import ruamel.yaml as yaml
 
 from alg_util import is_numpy_type, randomword
 
-def extract_evalplus_score(result_file):
+def extract_evalplus_score(result_file, logger=None):
     try:
         with open(result_file, 'r') as f:
             lines = f.readlines()
@@ -23,8 +23,10 @@ def extract_evalplus_score(result_file):
         assert 0.0 <= score <= 1.0
         return score
     except:
-        self.logger.info(
-            "Evalplus score extraction failed: %s" % result_file)
+        if logger is None:
+            print("Evalplus score extraction failed: %s" % result_file)
+        else:
+            logger.debug("Evalplus score extraction failed: %s" % result_file)
         return 0.0
 
 def unzip(x):

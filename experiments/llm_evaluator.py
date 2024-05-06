@@ -202,7 +202,7 @@ class LLMEvaluator(object):
         with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
             f.write(coder.get_prompt_template())
 
-        return extract_evalplus_score(evalplus_fp)
+        return extract_evalplus_score(evalplus_fp, self.logger)
 
 
 #### Unit tests ####
