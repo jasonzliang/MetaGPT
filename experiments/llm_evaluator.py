@@ -156,7 +156,7 @@ class LLMEvaluator(object):
         self.evaluator_dir = evaluator_dir
         self.dummy_mode = self.config.get("dummy_mode", False)
         self.llm_model = self.config.get("llm_model", "gpt-3.5-turbo")
-        self.logger = logging.getLogger('root')
+        self.logger = logging.getLogger('role_evo')
 
     def evaluate(self, population):
         result_dicts = []

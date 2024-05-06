@@ -42,7 +42,7 @@ class RoleEvolutionServer(object):
             self.config = {}
 
         # Setup logger
-        self.logger = setup_experiment_logging('root',
+        self.logger = setup_experiment_logging('role_evo',
             os.path.join(self.experiment_dir, "server.log"),
             self.config.get('verbosity', 'info'))
         self.logger.info("Loaded config file: %s" % self.config_file)

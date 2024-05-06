@@ -40,7 +40,7 @@ class FitnessLog(object):
 class Individual(object):
     def __init__(self, config, gen_created=None):
         self.config = config
-        self.logger = logging.getLogger('root')
+        self.logger = logging.getLogger('role_evo')
 
         self.dummy_mode = self.config.get("dummy_mode", False)
         self.id = self._set_id(gen_created) # Ids are unique, names are not
@@ -142,7 +142,7 @@ class RoleEvolutionGA(object):
         self.checkpoint_dir = checkpoint_dir
         if not os.path.exists(self.checkpoint_dir):
             os.makedirs(self.checkpoint_dir)
-        self.logger = logging.getLogger('root')
+        self.logger = logging.getLogger('role_evo')
 
         self.checkpoint = self.config.get("checkpoint", False)
         self.pop_size = self.config.get("pop_size", MIN_POP_SIZE)
