@@ -8,6 +8,8 @@ import time
 import numpy as np
 import ruamel.yaml as yaml
 
+from llm_evaluator import llm_mutate, llm_crossover
+from llm_evaluator import create_new_team
 
 def get_time(space=True, date=True):
     '''Creates a nicely formated timestamp'''
@@ -110,13 +112,12 @@ class Individual(object):
     def set_true_fitness(self, true_fitness):
         self.true_fitness = true_fitness
 
-    # TODO
-    def mutate(self):
-        pass
 
-    # TODO
+    def mutate(self):
+        self.role = llm_mutate(self.role)
+
     def crossover(self, other):
-        pass
+        self.role = llm_crossover(self.role, other.role)
 
     def serialize(self):
         return {'id': self.id,
@@ -130,7 +131,6 @@ class Individual(object):
         self.gen_created = indv_dict.get("gen_created", self.gen_created)
         self.fitness = indv_dict.get("fitness", None)
         self.true_fitness = indv_dict.get("true_fitness", None)
-
         self.role = indv_dict.get("role", "")
 
 
@@ -147,6 +147,7 @@ class RoleEvolutionGA(object):
         self.num_gen = self.config.get("num_gen", 5)
         self.num_elites = self.config.get("num_elites", 1)
         self.reevaluate_elites = self.config.get("reevaluate_elites", True)
+        self.indv_config = self.config.get("indv_config", {})
 
         assert self.num_gen > 0
 
@@ -170,7 +171,7 @@ class RoleEvolutionGA(object):
         self.gen = 0
         self.individuals = []
         for i in range(self.pop_size):
-            individual = Individual(self.gene_configs, self.gen)
+            individual = Individual(self.indv_config, self.gen)
             self.individuals.append(individual)
         assert len(self.individuals) == self.pop_size
 
