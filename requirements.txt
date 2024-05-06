@@ -79,4 +79,4 @@ pydot
 pytz
 ruamel.yaml
 simplejson
-git+https://github.com/evalplus/evalplus.git
+evalplus
