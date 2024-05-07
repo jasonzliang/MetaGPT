@@ -44,7 +44,7 @@ You are a professional engineer; the main goal is to write google-style, elegant
 
 {prompt}
 
-Return an improved version of the example prompt template that allows better, higher quality, and more accurate code to be written. Output the improved prompt template below with NO other texts and make sure {instruction} is present within the output:
+Return an improved version of the example prompt template that allows better, higher quality, and more accurate code to be written. Output the improved prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
 
 PROMPT_TEMPLATE: str = '''
 your_output_here
@@ -74,7 +74,7 @@ Here are two prompt templates that you use for writing code:
 ### PROMPT TEMPLATE 2 ###
 {prompt_2}
 
-Combine and merge these two prompt templates to create a more effective, useful, and powerful prompt for writing code. Be creative and try to output interesting, original, and unique prompts. Output the combined prompt template below with NO other texts and make sure {instruction} is present within the output:
+Combine and merge these two prompt templates to create a more effective, useful, and powerful prompt for writing code. Be creative and try to output interesting, original, and unique prompts. Output the combined prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
 
 PROMPT_TEMPLATE: str = '''
 your_output_here
