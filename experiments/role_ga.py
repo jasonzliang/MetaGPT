@@ -284,7 +284,7 @@ class RoleEvolutionGA(object):
         child_a.crossover(child_b)
         child = random.choice([child_a, child_b])
         child.mutate()
-        assert not child.role.begins_with("PROMPT_TEMPLATE: str =")
+        assert not child.role.startswith("PROMPT_TEMPLATE: str =")
         return child
 
     def ask(self):
