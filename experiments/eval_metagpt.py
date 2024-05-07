@@ -30,11 +30,12 @@ def parse_code(rsp):
 
 
 class SimpleWriteCode(Action):
-    PROMPT_TEMPLATE: str = """
+    PROMPT_TEMPLATE: str = \
+"""
 Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
 your code:
-    """
+"""
     name: str = "SimpleWriteCode"
     code_text: str = ""
 
@@ -49,7 +50,8 @@ your code:
 
 
 class SimpleWriteCodeWC(SimpleWriteCode):
-    PROMPT_TEMPLATE: str = '''
+    PROMPT_TEMPLATE: str = \
+'''
 Write a python function that can {instruction}.
 
 The function should follow Google's Python Style Guide (https://google.github.io/styleguide/pyguide.html) and be modular, easy to read and maintain. The function should return the result of the operation in a clear and understandable way.
@@ -73,11 +75,12 @@ def my_function(parameter):
 ```
 
 Please replace `my_function`, `parameter`, `This is a one-line description of what this function does.`, `This is the explanation of the parameter.`, `The return value and its explanation.`, `Any exceptions that are raised and why they might occur.` with your actual function name, parameters, descriptions, return values, and exception handling respectively.
-    '''
+'''
 
 
 class SimpleWriteCodeGPT(SimpleWriteCode):
-    PROMPT_TEMPLATE: str = '''
+    PROMPT_TEMPLATE: str = \
+'''
 ### Task Description
 Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
 
@@ -114,11 +117,12 @@ def factorial(n):
 # Example usage:
 # print(factorial(5))
 ```
-    '''
+'''
 
 
 class SimpleWriteCodeGPTCrossover(SimpleWriteCode):
-    PROMPT_TEMPLATE: str = '''
+    PROMPT_TEMPLATE: str = \
+'''
 ### Task Description
 Write a Python function that {instruction}. The function should adhere to Google's Python Style Guide (https://google.github.io/styleguide/pyguide.html) and incorporate the following principles for quality and maintainability:
 
@@ -180,7 +184,7 @@ def factorial(n):
 # Example usage:
 # print(factorial(5))
 ```
-    '''
+'''
 
 
 class SimpleCoder(Role):
@@ -205,12 +209,13 @@ class SimpleCoder(Role):
 
 
 class SimpleWriteTest(Action):
-    PROMPT_TEMPLATE: str = """
-    Context: {context}
-    Write {k} unit tests using pytest for the given function, assuming you have imported it.
-    Return ```python your_code_here ``` with NO other texts,
-    your code:
-    """
+    PROMPT_TEMPLATE: str = \
+"""
+Context: {context}
+Write {k} unit tests using pytest for the given function, assuming you have imported it.
+Return ```python your_code_here ``` with NO other texts,
+your code:
+"""
 
     name: str = "SimpleWriteTest"
 
@@ -248,10 +253,11 @@ class SimpleTester(Role):
 
 
 class SimpleWriteReview(Action):
-    PROMPT_TEMPLATE: str = """
-    Context: {context}
-    Review the test cases and provide one critical comments:
-    """
+    PROMPT_TEMPLATE: str = \
+"""
+Context: {context}
+Review the test cases and provide one critical comments:
+"""
 
     name: str = "SimpleWriteReview"
 

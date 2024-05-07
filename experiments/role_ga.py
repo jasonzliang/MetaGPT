@@ -15,7 +15,8 @@ from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from llm_evaluator import llm_mutate, llm_crossover
 from util import get_time, sanitize_result_dict
 
-DEFAULT_ROLE = """
+DEFAULT_ROLE = \
+"""
 Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
 your code:

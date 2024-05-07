@@ -29,8 +29,17 @@ def parse_code(rsp):
     return code_text
 
 
+def parse_prompt_template(rsp):
+    pattern = r"PROMPT_TEMPLATE: str = '''(.*)'''"
+    match = re.search(pattern, rsp, re.DOTALL)
+    code_text = match.group(1) if match else rsp
+    code_text = code_text.lstrip().rstrip()
+    return code_text
+
+
 class MutateAction(Action):
-    PROMPT_TEMPLATE: str = """
+    PROMPT_TEMPLATE: str = \
+"""
 You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The prompt template that you use for writing the code can be illustrated by the following example:
 
 {prompt}
@@ -47,6 +56,7 @@ your_output_here
     async def run(self, prompt: str):
         prompt = self.PROMPT_TEMPLATE.format(prompt=prompt)
         self.code_text = await self._aask(prompt)
+        self.code_text = parse_prompt_template(self.code_text)
         return self.code_text
 
     def get_code_text(self):
@@ -54,7 +64,8 @@ your_output_here
 
 
 class CrossoverAction(Action):
-    PROMPT_TEMPLATE: str = """
+    PROMPT_TEMPLATE: str = \
+"""
 Here are two prompt templates that you use for writing code:
 
 ### PROMPT TEMPLATE 1 ###
@@ -76,6 +87,7 @@ your_output_here
         prompt = self.PROMPT_TEMPLATE.format(
             prompt_1=prompt_1, prompt_2=prompt_2)
         self.code_text = await self._aask(prompt)
+        self.code_text = parse_prompt_template(self.code_text)
         return self.code_text
 
     def get_code_text(self):
@@ -240,7 +252,8 @@ with no additional text outside the code block.
 def _test_evaluator():
     from role_ga import Individual
     indv = Individual({}, gen_created=0)
-    indv.role = '''
+    indv.role = \
+'''
 Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
 your code:
@@ -248,15 +261,59 @@ your code:
     population = [indv]
     evaluator = LLMEvaluator({}, evaluator_dir='.')
     result_dicts = evaluator.evaluate(population)
-    print("#### Evaluation Results ####")
+    print("Evaluation results:")
     print(result_dicts)
 
 
 def _test_evalplus_extractor():
     score = extract_evalplus_score(
-        "humaneval_ID-G-0_ID-KZJyETCnkrAI/evalplus.txt")
+        "results/humaneval_ID-G-0_ID-KZJyETCnkrAI/evalplus.txt")
     print(score, type(score))
 
+def _test_prompt_extractor():
+    prompt_template = """PROMPT_TEMPLATE: str = '''
+### Task Description
+Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
+
+- **Modularity**: Break down the solution into smaller, reusable components where applicable.
+- **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
+- **Efficiency**: Optimize for performance where necessary, avoiding unnecessary computations or memory usage.
+- **Error Handling**: Include basic error handling to manage potential exceptions or invalid inputs.
+- **Documentation**: Provide brief comments or a docstring explaining the logic behind key sections of your code or complex operations.
+- **Testing**: Optionally, include a simple example or test case that demonstrates how to call your function and what output to expect.
+
+### Your Code
+Return your solution in the following format:
+```python
+# Your code here
+```
+with no additional text outside the code block.
+
+### Example
+If the task is to "calculate the factorial of a given number," your submission should look like this:
+
+```python
+def factorial(n):
+    \"\"\"Calculate the factorial of a given number n.\"\"\"
+    if n < 0:
+        return "Error: Negative numbers do not have factorials."
+    elif n == 0:
+        return 1
+    else:
+        result = 1
+        for i in range(1, n + 1):
+            result *= i
+        return result
+
+# Example usage:
+# print(factorial(5))
+```
+'''"""
+
+    print("Original prompt template:")
+    print(prompt_template)
+    print("Extracted prompt template:")
+    print(parse_prompt_template(prompt_template))
 
 if __name__ == "__main__":
-    _test_evaluator()
+    _test_prompt_extractor()
