@@ -281,8 +281,7 @@ class RoleEvolutionGA(object):
         child_a = parent_a.create_child(self.gen)
         child_b = parent_b.create_child(self.gen)
 
-        child_a.crossover(child_b)
-        child = random.choice([child_a, child_b])
+        child_a.crossover(child_b); child = child_a
         child.mutate()
         assert not child.role.startswith("PROMPT_TEMPLATE: str =")
         return child
