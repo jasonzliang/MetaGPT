@@ -3,6 +3,7 @@ verbosity: info
 role_ga_config:
     indv_config:
         dummy_mode: False
+        mutate_rate: 0.75
         initial_role: |
             Write a python function that can {instruction}.
             Return ```python your_code_here ``` with NO other texts,

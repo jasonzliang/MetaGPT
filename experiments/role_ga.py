@@ -30,6 +30,7 @@ class Individual(object):
         self.logger = logging.getLogger('evolve_role')
 
         self.dummy_mode = self.config.get("dummy_mode", False)
+        self.mutate_rate = self.config.get("mutate_rate", 0.5)
         self.initial_role = self.config.get("initial_role", DEFAULT_ROLE)
         # print(self.initial_role); exit()
         self.id = self._set_id(gen_created) # Ids are unique, names are not
@@ -101,7 +102,7 @@ class Individual(object):
     def mutate(self):
         if self.dummy_mode:
             self.role += randomword(ID_LENGTH)
-        else:
+        elif random.random() < self.mutate_rate:
             self.role = llm_mutate(self.role)
 
     def crossover(self, other):
