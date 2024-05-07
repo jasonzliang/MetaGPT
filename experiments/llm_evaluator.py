@@ -176,6 +176,7 @@ class LLMEvaluator(object):
             if self.dummy_mode:
                 fitness = random.random()
             else:
+                # print(indv.role); exit()
                 fitness = self._eval_humaneval(indv.role, indv.id)
 
             result_dict = {}

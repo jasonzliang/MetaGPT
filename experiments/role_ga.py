@@ -227,6 +227,7 @@ class RoleEvolutionGA(object):
             else:
                 individual.deserialize(new_indv[i])
 
+
     def _log_population(self):
         def _log_helper(fitnesses, name):
             if len(fitnesses) == 0:
@@ -283,6 +284,7 @@ class RoleEvolutionGA(object):
         child_a.crossover(child_b)
         child = random.choice([child_a, child_b])
         child.mutate()
+        assert not child.role.begins_with("PROMPT_TEMPLATE: str =")
         return child
 
     def ask(self):
