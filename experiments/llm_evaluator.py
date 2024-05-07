@@ -100,10 +100,17 @@ class SimpleWriteCode(Action):
     code_text: str = ""
 
     async def run(self, instruction: str):
-        prompt = self.PROMPT_TEMPLATE.format(instruction=instruction)
-        rsp = await self._aask(prompt)
-        self.code_text = parse_code(rsp)
-        return self.code_text
+        prompt = self.PROMPT_TEMPLATE
+        try:
+            prompt = prompt.format(instruction=instruction)
+        except:
+            # If cannot find {instruction} search for first available bracket
+            special_word = prompt[prompt.find("{"):prompt.find("}")+1]
+            prompt = prompt.replace(special_word, instruction)
+        finally:
+            rsp = await self._aask(prompt)
+            self.code_text = parse_code(rsp)
+            return self.code_text
 
 
 class SimpleCoder(Role):
