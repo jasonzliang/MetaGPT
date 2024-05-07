@@ -12,7 +12,7 @@ from ruamel.yaml import YAML
 
 from alg_util import randomword
 from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
-from llm_evaluator import llm_mutate, llm_crossover
+from llm_evaluator import llm_mutate, llm_crossover, parse_prompt_template
 from util import get_time, sanitize_result_dict
 
 DEFAULT_ROLE = \
@@ -122,7 +122,7 @@ class Individual(object):
         self.gen_created = indv_dict.get("gen_created", self.gen_created)
         self.fitness = indv_dict.get("fitness", None)
         self.true_fitness = indv_dict.get("true_fitness", None)
-        self.role = indv_dict.get("role", "")
+        self.role = parse_prompt_template(indv_dict.get("role", ""))
 
 
 class FitnessLog(object):
