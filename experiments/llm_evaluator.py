@@ -104,7 +104,7 @@ class SimpleWriteCode(Action):
         try:
             prompt = prompt.format(instruction=instruction)
         except:
-            # If cannot find {instruction} search for first available bracket
+            # If {instruction} not found, search for first pair of braces
             special_word = prompt[prompt.find("{"):prompt.find("}")+1]
             prompt = prompt.replace(special_word, instruction)
         finally:
