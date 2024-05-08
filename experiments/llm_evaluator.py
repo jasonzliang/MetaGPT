@@ -66,7 +66,7 @@ your_output_here
 class CrossoverAction(Action):
     PROMPT_TEMPLATE: str = \
 """
-Here are two prompt templates that you use for writing code:
+You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. Here are two prompt templates that you use for writing code:
 
 ### PROMPT TEMPLATE 1 ###
 {prompt_1}
