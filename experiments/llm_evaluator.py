@@ -15,7 +15,7 @@ from metagpt.roles import Role
 from metagpt.schema import Message
 from metagpt.team import Team
 
-from evalplus.data.humaneval import get_human_eval_plus
+from evalplus.data.humaneval import get_human_eval_plus, get_mbpp_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
@@ -184,7 +184,7 @@ class LLMEvaluator(object):
                 fitness = random.random()
             else:
                 # print(indv.role); exit()
-                fitness = self._eval_humaneval(indv.role, indv.id)
+                fitness = self._evalplus(indv.role, indv.id)
 
             result_dict = {}
             result_dict['fitness'] = fitness
@@ -192,10 +192,15 @@ class LLMEvaluator(object):
             result_dicts.append(result_dict)
         return result_dicts
 
-    def _eval_humaneval(self, prompt_template, eval_id):
+    def _evalplus(self, prompt_template, eval_id, dataset='humaneval'):
         result_dir = os.path.join(
-            self.evaluator_dir, "humaneval_ID-%s" % eval_id)
-        problems = get_human_eval_plus()
+            self.evaluator_dir, "%s_ID-%s_T-%d" % (dataset, eval_id,
+                time.time()))
+
+        if dataset == 'humaneval':
+            problems = get_human_eval_plus()
+        else:
+            assert dataset == 'mbpp'; problems = get_mbpp_plus()
         # results = []
 
         for task_id, problem in problems.items():
@@ -218,7 +223,7 @@ class LLMEvaluator(object):
 
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
-            % ("humaneval", result_dir, evalplus_fp))
+            % (dataset, result_dir, evalplus_fp))
         with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
             f.write(coder.get_prompt_template())
 
@@ -279,16 +284,10 @@ def _test_evalplus_extractor():
     print(score, type(score))
 
 def _test_prompt_extractor():
-    prompt_template = """PROMPT_TEMPLATE: str = '''
+    prompt_template = \
+"""PROMPT_TEMPLATE: str = '''
 ### Task Description
 Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
-
-- **Modularity**: Break down the solution into smaller, reusable components where applicable.
-- **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
-- **Efficiency**: Optimize for performance where necessary, avoiding unnecessary computations or memory usage.
-- **Error Handling**: Include basic error handling to manage potential exceptions or invalid inputs.
-- **Documentation**: Provide brief comments or a docstring explaining the logic behind key sections of your code or complex operations.
-- **Testing**: Optionally, include a simple example or test case that demonstrates how to call your function and what output to expect.
 
 ### Your Code
 Return your solution in the following format:
@@ -296,26 +295,6 @@ Return your solution in the following format:
 # Your code here
 ```
 with no additional text outside the code block.
-
-### Example
-If the task is to "calculate the factorial of a given number," your submission should look like this:
-
-```python
-def factorial(n):
-    \"\"\"Calculate the factorial of a given number n.\"\"\"
-    if n < 0:
-        return "Error: Negative numbers do not have factorials."
-    elif n == 0:
-        return 1
-    else:
-        result = 1
-        for i in range(1, n + 1):
-            result *= i
-        return result
-
-# Example usage:
-# print(factorial(5))
-```
 '''"""
 
     print("Original prompt template:")
