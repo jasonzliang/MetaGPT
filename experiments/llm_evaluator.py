@@ -15,7 +15,7 @@ from metagpt.roles import Role
 from metagpt.schema import Message
 from metagpt.team import Team
 
-from evalplus.data.humaneval import get_human_eval_plus, get_mbpp_plus
+from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
@@ -303,4 +303,4 @@ with no additional text outside the code block.
     print(parse_prompt_template(prompt_template))
 
 if __name__ == "__main__":
-    _test_prompt_extractor()
+    _test_mutation_crossover()
