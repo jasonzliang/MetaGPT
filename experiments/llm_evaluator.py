@@ -55,8 +55,8 @@ your_output_here
 
     async def run(self, prompt: str):
         prompt = self.PROMPT_TEMPLATE.format(prompt=prompt)
-        self.code_text = await self._aask(prompt)
-        self.code_text = parse_prompt_template(self.code_text)
+        code_text = await self._aask(prompt)
+        self.code_text = parse_prompt_template(code_text)
         return self.code_text
 
     def get_code_text(self):
@@ -86,8 +86,8 @@ your_output_here
     async def run(self, prompt_1: str, prompt_2: str):
         prompt = self.PROMPT_TEMPLATE.format(
             prompt_1=prompt_1, prompt_2=prompt_2)
-        self.code_text = await self._aask(prompt)
-        self.code_text = parse_prompt_template(self.code_text)
+        code_text = await self._aask(prompt)
+        self.code_text = parse_prompt_template(code_text)
         return self.code_text
 
     def get_code_text(self):
