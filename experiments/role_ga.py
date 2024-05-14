@@ -8,6 +8,7 @@ import random
 import time
 
 import numpy as np
+from pathos.pools import ProcessPool
 from ruamel.yaml import YAML
 
 from alg_util import randomword
@@ -32,7 +33,9 @@ class Individual(object):
         self.dummy_mode = self.config.get("dummy_mode", False)
         self.mutate_rate = self.config.get("mutate_rate", 0.5)
         self.initial_role = self.config.get("initial_role", DEFAULT_ROLE)
-        # print(self.initial_role); exit()
+        self.n_workers = self.config.get("n_workers", 1)
+        assert self.n_workers > 0
+
         self.id = self._set_id(gen_created) # Ids are unique, names are not
         self.reset()
 
@@ -155,8 +158,10 @@ class RoleEvolutionGA(object):
 
         self.checkpoint = self.config.get("checkpoint", False)
         self.pop_size = self.config.get("pop_size", MIN_POP_SIZE)
-        self.num_gen = self.config.get("num_gen", 5); assert self.num_gen > 0
+        self.num_gen = self.config.get("num_gen", 5)
+        assert self.num_gen > 0
         self.num_elites = self.config.get("num_elites", 1)
+        assert self.num_elites < self.pop_size
         self.reevaluate_elites = self.config.get("reevaluate_elites", True)
         self.tournament_size = self.config.get("tournament_size", 2)
         self.indv_config = self.config.get("indv_config", {})
@@ -184,6 +189,10 @@ class RoleEvolutionGA(object):
             individual = Individual(self.indv_config, self.gen)
             self.individuals.append(individual)
         assert self.pop_size == len(self.individuals)
+
+        if hasattr(self, "pool"):
+            self.pool.close(); self.pool.join(); self.pool.clear()
+        self.pool = ProcessPool(self.n_workers)
 
     def _find_latest_checkpoint(self):
         checkpoints = glob.glob(os.path.join(self.checkpoint_dir,
@@ -275,6 +284,9 @@ class RoleEvolutionGA(object):
             replace=False)
         return np.max(chosen_ones)
 
+    def _generate_individual_wrapper(self, idx):
+        return self._generate_individual()
+
     def _generate_individual(self):
         parent_a = self._tournament_selection()
         parent_b = self._tournament_selection()
@@ -294,8 +306,13 @@ class RoleEvolutionGA(object):
         sorted_individuals = self.get_sorted_individuals(self.individuals)
 
         new_individuals = sorted_individuals[:self.num_elites]
-        while len(new_individuals) < self.pop_size:
-            new_individuals.append(self._generate_individual())
+        if self.n_workers == 1:
+            while len(new_individuals) < self.pop_size:
+                new_individuals.append(self._generate_individual())
+        else:
+            created_indv = self.pool.map(self._generate_individual_wrapper,
+                range(self.pop_size - self.num_elites))
+            new_individuals.extend(created_indv)
 
         self.individuals = new_individuals
         assert self.pop_size == len(self.individuals)
