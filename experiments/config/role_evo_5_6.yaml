@@ -15,6 +15,7 @@ role_ga_config:
     tournament_size: 2
     checkpoint: True
     reevaluate_elites: False
+    n_workers: 5
 
 llm_evaluator_config:
     dummy_mode: False

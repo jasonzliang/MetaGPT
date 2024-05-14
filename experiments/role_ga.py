@@ -32,9 +32,8 @@ class Individual(object):
 
         self.dummy_mode = self.config.get("dummy_mode", False)
         self.mutate_rate = self.config.get("mutate_rate", 0.5)
+        assert 0 <= self.mutate_rate <= 1.0
         self.initial_role = self.config.get("initial_role", DEFAULT_ROLE)
-        self.n_workers = self.config.get("n_workers", 1)
-        assert self.n_workers > 0
 
         self.id = self._set_id(gen_created) # Ids are unique, names are not
         self.reset()
@@ -158,12 +157,16 @@ class RoleEvolutionGA(object):
 
         self.checkpoint = self.config.get("checkpoint", False)
         self.pop_size = self.config.get("pop_size", MIN_POP_SIZE)
+        assert self.pop_size > 0
         self.num_gen = self.config.get("num_gen", 5)
         assert self.num_gen > 0
         self.num_elites = self.config.get("num_elites", 1)
         assert self.num_elites < self.pop_size
         self.reevaluate_elites = self.config.get("reevaluate_elites", True)
         self.tournament_size = self.config.get("tournament_size", 2)
+        assert self.tournament_size > 0
+        self.n_workers = self.config.get("n_workers", 1)
+        assert self.n_workers > 0
         self.indv_config = self.config.get("indv_config", {})
 
         if self.checkpoint:
