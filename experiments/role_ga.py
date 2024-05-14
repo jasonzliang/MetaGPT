@@ -221,12 +221,12 @@ class RoleEvolutionGA(object):
         if not hasattr(self, "individuals"):
             self._reset()
         self.gen = pop_dict.get('generation', 0) + 1
-        new_indv = pop_dict.get('individuals', [])
+        chkpt_indv = pop_dict.get('individuals', [])
         for i, individual in enumerate(self.individuals):
-            if i >= len(new_indv):
+            if i >= len(chkpt_indv):
                 return
             else:
-                individual.deserialize(new_indv[i])
+                individual.deserialize(chkpt_indv[i])
 
 
     def _log_population(self):

@@ -201,7 +201,6 @@ class LLMEvaluator(object):
             problems = get_human_eval_plus()
         else:
             assert dataset == 'mbpp'; problems = get_mbpp_plus()
-        # results = []
 
         for task_id, problem in problems.items():
             prompt = problem['prompt']
@@ -219,7 +218,6 @@ class LLMEvaluator(object):
             result_file = os.path.join(task_id_dir, "0.py")
             with open(result_file, 'w') as f:
                 f.write(output)
-            # results.append({'task_id': task_id, 'solution': output})
 
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
@@ -280,7 +278,7 @@ your code:
 
 def _test_evalplus_extractor():
     score = extract_evalplus_score(
-        "results/humaneval_ID-G-0_ID-KZJyETCnkrAI/evalplus.txt")
+        "results/humaneval_results_1712181961/evalplus.txt")
     print(score, type(score))
 
 def _test_prompt_extractor():
