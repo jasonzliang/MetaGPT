@@ -220,7 +220,7 @@ class LLMEvaluator(object):
 
     def _evalplus(self, prompt_template, eval_id, dataset='humaneval'):
         result_dir = os.path.join(
-            self.evaluator_dir, "%s_ID-%s_T-%d" % (dataset, eval_id,
+            self.evaluator_dir, "%s_%s_T-%d" % (dataset, eval_id,
                 time.time()))
 
         if dataset == 'humaneval':
