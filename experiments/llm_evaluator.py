@@ -142,6 +142,7 @@ class SimpleCoder(Role):
 def create_new_team(llm_model):
     llm_config = Config.default()
     llm_config.llm.model = llm_model
+    llm_config.llm.temperature = 0.0
 
     team = Team()
     coder = SimpleCoder(config=llm_config)
