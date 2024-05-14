@@ -13,9 +13,9 @@ role_ga_config:
     checkpoint: True
     reevaluate_elites: True
     init_mutate: True
-    n_workers: 8
+    n_workers: 10
 
 llm_evaluator_config:
     dummy_mode: False
     llm_model: gpt-3.5-turbo
-    n_workers: 18
+    n_workers: 20
