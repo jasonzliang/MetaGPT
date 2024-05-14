@@ -222,6 +222,8 @@ class LLMEvaluator(object):
         result_dir = os.path.join(
             self.evaluator_dir, "%s_%s_T-%d" % (dataset, eval_id,
                 time.time()))
+        with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
+            f.write(prompt_template)
 
         if dataset == 'humaneval':
             problems = get_human_eval_plus()
@@ -249,8 +251,6 @@ class LLMEvaluator(object):
         os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
             % (dataset, result_dir, evalplus_fp))
         time.sleep(0.25)
-        with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
-            f.write(coder.get_prompt_template())
 
         return extract_evalplus_score(evalplus_fp, self.logger)
 
