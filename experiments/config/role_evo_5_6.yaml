@@ -7,12 +7,13 @@ role_ga_config:
         initial_role: initial_role_gpt4.txt
 
     num_gen: 50
-    pop_size: 40
-    num_elites: 20
+    pop_size: 30
+    num_elites: 10
     tournament_size: 2
     checkpoint: True
-    reevaluate_elites: False
-    n_workers: 10
+    reevaluate_elites: True
+    init_mutate: True
+    n_workers: 8
 
 llm_evaluator_config:
     dummy_mode: False

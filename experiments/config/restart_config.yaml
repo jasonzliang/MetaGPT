@@ -1,0 +1,4 @@
+hostid: True
+git_pull: True
+experiments:
+  - [results/5_14_role_ga, config/role_evo_5_6.yaml, 3000, 4000]

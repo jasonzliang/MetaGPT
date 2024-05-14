@@ -108,10 +108,16 @@ class Individual(object):
         self.true_fitness = true_fitness
 
 
-    def mutate(self):
+    def mutate(self, override_mutate_rate=None):
+        if override_mutate_rate is not None:
+            assert 0.0 <= override_mutate_rate <= 1.0
+            mutate_rate = override_mutate_rate
+        else:
+            mutate_rate = self.mutate_rate
+
         if self.dummy_mode:
             self.role += randomword(ID_LENGTH)
-        elif random.random() < self.mutate_rate:
+        elif random.random() < mutate_rate:
             self.role = llm_mutate(self.role)
 
     def crossover(self, other):
@@ -163,15 +169,16 @@ class RoleEvolutionGA(object):
         self.logger = logging.getLogger('evolve_role')
 
         self.checkpoint = self.config.get("checkpoint", False)
-        self.pop_size = self.config.get("pop_size", MIN_POP_SIZE)
-        assert self.pop_size > 0
         self.num_gen = self.config.get("num_gen", 5)
         assert self.num_gen > 0
+        self.pop_size = self.config.get("pop_size", MIN_POP_SIZE)
+        assert self.pop_size > 0
         self.num_elites = self.config.get("num_elites", 1)
         assert self.num_elites < self.pop_size
         self.reevaluate_elites = self.config.get("reevaluate_elites", True)
         self.tournament_size = self.config.get("tournament_size", 2)
         assert self.tournament_size > 0
+        self.init_mutate = self.config.get("init_mutate", True)
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
         self.indv_config = self.config.get("indv_config", {})
@@ -199,6 +206,9 @@ class RoleEvolutionGA(object):
             individual = Individual(self.indv_config, self.gen)
             self.individuals.append(individual)
         assert self.pop_size == len(self.individuals)
+        if self.init_mutate:
+            [indv.mutate(override_mutate_rate=1.0) for indv in \
+                self.individuals[1:]]
 
         if hasattr(self, "pool"):
             self.pool.close(); self.pool.join(); self.pool.clear()
