@@ -39,8 +39,7 @@ class Individual(object):
         if os.path.exists(initial_role_fp):
             with open(initial_role_fp, "r") as f:
                 self.initial_role = f.read()
-            self.logger.info(
-                "Loaded initial role from file: %s" % initial_role_fp)
+        self.logger.info("Initial Role:\n%s" % self.initial_role)
 
         self.id = self._set_id(gen_created) # Ids are unique, names are not
         self.reset()
@@ -211,7 +210,7 @@ class RoleEvolutionGA(object):
                 self.individuals[1:]]
 
         if hasattr(self, "pool"):
-            self.pool.close(); self.pool.join(); self.pool.clear()
+            self.pool.close(); self.pool.join(); self.pool.clear(); del self.pool
         self.pool = ProcessPool(self.n_workers)
 
     def _find_latest_checkpoint(self):
