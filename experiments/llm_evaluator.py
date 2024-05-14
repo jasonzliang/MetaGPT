@@ -223,6 +223,7 @@ class LLMEvaluator(object):
         result_dir = os.path.join(
             self.evaluator_dir, "%s_%s_T-%d" % (dataset, eval_id,
                 time.time()))
+        os.makedirs(result_dir, exist_ok=True)
         with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
             f.write(prompt_template)
 
