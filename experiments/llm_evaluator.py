@@ -15,7 +15,8 @@ from metagpt.roles import Role
 from metagpt.schema import Message
 from metagpt.team import Team
 
-from pathos.pools import _ProcessPool as Pool
+# from pathos.pools import _ProcessPool as Pool
+from pathos.pools import ProcessPool
 
 from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
@@ -179,7 +180,7 @@ class LLMEvaluator(object):
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
         self.llm_model = self.config.get("llm_model", "gpt-3.5-turbo")
-        self.restart_interval = self.config("restart_interval", 999)
+        self.restart_interval = self.config.get("restart_interval", 999)
 
         self.logger = logging.getLogger('evolve_role')
         self.reset()
@@ -187,15 +188,15 @@ class LLMEvaluator(object):
     def reset(self):
         self.gen = 0
         if hasattr(self, "pool"):
-            self.pool.close(); self.pool.join(); del self.pool
-        self.pool = Pool(self.n_workers)
+            self.pool.close(); self.pool.join(); self.pool.clear()
+        self.pool = ProcessPool(self.n_workers)
 
     def evaluate(self, population):
         self.gen += 1
         if self.gen % self.restart_interval == 0:
             self.reset()
 
-        if n_workers == 1 or self.dummy_mode:
+        if self.n_workers == 1 or self.dummy_mode:
             result_dicts = []
             for indv in population:
                 if self.dummy_mode:
@@ -294,7 +295,8 @@ Return ```python your_code_here ``` with NO other texts,
 your code:
 '''
     population = [indv]
-    evaluator = LLMEvaluator({}, evaluator_dir='.')
+    eval_config = {'n_workers': 1, 'dummy_mode': False}
+    evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
     print("Evaluation results:")
     print(result_dicts)
@@ -304,6 +306,7 @@ def _test_evalplus_extractor():
     score = extract_evalplus_score(
         "results/humaneval_ID-G-0_ID-KZJyETCnkrAI/evalplus.txt")
     print(score, type(score))
+
 
 def _test_prompt_extractor():
     prompt_template = \
@@ -324,5 +327,23 @@ with no additional text outside the code block.
     print("Extracted prompt template:")
     print(parse_prompt_template(prompt_template))
 
+
+def _test_parallel_eval():
+    from role_ga import Individual
+    population = [Individual({}, gen_created=0) for i in range(5)]
+    for indv in population:
+        indv.role = \
+'''
+Write a python function that can {instruction}.
+Return ```python your_code_here ``` with NO other texts,
+your code:
+'''
+    eval_config = {'n_workers': 5, 'dummy_mode': False}
+    evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
+    result_dicts = evaluator.evaluate(population)
+    print("Evaluation results:")
+    print(result_dicts)
+
+
 if __name__ == "__main__":
-    _test_mutation_crossover()
+    _test_parallel_eval()
