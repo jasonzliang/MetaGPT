@@ -15,7 +15,10 @@ from metagpt.roles import Role
 from metagpt.schema import Message
 from metagpt.team import Team
 
-from evalplus.data.humaneval import get_human_eval_plus, get_mbpp_plus
+# from pathos.pools import _ProcessPool as Pool
+from pathos.pools import ProcessPool
+
+from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
@@ -55,8 +58,8 @@ your_output_here
 
     async def run(self, prompt: str):
         prompt = self.PROMPT_TEMPLATE.format(prompt=prompt)
-        self.code_text = await self._aask(prompt)
-        self.code_text = parse_prompt_template(self.code_text)
+        code_text = await self._aask(prompt)
+        self.code_text = parse_prompt_template(code_text)
         return self.code_text
 
     def get_code_text(self):
@@ -86,8 +89,8 @@ your_output_here
     async def run(self, prompt_1: str, prompt_2: str):
         prompt = self.PROMPT_TEMPLATE.format(
             prompt_1=prompt_1, prompt_2=prompt_2)
-        self.code_text = await self._aask(prompt)
-        self.code_text = parse_prompt_template(self.code_text)
+        code_text = await self._aask(prompt)
+        self.code_text = parse_prompt_template(code_text)
         return self.code_text
 
     def get_code_text(self):
@@ -174,27 +177,50 @@ class LLMEvaluator(object):
         self.config = config
         self.evaluator_dir = evaluator_dir
         self.dummy_mode = self.config.get("dummy_mode", False)
+        self.n_workers = self.config.get("n_workers", 1)
+        assert self.n_workers > 0
         self.llm_model = self.config.get("llm_model", "gpt-3.5-turbo")
+        self.restart_interval = self.config.get("restart_interval", 999)
+
         self.logger = logging.getLogger('evolve_role')
+        self.reset()
+
+    def reset(self):
+        self.gen = 0
+        if hasattr(self, "pool"):
+            self.pool.close(); self.pool.join(); self.pool.clear()
+        self.pool = ProcessPool(self.n_workers)
 
     def evaluate(self, population):
-        result_dicts = []
-        for indv in population:
-            if self.dummy_mode:
-                fitness = random.random()
-            else:
-                # print(indv.role); exit()
-                fitness = self._evalplus(indv.role, indv.id)
+        self.gen += 1
+        if self.gen % self.restart_interval == 0:
+            self.reset()
 
-            result_dict = {}
-            result_dict['fitness'] = fitness
-            result_dict['true_fitness'] = fitness
-            result_dicts.append(result_dict)
+        if self.n_workers == 1 or self.dummy_mode:
+            result_dicts = []
+            for indv in population:
+                if self.dummy_mode:
+                    fitness = random.random()
+                else:
+                    fitness = self._evalplus(indv.role, indv.id)
+                result_dict = {}
+                result_dict['fitness'] = fitness
+                result_dict['true_fitness'] = fitness
+                result_dicts.append(result_dict)
+        else:
+            result_dicts = self.pool.map(self._evalplus_wrapper, population)
         return result_dicts
+
+    def _evalplus_wrapper(self, indv):
+        fitness = self._evalplus(indv.role, indv.id)
+        result_dict = {}
+        result_dict['fitness'] = fitness
+        result_dict['true_fitness'] = fitness
+        return result_dict
 
     def _evalplus(self, prompt_template, eval_id, dataset='humaneval'):
         result_dir = os.path.join(
-            self.evaluator_dir, "%s_ID-%s_T-%d" % (dataset, eval_id,
+            self.evaluator_dir, "%s_%s_T-%d" % (dataset, eval_id,
                 time.time()))
 
         if dataset == 'humaneval':
@@ -222,6 +248,7 @@ class LLMEvaluator(object):
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
             % (dataset, result_dir, evalplus_fp))
+        time.sleep(0.25)
         with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
             f.write(coder.get_prompt_template())
 
@@ -241,10 +268,6 @@ Write a Python function that {instruction}. Ensure your code adheres to the foll
 
 - **Modularity**: Break down the solution into smaller, reusable components where applicable.
 - **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
-- **Efficiency**: Optimize for performance where necessary, avoiding unnecessary computations or memory usage.
-- **Error Handling**: Include basic error handling to manage potential exceptions or invalid inputs.
-- **Documentation**: Provide brief comments or a docstring explaining the logic behind key sections of your code or complex operations.
-- **Testing**: Optionally, include a simple example or test case that demonstrates how to call your function and what output to expect.
 
 ### Your Code
 Return your solution in the following format:
@@ -270,7 +293,8 @@ Return ```python your_code_here ``` with NO other texts,
 your code:
 '''
     population = [indv]
-    evaluator = LLMEvaluator({}, evaluator_dir='.')
+    eval_config = {'n_workers': 1, 'dummy_mode': False}
+    evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
     print("Evaluation results:")
     print(result_dicts)
@@ -280,6 +304,7 @@ def _test_evalplus_extractor():
     score = extract_evalplus_score(
         "results/humaneval_results_1712181961/evalplus.txt")
     print(score, type(score))
+
 
 def _test_prompt_extractor():
     prompt_template = \
@@ -300,5 +325,23 @@ with no additional text outside the code block.
     print("Extracted prompt template:")
     print(parse_prompt_template(prompt_template))
 
+
+def _test_parallel_eval():
+    from role_ga import Individual
+    population = [Individual({}, gen_created=0) for i in range(5)]
+    for indv in population:
+        indv.role = \
+'''
+Write a python function that can {instruction}.
+Return ```python your_code_here ``` with NO other texts,
+your code:
+'''
+    eval_config = {'n_workers': 5, 'dummy_mode': False}
+    evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
+    result_dicts = evaluator.evaluate(population)
+    print("Evaluation results:")
+    print(result_dicts)
+
+
 if __name__ == "__main__":
-    _test_prompt_extractor()
+    _test_parallel_eval()

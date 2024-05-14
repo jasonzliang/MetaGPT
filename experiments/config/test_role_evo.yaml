@@ -9,14 +9,14 @@ role_ga_config:
             Return ```python your_code_here ``` with NO other texts,
             your code:
 
-    num_gen: 50
-    pop_size: 40
-    num_elites: 20
+    num_gen: 5
+    pop_size: 5
+    num_elites: 2
     tournament_size: 2
     checkpoint: True
-    reevaluate_elites: False
+    reevaluate_elites: True
 
 llm_evaluator_config:
     dummy_mode: False
     llm_model: gpt-3.5-turbo
-    n_workers: 10
+    n_workers: 5
