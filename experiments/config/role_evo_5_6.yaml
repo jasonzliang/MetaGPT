@@ -12,9 +12,9 @@ role_ga_config:
     tournament_size: 2
     checkpoint: True
     reevaluate_elites: False
-    n_workers: 5
+    n_workers: 10
 
 llm_evaluator_config:
     dummy_mode: False
     llm_model: gpt-3.5-turbo
-    n_workers: 10
+    n_workers: 20
