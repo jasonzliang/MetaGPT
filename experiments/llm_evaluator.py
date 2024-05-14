@@ -15,6 +15,8 @@ from metagpt.roles import Role
 from metagpt.schema import Message
 from metagpt.team import Team
 
+from pathos.pools import _ProcessPool as Pool
+
 from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
@@ -174,23 +176,46 @@ class LLMEvaluator(object):
         self.config = config
         self.evaluator_dir = evaluator_dir
         self.dummy_mode = self.config.get("dummy_mode", False)
+        self.n_workers = self.config.get("n_workers", 1)
+        assert self.n_workers > 0
         self.llm_model = self.config.get("llm_model", "gpt-3.5-turbo")
+        self.restart_interval = self.config("restart_interval", 999)
+
         self.logger = logging.getLogger('evolve_role')
+        self.reset()
+
+    def reset(self):
+        self.gen = 0
+        if hasattr(self, "pool"):
+            self.pool.close(); self.pool.join(); del self.pool
+        self.pool = Pool(self.n_workers)
 
     def evaluate(self, population):
-        result_dicts = []
-        for indv in population:
-            if self.dummy_mode:
-                fitness = random.random()
-            else:
-                # print(indv.role); exit()
-                fitness = self._evalplus(indv.role, indv.id)
+        self.gen += 1
+        if self.gen % self.restart_interval == 0:
+            self.reset()
 
-            result_dict = {}
-            result_dict['fitness'] = fitness
-            result_dict['true_fitness'] = fitness
-            result_dicts.append(result_dict)
+        if n_workers == 1 or self.dummy_mode:
+            result_dicts = []
+            for indv in population:
+                if self.dummy_mode:
+                    fitness = random.random()
+                else:
+                    fitness = self._evalplus(indv.role, indv.id)
+                result_dict = {}
+                result_dict['fitness'] = fitness
+                result_dict['true_fitness'] = fitness
+                result_dicts.append(result_dict)
+        else:
+            result_dicts = self.pool.map(self._evalplus_wrapper, population)
         return result_dicts
+
+    def _evalplus_wrapper(self, indv):
+        fitness = self._evalplus(indv.role, indv.id)
+        result_dict = {}
+        result_dict['fitness'] = fitness
+        result_dict['true_fitness'] = fitness
+        return result_dict
 
     def _evalplus(self, prompt_template, eval_id, dataset='humaneval'):
         result_dir = os.path.join(
@@ -224,6 +249,7 @@ class LLMEvaluator(object):
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
             % (dataset, result_dir, evalplus_fp))
+        time.sleep(0.25)
         with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
             f.write(coder.get_prompt_template())
 
@@ -243,10 +269,6 @@ Write a Python function that {instruction}. Ensure your code adheres to the foll
 
 - **Modularity**: Break down the solution into smaller, reusable components where applicable.
 - **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
-- **Efficiency**: Optimize for performance where necessary, avoiding unnecessary computations or memory usage.
-- **Error Handling**: Include basic error handling to manage potential exceptions or invalid inputs.
-- **Documentation**: Provide brief comments or a docstring explaining the logic behind key sections of your code or complex operations.
-- **Testing**: Optionally, include a simple example or test case that demonstrates how to call your function and what output to expect.
 
 ### Your Code
 Return your solution in the following format:
