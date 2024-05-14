@@ -18,4 +18,4 @@ role_ga_config:
 llm_evaluator_config:
     dummy_mode: False
     llm_model: gpt-3.5-turbo
-    n_workers: 20
+    n_workers: 18
