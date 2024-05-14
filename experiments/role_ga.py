@@ -199,14 +199,14 @@ class RoleEvolutionGA(object):
     def get_sorted_individuals(self, individuals):
         return sorted(individuals, reverse=True)
 
-    def _reset(self):
+    def _reset(self, disable_init_mutate=False):
         self.gen = 0
         self.individuals = []
         for i in range(self.pop_size):
             individual = Individual(self.indv_config, self.gen)
             self.individuals.append(individual)
         assert self.pop_size == len(self.individuals)
-        if self.init_mutate:
+        if not disable_init_mutate and self.init_mutate:
             [indv.mutate(override_mutate_rate=1.0) for indv in \
                 self.individuals[1:]]
 
@@ -248,7 +248,7 @@ class RoleEvolutionGA(object):
             assert pop_dict is not None
 
         if not hasattr(self, "individuals"):
-            self._reset()
+            self._reset(disable_init_mutate=True)
         self.gen = pop_dict.get('generation', 0) + 1
         chkpt_indv = pop_dict.get('individuals', [])
         for i, individual in enumerate(self.individuals):
