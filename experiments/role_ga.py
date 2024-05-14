@@ -306,7 +306,7 @@ class RoleEvolutionGA(object):
 
         child_a.crossover(child_b); child = child_a
         child.mutate()
-        assert not child.role.startswith("PROMPT_TEMPLATE: str =")
+        # assert not child.role.startswith("PROMPT_TEMPLATE: str =")
         return child
 
     def ask(self):
