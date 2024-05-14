@@ -34,6 +34,13 @@ class Individual(object):
         self.mutate_rate = self.config.get("mutate_rate", 0.5)
         assert 0 <= self.mutate_rate <= 1.0
         self.initial_role = self.config.get("initial_role", DEFAULT_ROLE)
+        initial_role_fp = os.path.join(os.path.abspath(
+            os.path.dirname(__file__)), "config/%s" % self.initial_role)
+        if os.path.exists(initial_role_fp):
+            with open(initial_role_fp, "r") as f:
+                self.initial_role = f.read()
+            self.logger.info(
+                "Loaded initial role from file: %s" % initial_role_fp)
 
         self.id = self._set_id(gen_created) # Ids are unique, names are not
         self.reset()

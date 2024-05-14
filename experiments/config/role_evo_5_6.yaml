@@ -4,10 +4,7 @@ role_ga_config:
     indv_config:
         dummy_mode: False
         mutate_rate: 0.75
-        initial_role: |
-            Write a python function that can {instruction}.
-            Return ```python your_code_here ``` with NO other texts,
-            your code:
+        initial_role: initial_role_gpt4.txt
 
     num_gen: 50
     pop_size: 40

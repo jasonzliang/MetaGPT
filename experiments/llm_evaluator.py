@@ -47,7 +47,7 @@ You are a professional engineer; the main goal is to write google-style, elegant
 
 {prompt}
 
-Return an improved version of the example prompt template that allows better, higher quality, and more accurate code to be written. Output the improved prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
+Return an improved version of the example prompt template which writes better code that is more efficient, accurate, and correct. Output the improved prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
 
 PROMPT_TEMPLATE: str = '''
 your_output_here
@@ -69,7 +69,7 @@ your_output_here
 class CrossoverAction(Action):
     PROMPT_TEMPLATE: str = \
 """
-You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. Here are two prompt templates that you use for writing code:
+You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. Here are two example prompt templates that you use for writing code:
 
 ### PROMPT TEMPLATE 1 ###
 {prompt_1}
@@ -77,7 +77,7 @@ You are a professional engineer; the main goal is to write google-style, elegant
 ### PROMPT TEMPLATE 2 ###
 {prompt_2}
 
-Combine and merge these two prompt templates to create a more effective, useful, and powerful prompt for writing code. Be creative and try to output interesting, original, and unique prompts. Output the combined prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
+Combine and merge these two prompt templates to create a better prompt for writing more efficient, accurate, and correct code. Try to output interesting, original, and creative prompts. Output the combined prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
 
 PROMPT_TEMPLATE: str = '''
 your_output_here
@@ -153,7 +153,7 @@ def create_new_team(llm_model):
 def llm_mutate(prompt):
     llm_config = Config.default()
     llm_config.llm.model = "gpt-4-turbo"
-    llm_config.llm.temperature = 0.7
+    llm_config.llm.temperature = 0.8
     mutate_operator = MutateAction(config=llm_config)
 
     asyncio.run(mutate_operator.run(prompt=prompt))
@@ -164,7 +164,7 @@ def llm_mutate(prompt):
 def llm_crossover(prompt_1, prompt_2):
     llm_config = Config.default()
     llm_config.llm.model = "gpt-4-turbo"
-    llm_config.llm.temperature = 0.7
+    llm_config.llm.temperature = 0.8
     crossover_operator = CrossoverAction(config=llm_config)
 
     asyncio.run(crossover_operator.run(prompt_1=prompt_1, prompt_2=prompt_2))
