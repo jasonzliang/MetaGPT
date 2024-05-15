@@ -140,13 +140,14 @@ def restart_experiment(directory, config_file, reason=None):
         for p in proc_iter:
             try:
                 cmdline = " ".join(p.cmdline())
+                if EXP_SCRIPT_NAME in cmdline:
+                    kill_exp_name = get_exp_name_cmdline(cmdline)
+                    can_break = kill_proc_tree(p.pid, kill_exp_name)
+                    print("Experiment [%s] killed: %s" % \
+                        (kill_exp_name, can_break))
             except:
                 continue
 
-            if EXP_SCRIPT_NAME in cmdline: # and experiment_name in cmdline:
-                kill_exp_name = get_exp_name_cmdline(cmdline)
-                can_break = kill_proc_tree(p.pid, kill_exp_name)
-                print("Experiment [%s] killed: %s" % (kill_exp_name, can_break))
         if can_break:
             break
 
