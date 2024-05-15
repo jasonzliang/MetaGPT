@@ -172,8 +172,8 @@ def restart_experiment(directory, config_file, reason=None):
     assert os.path.exists(log_file)
 
     global MAXIMUM_RESTARTS; MAXIMUM_RESTARTS -= 1
-        print("No more (re)starts remaining, exiting")
     if MAXIMUM_RESTARTS == 0:
+        print("No more (re)starts remaining, exiting")
         raise RestartException
     else:
         print("Experiment (re)start successful, %s remaining" %
