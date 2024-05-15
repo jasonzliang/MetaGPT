@@ -318,7 +318,7 @@ def monitor_experiment(directory, config_file=None, timeout=MAX_GEN_TIMEOUT,
 def check_config(batch_config):
     experiment_dirs = set([])
     for i, experiment_list in enumerate(batch_config.get("experiments", [])):
-        assert len(experiment_list) == 4:
+        assert len(experiment_list) == 4
         experiment_dir, experiment_config, log_timeout, server_timeout = \
             experiment_list
 
