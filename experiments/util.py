@@ -1,16 +1,20 @@
+import asyncio
 import copy
 import datetime
+import functools
 import os
 import pickle
 import sys
+import time
 import traceback
 
 import jsonpickle
 import numpy as np
 from pytz import timezone
-import ruamel.yaml as yaml
+from ruamel.yaml import YAML
 
 from alg_util import is_numpy_type, randomword
+
 
 def extract_evalplus_score(result_file, logger=None):
     try:
@@ -29,8 +33,10 @@ def extract_evalplus_score(result_file, logger=None):
             logger.debug("Evalplus score extraction failed: %s" % result_file)
         return 0.0
 
+
 def unzip(x):
     return [list(x) for x in zip(*x)]
+
 
 def get_time(space=True, date=True):
     '''Creates a nicely formated timestamp'''
@@ -43,6 +49,7 @@ def get_time(space=True, date=True):
         date_str = date_str.replace(":", "-").replace(" ", "_")
 
     return datetime.datetime.now(timezone('US/Pacific')).strftime(date_str)
+
 
 def sanitize_result_dict(result_dict):
     '''Converts numpy types to python built ins'''
@@ -61,6 +68,7 @@ def sanitize_result_dict(result_dict):
     else:
         return result_dict
 
+
 def get_result_from_cache(key, cache_dir='/tmp/'):
     try:
         cache_file = os.path.join(cache_dir, str(key) + '.pkl')
@@ -73,6 +81,7 @@ def get_result_from_cache(key, cache_dir='/tmp/'):
     except:
         traceback.print_exc()
         return None
+
 
 def save_result_to_cache(key, result_dict, cache_dir='/tmp/'):
     tmp_file = os.path.join(cache_dir, randomword(24))
@@ -87,6 +96,7 @@ def save_result_to_cache(key, result_dict, cache_dir='/tmp/'):
 
     os.rename(tmp_file, cache_file)
     assert os.path.exists(cache_file)
+
 
 def save_global_config(filepath, global_dict):
     def strip_python_tags(s):
@@ -110,5 +120,5 @@ def save_global_config(filepath, global_dict):
     # s = jsonpickle.encode(config_dict, indent=4)
     with open(filepath, 'w') as f:
         # f.write(s)
-        yaml.dump(config_dict, f)
+        YAML().dump(config_dict, f)
     print("Dumped global config to file: %s" % filepath)

@@ -151,9 +151,9 @@ def create_new_team(llm_model):
     return team, coder
 
 
-def llm_mutate(prompt):
+def llm_mutate(prompt, llm_model):
     llm_config = Config.default()
-    llm_config.llm.model = "gpt-4-turbo"
+    llm_config.llm.model = llm_model
     llm_config.llm.temperature = 0.8
     mutate_operator = MutateAction(config=llm_config)
 
@@ -162,9 +162,9 @@ def llm_mutate(prompt):
     return improved_prompt
 
 
-def llm_crossover(prompt_1, prompt_2):
+def llm_crossover(prompt_1, prompt_2, llm_model):
     llm_config = Config.default()
-    llm_config.llm.model = "gpt-4-turbo"
+    llm_config.llm.model = llm_model
     llm_config.llm.temperature = 0.8
     crossover_operator = CrossoverAction(config=llm_config)
 
@@ -276,26 +276,32 @@ Return your solution in the following format:
 ```python your_code_here ```
 with no additional text outside the code block.
 '''
-    output = llm_mutate(PROMPT_TEMPLATE_1)
+    output = llm_mutate(PROMPT_TEMPLATE_1, llm_model='gpt-4o')
     print("### LLM_MUTATE RETURN VALUE ###")
     print(output)
 
-    output = llm_crossover(PROMPT_TEMPLATE_1, PROMPT_TEMPLATE_2)
+    output = llm_crossover(PROMPT_TEMPLATE_1, PROMPT_TEMPLATE_2,
+        llm_model='gpt-4o')
     print("### LLM_CROSSOVER RETURN VALUE ###")
     print(output)
 
 
-def _test_evaluator():
+def _test_evaluator(prompt_fp=None):
     from role_ga import Individual
     indv = Individual({}, gen_created=0)
-    indv.role = \
+    if prompt_fp is not None and os.path.exists(prompt_fp):
+        with open(prompt_fp, "r") as f:
+            indv.role = f.read()
+    else:
+        indv.role = \
 '''
 Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
 your code:
 '''
+
     population = [indv]
-    eval_config = {'n_workers': 1, 'dummy_mode': False}
+    eval_config = {'n_workers': 1, 'dummy_mode': False, 'llm_model': 'gpt-4o'}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
     print("Evaluation results:")
@@ -346,4 +352,4 @@ your code:
 
 
 if __name__ == "__main__":
-    _test_parallel_eval()
+    _test_evaluator(prompt_fp='config/initial_role_gpt4.txt')

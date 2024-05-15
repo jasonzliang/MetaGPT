@@ -33,6 +33,13 @@ class Individual(object):
         self.dummy_mode = self.config.get("dummy_mode", False)
         self.mutate_rate = self.config.get("mutate_rate", 0.5)
         assert 0 <= self.mutate_rate <= 1.0
+        self.llm_model = self.config.get("llm_model", "gpt-4o")
+
+        self.id = self._set_id(gen_created) # Ids are unique, names are not
+        self._load_initial_role()
+        self.reset()
+
+    def _load_initial_role(self):
         self.initial_role = self.config.get("initial_role", DEFAULT_ROLE)
         initial_role_fp = os.path.join(os.path.abspath(
             os.path.dirname(__file__)), "config/%s" % self.initial_role)
@@ -40,9 +47,6 @@ class Individual(object):
             with open(initial_role_fp, "r") as f:
                 self.initial_role = f.read()
         self.logger.info("Initial Role:\n%s" % self.initial_role)
-
-        self.id = self._set_id(gen_created) # Ids are unique, names are not
-        self.reset()
 
     def _set_id(self, gen_created):
         self.gen_created = gen_created
@@ -108,22 +112,20 @@ class Individual(object):
 
 
     def mutate(self, override_mutate_rate=None):
-        if override_mutate_rate is not None:
-            assert 0.0 <= override_mutate_rate <= 1.0
-            mutate_rate = override_mutate_rate
-        else:
-            mutate_rate = self.mutate_rate
+        assert 0.0 <= override_mutate_rate <= 1.0
+        mutate_rate = override_mutate_rate if override_mutate_rate is not None \
+            else self.mutate_rate
 
         if self.dummy_mode:
             self.role += randomword(ID_LENGTH)
         elif random.random() < mutate_rate:
-            self.role = llm_mutate(self.role)
+            self.role = llm_mutate(self.role, self.llm_model)
 
     def crossover(self, other):
         if self.dummy_mode:
             self.role, other.role = other.role, self.role
         else:
-            self.role = llm_crossover(self.role, other.role)
+            self.role = llm_crossover(self.role, other.role, self.llm_model)
 
     def serialize(self):
         return {'id': self.id,

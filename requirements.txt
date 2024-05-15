@@ -80,4 +80,5 @@ pytz
 ruamel.yaml
 simplejson
 pathos
+retry
 git+https://github.com/evalplus/evalplus.git

@@ -14,25 +14,42 @@ import psutil
 
 from util import randomword, get_time
 
-SLEEP_TIME = 30 # Interval to check whether restart conditions meet
-WAIT_TIME = 3 # Grace period after killing an experiment process
-RESTART_TIME = 120 # Maximum time to wait after launching new experiment
-MAX_MEMORY_PERCENT = 100.0 # Maximum memory usage before restarting experiment
-MAXIMUM_RESTARTS = 10 # Maximum number of times restarts can happen
+# Interval to check whether restart conditions meet
+SLEEP_TIME = 30
+# Grace period after killing an experiment process
+WAIT_TIME = 3
+# Time to wait after launching new experiment before checking
+RESTART_TIME = 120
+# Maximum memory usage before restarting experiment
+MAX_MEMORY_PERCENT = 100.0
+# Maximum number of times restarts can happen
+MAXIMUM_RESTARTS = 10
 
-DEFAULT_SCREEN_NAME = "experiment" # Default name of screen to use
-EXP_BASE_DIR = "~/Desktop/MetaGPT/experiments" # Base directory for running experiments
-EXP_SCRIPT_NAME = "evolve_role.py" # Name of main experiment script
-SCROLLBACK_LINES = 10000000 # number of lines to set scrollback"\
+# Default name of screen to use
+DEFAULT_SCREEN_NAME = "experiment"
+# Base directory for running experiments
+EXP_BASE_DIR = os.path.expanduser("~/Desktop/MetaGPT/experiments")
+# Name of main experiment script
+EXP_SCRIPT_NAME = "evolve_role.py"
+# Number of lines to set scrollback"\
+SCROLLBACK_LINES = 10000000
 
-MAX_GEN_TIMEOUT = 50000 # Maximum generation timeout
-ADAPTIVE_GEN_TIMEOUT = False # Change gen timeout depending on past gen lengths
-MIN_DATA_PTS = 10 # Minimum data points for adaptive timeout to be enabled
-USE_LATEST_PTS = None # Use only the latest data points to determine timeout
-CALC_METHOD = 'max' # Either mean, median, max for determining typical gen time
-STD_THRESHOLD = 4.0 # Timeout is this many stds above the typical gen time
-TIMEOUT_MULTIPLIER = 1.5 # Multiplier to the timeout, use if higher than STD
-RESTART_LOG = 'restart.log' # Log file for writing reason for restart
+# Maximum generation timeout
+MAX_GEN_TIMEOUT = 50000
+# Change gen timeout depending on past gen lengths
+ADAPTIVE_GEN_TIMEOUT = False
+# Minimum data points for adaptive timeout to be enabled
+MIN_DATA_PTS = 10
+# Use only the latest data points to determine timeout
+USE_LATEST_PTS = None
+# Either mean, median, max for determining typical gen time
+CALC_METHOD = 'max'
+# Timeout is this many stds above the typical gen time
+STD_THRESHOLD = 4.0
+# Multiplier to the timeout, use if higher than STD
+TIMEOUT_MULTIPLIER = 1.5
+# Log file for writing reason for restart
+RESTART_LOG = 'restart.log'
 
 class RestartException(Exception):
     pass
