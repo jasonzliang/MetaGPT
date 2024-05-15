@@ -299,9 +299,7 @@ Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
 your code:
 '''
-    print(indv.role)
-
-    population = [indv]
+    print(indv.role); population = [indv]
     eval_config = {'n_workers': 1, 'dummy_mode': False, 'llm_model': 'gpt-4o'}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
@@ -346,7 +344,6 @@ Return ```python your_code_here ``` with NO other texts,
 your code:
 '''
     print(indv.role)
-
     eval_config = {'n_workers': 5, 'dummy_mode': False}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
