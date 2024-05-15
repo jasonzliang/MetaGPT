@@ -299,6 +299,7 @@ Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
 your code:
 '''
+    print(indv.role)
 
     population = [indv]
     eval_config = {'n_workers': 1, 'dummy_mode': False, 'llm_model': 'gpt-4o'}
@@ -344,6 +345,8 @@ Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
 your code:
 '''
+    print(indv.role)
+
     eval_config = {'n_workers': 5, 'dummy_mode': False}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
@@ -352,4 +355,4 @@ your code:
 
 
 if __name__ == "__main__":
-    _test_evaluator(prompt_fp='config/initial_role_gpt4.txt')
+    _test_evaluator(prompt_fp='config/best_role_5_14.txt')

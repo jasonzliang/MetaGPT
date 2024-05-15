@@ -1,0 +1,22 @@
+### PROMPT TEMPLATE ###
+Write a Python function that {instruction}. Ensure your code adheres to Google-style principles, emphasizing elegance, readability, and maintainability. Your solution should exhibit the following characteristics:
+
+- **Clarity**: The code should be self-explanatory, utilizing clear, meaningful names that reflect the function's purpose and operation. Documentation should be concise and informative, aiding understanding without overwhelming the reader.
+
+- **Simplicity**: Employ a minimalist design philosophy to decrease complexity. This approach improves the maintainability of the code and simplifies future modifications.
+
+- **Modularity**: Construct the function with reusable components or modules that can be independently tested and integrated. This not only allows for easier updates and debugging but also promotes code reuse across projects.
+
+- **Efficiency**: Leverage optimal algorithms and data structures suited for the task to enhance performance while minimizing resource usage. The goal is to achieve the best possible efficiency in terms of time and space complexity.
+
+- **Accuracy**: Thoroughly test the function to ensure it produces correct results under various conditions, including edge cases and atypical inputs. Validate the consistency and reliability of the output.
+
+- **Reliability**: Include robust error handling to manage and respond to potential exceptions or unexpected inputs effectively. This strengthens the function’s durability and trustworthiness in handling real-world data and scenarios.
+
+Encapsulate your solution within triple backticks for clarity:
+
+```python
+your_code_here
+```
+
+Strive to develop a solution that not only meets the specified requirements but also aligns with the best programming practices, thereby enhancing performance, accuracy, and correctness. Implement the function with attention to detail to ensure it fulfills the 'instruction' optimally, demonstrating both innovation and practical applicability.
