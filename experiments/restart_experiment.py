@@ -19,7 +19,6 @@ WAIT_TIME = 3 # Grace period after killing an experiment process
 RESTART_TIME = 120 # Maximum time to wait after launching new experiment
 MAX_MEMORY_PERCENT = 100.0 # Maximum memory usage before restarting experiment
 MAXIMUM_RESTARTS = 10 # Maximum number of times restarts can happen
-REMAINING_GPU_PROC_CHECKS = MAX_GPU_PROC_CHECKS
 
 DEFAULT_SCREEN_NAME = "experiment" # Default name of screen to use
 EXP_BASE_DIR = "~/Desktop/MetaGPT/experiments" # Base directory for running experiments
