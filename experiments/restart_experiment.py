@@ -338,7 +338,8 @@ def monitor_experiment_batch(config_file):
 
     if git_pull:
         result = bash_command("git pull").decode('utf-8').rstrip()
-        if 'Already up to date' not in result \
+        print(result); exit()
+        if 'Already up to date' not in result and
             and 'Already up-to-date' not in result:
             print("Restarting monitoring script due to git updates")
             os.execv(__file__, sys.argv)
