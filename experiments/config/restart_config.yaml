@@ -1,4 +1,4 @@
 hostid: False
 git_pull: False
 experiments:
-  - [results/5_14_role_ga, config/role_evo_5_6.yaml, 3000, 4000]
+  - [results/5_14_role_ga, config/role_evo_5_6.yaml, 4000, 4000]

@@ -26,7 +26,7 @@ EXP_SCRIPT_NAME = "evolve_role.py" # Name of main experiment script
 SCROLLBACK_LINES = 10000000 # number of lines to set scrollback"\
 
 MAX_GEN_TIMEOUT = 50000 # Maximum generation timeout
-ADAPTIVE_GEN_TIMEOUT = True # Change gen timeout depending on past gen lengths
+ADAPTIVE_GEN_TIMEOUT = False # Change gen timeout depending on past gen lengths
 MIN_DATA_PTS = 10 # Minimum data points for adaptive timeout to be enabled
 USE_LATEST_PTS = None # Use only the latest data points to determine timeout
 CALC_METHOD = 'max' # Either mean, median, max for determining typical gen time
@@ -145,10 +145,8 @@ def restart_experiment(directory, config_file, reason=None):
 
             if EXP_SCRIPT_NAME in cmdline: # and experiment_name in cmdline:
                 kill_exp_name = get_exp_name_cmdline(cmdline)
-                killed_process = kill_proc_tree(p.pid, kill_exp_name)
-                print("Experiment [%s] killed" % kill_exp_name)
-                if not killed_process:
-                    can_break = False
+                can_break = kill_proc_tree(p.pid, kill_exp_name)
+                print("Experiment [%s] killed: %s" % (kill_exp_name, can_break))
         if can_break:
             break
 
