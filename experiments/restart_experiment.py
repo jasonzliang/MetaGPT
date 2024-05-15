@@ -138,7 +138,10 @@ def restart_experiment(directory, config_file, reason=None):
         proc_iter = psutil.process_iter(attrs=["pid", "name", "cmdline"])
 
         for p in proc_iter:
-            cmdline = " ".join(p.cmdline())
+            try:
+                cmdline = " ".join(p.cmdline())
+            except:
+                continue
 
             if EXP_SCRIPT_NAME in cmdline: # and experiment_name in cmdline:
                 kill_exp_name = get_exp_name_cmdline(cmdline)
