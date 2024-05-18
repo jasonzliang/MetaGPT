@@ -10,13 +10,14 @@ import time
 
 from metagpt.actions import Action, UserRequirement
 from metagpt.config2 import Config
-from metagpt.logs import logger
+from metagpt.logs import logger as mlogger
 from metagpt.roles import Role
 from metagpt.schema import Message
 from metagpt.team import Team
 
-# from pathos.pools import _ProcessPool as Pool
 from pathos.pools import ProcessPool
+from retry import retry
+from retry.api import retry_call
 
 from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
@@ -151,25 +152,41 @@ def create_new_team(llm_model):
     return team, coder
 
 
+@retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
+    logger=logging.getLogger('evolve_role'))
 def llm_mutate(prompt, llm_model):
     llm_config = Config.default()
     llm_config.llm.model = llm_model
     llm_config.llm.temperature = 0.8
     mutate_operator = MutateAction(config=llm_config)
 
+    # try:
     asyncio.run(mutate_operator.run(prompt=prompt))
     improved_prompt = mutate_operator.get_code_text()
+    # except:
+    #     mlogger.info("### llm_mutate failed ###")
+    #     mlogger.info(traceback.format_exc())
+    #     improved_prompt = prompt
+
     return improved_prompt
 
 
+@retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
+    logger=logging.getLogger('evolve_role'))
 def llm_crossover(prompt_1, prompt_2, llm_model):
     llm_config = Config.default()
     llm_config.llm.model = llm_model
     llm_config.llm.temperature = 0.8
     crossover_operator = CrossoverAction(config=llm_config)
 
+    # try:
     asyncio.run(crossover_operator.run(prompt_1=prompt_1, prompt_2=prompt_2))
     improved_prompt = crossover_operator.get_code_text()
+    # except:
+    #     mlogger.info("### llm_mutate failed ###")
+    #     mlogger.info(traceback.format_exc())
+    #     improved_prompt = prompt_1
+
     return improved_prompt
 
 
@@ -181,6 +198,7 @@ class LLMEvaluator(object):
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
         self.llm_model = self.config.get("llm_model", "gpt-3.5-turbo")
+        self.dataset = self.config.get("dataset", "humaneval")
         self.restart_interval = self.config.get("restart_interval", 999)
 
         self.logger = logging.getLogger('evolve_role')
@@ -203,45 +221,44 @@ class LLMEvaluator(object):
                 if self.dummy_mode:
                     fitness = random.random()
                 else:
-                    fitness = self._evalplus(indv.role, indv.id)
+                    fitness = self._evalplus(indv)
                 result_dict = {}
                 result_dict['fitness'] = fitness
                 result_dict['true_fitness'] = fitness
                 result_dicts.append(result_dict)
         else:
-            result_dicts = self.pool.map(self._evalplus_wrapper, population)
+            result_dicts = self.pool.map(self._evalplus, population)
         return result_dicts
 
-    def _evalplus_wrapper(self, indv):
-        fitness = self._evalplus(indv.role, indv.id)
-        result_dict = {}
-        result_dict['fitness'] = fitness
-        result_dict['true_fitness'] = fitness
-        return result_dict
-
-    def _evalplus(self, prompt_template, eval_id, dataset='humaneval'):
-        result_dir = os.path.join(
-            self.evaluator_dir, "%s_%s_T-%d" % (dataset, eval_id,
-                time.time()))
+    def _evalplus(self, indv):
+        prompt_template, eval_id = indv.role, indv.id
+        result_dir = os.path.join(self.evaluator_dir,
+            "%s_%s_T-%d" % (self.dataset, eval_id, time.time()))
         os.makedirs(result_dir, exist_ok=True)
         with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
             f.write(prompt_template)
 
-        if dataset == 'humaneval':
-            problems = get_human_eval_plus()
-        else:
-            assert dataset == 'mbpp'; problems = get_mbpp_plus()
-
-        for task_id, problem in problems.items():
-            prompt = problem['prompt']
-            logger.info("\n\n#### Task ID: %s, Prompt:\n%s" % (task_id, prompt))
-
+        @retry(Exception, tries=5, delay=1, backoff=2, logger=self.logger)
+        def eval_prompt(prompt):
             team, coder = create_new_team(self.llm_model)
             coder.set_prompt_template(prompt_template)
             team.run_project(prompt)
             asyncio.run(team.run(n_round=1))
             output = coder.get_code_text()
-            logger.info("#### MetaGPT Output:\n%s" % output)
+            assert len(output) > 0
+            return output
+
+        if self.dataset == 'humaneval':
+            problems = get_human_eval_plus()
+        else:
+            assert self.dataset == 'mbpp'; problems = get_mbpp_plus()
+
+        for task_id, problem in problems.items():
+            prompt = problem['prompt']
+            mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % (task_id, prompt))
+            try: output = eval_prompt(prompt)
+            except: output = ""
+            mlogger.info("#### MetaGPT Output:\n%s" % output)
 
             task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
             os.makedirs(task_id_dir, exist_ok=True)
@@ -251,14 +268,21 @@ class LLMEvaluator(object):
 
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
-            % (dataset, result_dir, evalplus_fp))
+            % (self.dataset, result_dir, evalplus_fp))
         time.sleep(0.25)
 
-        return extract_evalplus_score(evalplus_fp, self.logger)
+        fitness = extract_evalplus_score(evalplus_fp, self.logger)
+        result_dict = {}
+        result_dict['fitness'] = fitness
+        result_dict['true_fitness'] = fitness
+        return result_dict
 
 
 #### Unit tests ####
-def _test_mutation_crossover():
+def _test_mutation_crossover(test_err=False):
+    import traceback
+    llm_model = 'N/A' if test_err else 'gpt-4o'
+
     PROMPT_TEMPLATE_1 = '''
 Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
@@ -276,17 +300,23 @@ Return your solution in the following format:
 ```python your_code_here ```
 with no additional text outside the code block.
 '''
-    output = llm_mutate(PROMPT_TEMPLATE_1, llm_model='gpt-4o')
-    print("### LLM_MUTATE RETURN VALUE ###")
-    print(output)
+    try:
+        output = llm_mutate(PROMPT_TEMPLATE_1, llm_model=llm_model)
+        print("### LLM_MUTATE RETURN VALUE ###")
+        print(output)
+    except:
+        traceback.print_exc()
 
-    output = llm_crossover(PROMPT_TEMPLATE_1, PROMPT_TEMPLATE_2,
-        llm_model='gpt-4o')
-    print("### LLM_CROSSOVER RETURN VALUE ###")
-    print(output)
+    try:
+        output = llm_crossover(PROMPT_TEMPLATE_1, PROMPT_TEMPLATE_2,
+            llm_model=llm_model)
+        print("### LLM_CROSSOVER RETURN VALUE ###")
+        print(output)
+    except:
+        traceback.print_exc()
 
 
-def _test_evaluator(prompt_fp=None):
+def _test_evaluator(prompt_fp=None, test_err=False):
     from role_ga import Individual
     indv = Individual({}, gen_created=0)
     if prompt_fp is not None and os.path.exists(prompt_fp):
@@ -300,7 +330,8 @@ Return ```python your_code_here ``` with NO other texts,
 your code:
 '''
     print(indv.role); population = [indv]
-    eval_config = {'n_workers': 1, 'dummy_mode': False, 'llm_model': 'gpt-4o'}
+    llm_model = 'N/A' if test_err else 'gpt-4o'
+    eval_config = {'n_workers': 1, 'dummy_mode': False, 'llm_model': llm_model}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
     print("Evaluation results:")
@@ -352,4 +383,5 @@ your code:
 
 
 if __name__ == "__main__":
-    _test_evaluator(prompt_fp='config/best_role_5_14.txt')
+    _test_mutation_crossover(test_err=True)
+    # _test_evaluator(prompt_fp='config/best_role_5_14.txt', test_err=True)
