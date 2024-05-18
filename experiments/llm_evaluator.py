@@ -364,9 +364,9 @@ with no additional text outside the code block.
     print(parse_prompt_template(prompt_template))
 
 
-def _test_parallel_eval():
+def _test_parallel_eval(n=10):
     from role_ga import Individual
-    population = [Individual({}, gen_created=0) for i in range(5)]
+    population = [Individual({}, gen_created=0) for i in range(n)]
     for indv in population:
         indv.role = \
 '''
@@ -375,7 +375,7 @@ Return ```python your_code_here ``` with NO other texts,
 your code:
 '''
     print(indv.role)
-    eval_config = {'n_workers': 5, 'dummy_mode': False}
+    eval_config = {'n_workers': n, 'dummy_mode': False}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
     print("Evaluation results:")
@@ -383,5 +383,6 @@ your code:
 
 
 if __name__ == "__main__":
-    _test_mutation_crossover(test_err=True)
+    # _test_mutation_crossover(test_err=True)
     # _test_evaluator(prompt_fp='config/best_role_5_14.txt', test_err=True)
+    _test_parallel_eval()
