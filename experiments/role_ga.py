@@ -203,8 +203,8 @@ class RoleEvolutionGA(object):
 
         self.mutate2_n = self.config.get("mutate2_n", 3)
         assert self.mutate2_n >= 0
-        self.crossover2_n = self.config.get("crossover2_n", 4)
-        assert self.crossover2_n >= 2
+        self.crossover2_n = self.config.get("crossover2_n", 3)
+        assert self.crossover2_n >= 1
 
         self._reset()
         if self.checkpoint:
@@ -335,7 +335,7 @@ class RoleEvolutionGA(object):
 
     def _generate_individual2(self):
         parents = sorted([self._tournament_selection() for i in \
-            range(self.crossover2_n)], reverse=True)
+            range(self.crossover2_n + 1)], reverse=True)
         child = parents[0].create_child(self.gen); others = parents[1:]
 
         if random.random() < 0.5:

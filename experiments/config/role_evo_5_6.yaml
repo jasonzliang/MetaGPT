@@ -4,6 +4,7 @@ role_ga_config:
     indv_config:
         dummy_mode: False
         mutate_rate: 0.75
+        llm_model: gpt-4-turbo
         # initial_role: initial_role_gpt4.txt
 
     num_gen: 50
@@ -14,6 +15,9 @@ role_ga_config:
     reevaluate_elites: True
     init_mutate: True
     n_workers: 10
+
+    mutate2_n: 3
+    crossover2_n: 3
 
 llm_evaluator_config:
     dummy_mode: False
