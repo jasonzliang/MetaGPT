@@ -103,10 +103,8 @@ class RoleEvolutionServer(object):
             result_dicts = sanitize_result_dict(result_dicts)
             assert len(result_dicts) == len(population)
 
-            fitnesses = [x.get('fitness', None) for x in result_dicts]
-            true_fitnesses = [x.get('true_fitness', None) for x in result_dicts]
-            self.ga.tell(population, fitnesses, true_fitnesses)
-            self.logger.debug("Evaluated fitnesses: %s" % fitnesses)
+            self.ga.tell(population, result_dicts)
+            self.logger.debug("Evaluated results: %s" % result_dicts)
 
             self.ga.end_gen()
             self.logger.info("***END OF GENERATION***\n\n")

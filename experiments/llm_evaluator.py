@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import importlib
+import json
 import logging
 import os
 import re
@@ -54,11 +55,36 @@ PROMPT_TEMPLATE: str = '''
 your_output_here
 '''
 """
+    PROMPT_TEMPLATE_2: str = \
+"""
+You are a professional engineer; the prompt template that you use for writing the code can be illustrated by the following example:
+
+{prompt}
+
+In addition, here are some coding examples that the prompt has failed to write correct code for:
+
+
+{negative_examples}
+
+
+Return an improved version of the example prompt template which writes efficient, accurate, and correct code. The prompt must be able generate correct code for the coding examples above. Output the improved prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
+
+PROMPT_TEMPLATE: str = '''
+your_output_here
+'''
+"""
     name: str = "MutateAction"
     code_text: str = ""
 
     async def run(self, prompt: str):
         prompt = self.PROMPT_TEMPLATE.format(prompt=prompt)
+        code_text = await self._aask(prompt)
+        self.code_text = parse_prompt_template(code_text)
+        return self.code_text
+
+    async def run2(self, prompt: str, negative_examples: str):
+        prompt = self.PROMPT_TEMPLATE_2.format(prompt=prompt,
+            negative_examples=negative_examples)
         code_text = await self._aask(prompt)
         self.code_text = parse_prompt_template(code_text)
         return self.code_text
@@ -84,12 +110,37 @@ PROMPT_TEMPLATE: str = '''
 your_output_here
 '''
 """
+    PROMPT_TEMPLATE_2: str = \
+"""
+You are a professional engineer; here is the prompt template that you use for writing code:
+
+{prompt}
+
+In addition, here are additional alternative prompt templates that are ranked in order from best to worst:
+
+
+{additonal_prompts}
+
+
+Combine and merge elements from these additional prompts into the prompt template that you use for writing code. Make sure to account of the ranking of each additional prompt. Try to create interesting, original, and creative prompts that can write efficient, accurate, and correct code. Output the combined prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
+
+PROMPT_TEMPLATE: str = '''
+your_output_here
+'''
+"""
     name: str = "CrossoverAction"
     code_text: str = ""
 
     async def run(self, prompt_1: str, prompt_2: str):
         prompt = self.PROMPT_TEMPLATE.format(
             prompt_1=prompt_1, prompt_2=prompt_2)
+        code_text = await self._aask(prompt)
+        self.code_text = parse_prompt_template(code_text)
+        return self.code_text
+
+    async def run2(self, prompt: str, additional_prompts: str):
+        prompt = self.PROMPT_TEMPLATE_2.format(
+            prompt=prompt, additional_prompts=additional_prompts)
         code_text = await self._aask(prompt)
         self.code_text = parse_prompt_template(code_text)
         return self.code_text
@@ -158,34 +209,72 @@ def llm_mutate(prompt, llm_model):
     llm_config = Config.default()
     llm_config.llm.model = llm_model
     llm_config.llm.temperature = 0.8
-    mutate_operator = MutateAction(config=llm_config)
 
-    # try:
+    mutate_operator = MutateAction(config=llm_config)
     asyncio.run(mutate_operator.run(prompt=prompt))
     improved_prompt = mutate_operator.get_code_text()
-    # except:
-    #     mlogger.info("### llm_mutate failed ###")
-    #     mlogger.info(traceback.format_exc())
-    #     improved_prompt = prompt
+
+    return improved_prompt
+
+
+# @retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
+#     logger=logging.getLogger('evolve_role'))
+def llm_mutate2(prompt, llm_model, result_dir, n=5):
+    llm_config = Config.default()
+    llm_config.llm.model = llm_model
+    llm_config.llm.temperature = 0.8
+
+    with open(os.path.join(result_dir, "eval_results.json"), "r") as f:
+        eval_json = json.load(f)
+
+    negative_examples = []
+    for key, solution_dict in eval_json['eval'].items():
+        solution_dict = solution_dict[0]
+        if solution_dict["base_status"] == "fail":
+            negative_examples.append(solution_dict["solution"])
+    if len(negative_examples) == 0:
+        negative_examples = ["No negative examples exist!"]
+    elif len(negative_examples) > n:
+        negative_examples = random.sample(negative_examples, n)
+    negative_examples = "\n".join(negative_examples)
+
+    mutate_operator = MutateAction(config=llm_config)
+    asyncio.run(mutate_operator.run2(prompt=prompt,
+        negative_examples=negative_examples))
+    improved_prompt = mutate_operator.get_code_text()
+
+    return improved_prompt
+
+
+# @retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
+#     logger=logging.getLogger('evolve_role'))
+def llm_crossover(prompt_1, prompt_2, llm_model):
+    llm_config = Config.default()
+    llm_config.llm.model = llm_model
+    llm_config.llm.temperature = 0.8
+
+    crossover_operator = CrossoverAction(config=llm_config)
+    asyncio.run(crossover_operator.run(prompt_1=prompt_1, prompt_2=prompt_2))
+    improved_prompt = crossover_operator.get_code_text()
 
     return improved_prompt
 
 
 @retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
     logger=logging.getLogger('evolve_role'))
-def llm_crossover(prompt_1, prompt_2, llm_model):
+def llm_crossover2(prompt, additional_prompts, llm_model):
     llm_config = Config.default()
     llm_config.llm.model = llm_model
     llm_config.llm.temperature = 0.8
-    crossover_operator = CrossoverAction(config=llm_config)
 
-    # try:
-    asyncio.run(crossover_operator.run(prompt_1=prompt_1, prompt_2=prompt_2))
+    if len(additional_prompts) == 0:
+        additional_prompts = ["No additional prompts exist!"]
+    additional_prompts = "\n".join(additional_prompts)
+
+    crossover_operator = CrossoverAction(config=llm_config)
+    asyncio.run(crossover_operator.run2(prompt=prompt,
+        additional_prompts=additional_prompts))
     improved_prompt = crossover_operator.get_code_text()
-    # except:
-    #     mlogger.info("### llm_mutate failed ###")
-    #     mlogger.info(traceback.format_exc())
-    #     improved_prompt = prompt_1
 
     return improved_prompt
 
@@ -275,6 +364,7 @@ class LLMEvaluator(object):
         result_dict = {}
         result_dict['fitness'] = fitness
         result_dict['true_fitness'] = fitness
+        result_dict['result_dir'] = result_dir
         return result_dict
 
 
@@ -338,14 +428,14 @@ your code:
     print(result_dicts)
 
 
-def _test_evalplus_extractor():
-    score = extract_evalplus_score(
-        "results/humaneval_results_1712181961/evalplus.txt")
+def _test_evalplus_extractor(
+    result_dir="results/humaneval_results_1712181961/evalplus.txt"):
+    score = extract_evalplus_score(result_dir)
     print(score, type(score))
 
 
 def _test_prompt_extractor():
-    prompt_template = \
+    PROMPT_TEMPLATE = \
 """PROMPT_TEMPLATE: str = '''
 ### Task Description
 Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
@@ -359,9 +449,9 @@ with no additional text outside the code block.
 '''"""
 
     print("Original prompt template:")
-    print(prompt_template)
+    print(PROMPT_TEMPLATE)
     print("Extracted prompt template:")
-    print(parse_prompt_template(prompt_template))
+    print(parse_prompt_template(PROMPT_TEMPLATE))
 
 
 def _test_parallel_eval(n=10):

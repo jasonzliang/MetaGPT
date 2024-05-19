@@ -81,6 +81,7 @@ class Individual(object):
         self._reset_roles()
         self.fitness = None
         self.true_fitness = None
+        self.result_dir = None
 
     def create_child(self, gen_created=None):
         child = deepcopy(self)
@@ -88,8 +89,9 @@ class Individual(object):
         child._inherit_roles(self)
 
         child.id = child._set_id(gen_created)
-        child.fitness = self.fitness
-        child.true_fitness = self.true_fitness
+        # child.fitness = self.fitness
+        # child.true_fitness = self.true_fitness
+        # child.result_dir = self.result_dir
 
         return child
 
@@ -110,16 +112,22 @@ class Individual(object):
     def set_true_fitness(self, true_fitness):
         self.true_fitness = true_fitness
 
-
-    def mutate(self, override_mutate_rate=None):
-        assert 0.0 <= override_mutate_rate <= 1.0
-        mutate_rate = override_mutate_rate if override_mutate_rate is not None \
-            else self.mutate_rate
+    def mutate(self, mutate_rate=None):
+        if mutate_rate is None: mutate_rate = self.mutate_rate
+        assert 0 <= mutate_rate <= 1.0
 
         if self.dummy_mode:
             self.role += randomword(ID_LENGTH)
         elif random.random() < mutate_rate:
             self.role = llm_mutate(self.role, self.llm_model)
+
+    def mutate2(self, n):
+        if self.dummy_mode:
+            self.mutate()
+        else:
+            assert n >= 0 and self.result_dir is not None
+            self.role = llm_mutate2(self.role, self.llm_model, self.result_dir,
+                n=n)
 
     def crossover(self, other):
         if self.dummy_mode:
@@ -127,12 +135,20 @@ class Individual(object):
         else:
             self.role = llm_crossover(self.role, other.role, self.llm_model)
 
+    def crossover2(self, others):
+        if self.dummy_mode:
+            self.crossover(others[0])
+        else:
+            other_roles = [indv.role for indv in others]
+            self.role = llm_crossover2(self.role, other_roles, self.llm_model)
+
     def serialize(self):
         return {'id': self.id,
             'gen_created': self.gen_created,
             'fitness': self.fitness,
             'true_fitness': self.true_fitness,
-            'role': self.role}
+            'role': self.role,
+            'result_dir': self.result_dir}
 
     def deserialize(self, indv_dict):
         self.id = indv_dict.get("id", self.id)
@@ -140,6 +156,7 @@ class Individual(object):
         self.fitness = indv_dict.get("fitness", None)
         self.true_fitness = indv_dict.get("true_fitness", None)
         self.role = parse_prompt_template(indv_dict.get("role", ""))
+        self.result_dir = indv_dict.get("result_dir", None)
 
 
 class FitnessLog(object):
@@ -184,6 +201,11 @@ class RoleEvolutionGA(object):
         assert self.n_workers > 0
         self.indv_config = self.config.get("indv_config", {})
 
+        self.mutate2_n = self.config.gett("mutate2_n", "5")
+        assert self.mutate2_n >= 0
+        self.crossover2_n = self.config.get("crossover2_n", "5")
+        assert self.crossover2_n >= 2
+
         if self.checkpoint:
             self.fitness_logs = \
                 {'fitness': FitnessLog('fitness', self.checkpoint_dir),
@@ -192,24 +214,21 @@ class RoleEvolutionGA(object):
         else:
             chkpt_file = None
 
-        if chkpt_file is not None:
-            self._deserialize(file_path=chkpt_file)
-        else:
-            self._reset()
+        self._reset()
+        self._deserialize(file_path=chkpt_file)
 
     def get_sorted_individuals(self, individuals):
         return sorted(individuals, reverse=True)
 
-    def _reset(self, disable_init_mutate=False):
+    def _reset(self):
         self.gen = 0
         self.individuals = []
         for i in range(self.pop_size):
             individual = Individual(self.indv_config, self.gen)
             self.individuals.append(individual)
         assert self.pop_size == len(self.individuals)
-        if not disable_init_mutate and self.init_mutate:
-            [indv.mutate(override_mutate_rate=1.0) for indv in \
-                self.individuals[1:]]
+        if self.init_mutate:
+            [indv.mutate(mutate_rate=1.0) for indv in self.individuals[1:]]
 
         if hasattr(self, "pool"):
             self.pool.close(); self.pool.join(); self.pool.clear(); del self.pool
@@ -248,8 +267,7 @@ class RoleEvolutionGA(object):
         else:
             assert pop_dict is not None
 
-        if not hasattr(self, "individuals"):
-            self._reset(disable_init_mutate=True)
+        assert hasattr(self, "individuals")
         self.gen = pop_dict.get('generation', 0) + 1
         chkpt_indv = pop_dict.get('individuals', [])
         for i, individual in enumerate(self.individuals):
@@ -320,6 +338,18 @@ class RoleEvolutionGA(object):
         # assert not child.role.startswith("PROMPT_TEMPLATE: str =")
         return child
 
+    def _generate_individual2(self):
+        parents = sorted([self._tournament_selection() for i in \
+            range(self.crossover2_n)], reverse=True)
+        child = parents[0].create_child(self.gen); others = parents[1:]
+
+        if random.random() < 0.5:
+            child.crossover2(others)
+        else:
+            child.mutate2(self.mutate2_n)
+
+        return child
+
     def ask(self):
         if self.gen == 0:
             return self.individuals
@@ -329,7 +359,7 @@ class RoleEvolutionGA(object):
         new_individuals = sorted_individuals[:self.num_elites]
         if self.n_workers == 1:
             while len(new_individuals) < self.pop_size:
-                new_individuals.append(self._generate_individual())
+                new_individuals.append(self._generate_individual2())
         else:
             created_indv = self.pool.map(self._generate_individual_wrapper,
                 range(self.pop_size - self.num_elites))
@@ -343,9 +373,12 @@ class RoleEvolutionGA(object):
         else:
             return self.individuals[self.num_elites:]
 
-    def tell(self, eval_indvs, fitnesses, true_fitnesses):
+    def tell(self, eval_indvs, result_dicts):
+        fitnesses = [x.get('fitness', None) for x in result_dicts]
+        true_fitnesses = [x.get('true_fitness', None) for x in result_dicts]
         assert self.pop_size == len(self.individuals)
         assert len(eval_indvs) == len(true_fitnesses) == len(fitnesses)
+
         if self.reevaluate_elites:
             assert len(eval_indvs) == len(self.individuals)
 
