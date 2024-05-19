@@ -372,8 +372,6 @@ class LLMEvaluator(object):
 
 #### Unit tests ####
 def _test_mutation_crossover(test_err=False):
-    llm_model = 'N/A' if test_err else 'gpt-4o'
-
     PROMPT_TEMPLATE_1 = '''
 Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
@@ -391,6 +389,8 @@ Return your solution in the following format:
 ```python your_code_here ```
 with no additional text outside the code block.
 '''
+
+    llm_model = 'N/A' if test_err else 'gpt-4o'
     try:
         output = llm_mutate(PROMPT_TEMPLATE_1, llm_model=llm_model)
         print("### LLM_MUTATE RETURN VALUE ###")
@@ -477,9 +477,6 @@ your code:
 
 def _test_mutation_crossover2(
     result_dir='results/humaneval_results_1713947427', test_err=False):
-    import traceback
-    llm_model = 'N/A' if test_err else 'gpt-4o'
-
     PROMPT_TEMPLATE_1 = '''
 Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
@@ -497,6 +494,8 @@ Return your solution in the following format:
 ```python your_code_here ```
 with no additional text outside the code block.
 '''
+
+    llm_model = 'N/A' if test_err else 'gpt-4o'
     try:
         output = llm_mutate2(PROMPT_TEMPLATE_1, llm_model=llm_model,
             result_dir=result_dir)
