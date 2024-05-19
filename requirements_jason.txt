@@ -1,0 +1,67 @@
+aiohttp
+channels
+faiss_cpu
+fire
+typer
+lancedb
+loguru
+meilisearch
+numpy
+openai
+openpyxl
+beautifulsoup4
+pandas
+pydantic
+python_docx
+PyYAML
+setuptools
+tenacity
+tiktoken
+tqdm
+anthropic
+typing-inspect
+libcst
+qdrant-client
+ta
+semantic-kernel
+wrapt
+aioredis # Used by metagpt/utils/redis.py
+websocket-client
+aiofiles
+gitpython
+zhipuai
+rich
+nbclient
+nbformat
+ipython
+ipykernel
+scikit_learn
+typing-extensions
+socksio
+gitignore-parser
+websockets
+networkx
+google-generativeai
+playwright # used at metagpt/tools/libs/web_scraping.py
+anytree
+ipywidgets
+Pillow
+imap_tools  # Used by metagpt/tools/libs/email_login.py
+qianfan
+dashscope
+rank-bm25  # for tool recommendation
+gymnasium
+boto3
+
+### Packages added by Jason ###
+jsonpickle
+matplotlib
+networkx
+psutil
+pydot
+pytz
+ruamel.yaml
+simplejson
+pathos
+retry
+# git+https://github.com/evalplus/evalplus.git
