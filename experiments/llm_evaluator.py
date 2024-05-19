@@ -317,15 +317,7 @@ class LLMEvaluator(object):
             result_dicts = self.pool.map(self._evalplus, population)
         return result_dicts
 
-    @retry(Exception, tries=3, delay=3, backoff=1, logger=self.logger)
-    def _eval_prompt(self, prompt_template, prompt):
-        team, coder = create_new_team(self.llm_model)
-        coder.set_prompt_template(prompt_template)
-        team.run_project(prompt)
-        asyncio.run(team.run(n_round=1))
-        output = coder.get_code_text()
-        assert len(output) > 0
-        return output
+
 
     def _evalplus(self, indv):
         prompt_template, eval_id = indv.role, indv.id
@@ -335,6 +327,15 @@ class LLMEvaluator(object):
         with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
             f.write(prompt_template)
 
+        @retry(Exception, tries=3, delay=3, backoff=1, logger=self.logger)
+        def _eval_prompt(prompt_template, prompt):
+            team, coder = create_new_team(self.llm_model)
+            coder.set_prompt_template(prompt_template)
+            team.run_project(prompt)
+            asyncio.run(team.run(n_round=1))
+            output = coder.get_code_text()
+            assert len(output) > 0
+            return output
 
         if self.dataset == 'humaneval':
             problems = get_human_eval_plus()
@@ -345,7 +346,7 @@ class LLMEvaluator(object):
             prompt = problem['prompt']
             mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % (task_id, prompt))
             try:
-                output = self._eval_prompt(prompt_template, prompt)
+                output = _eval_prompt(prompt_template, prompt)
             except:
                 mlogger.info(traceback.format_exc())
                 output = ""
