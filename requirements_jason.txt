@@ -23,7 +23,7 @@ typing-inspect
 libcst
 qdrant-client
 ta
-semantic-kernel
+semantic-kernel==0.4.3.dev0
 wrapt
 aioredis # Used by metagpt/utils/redis.py
 websocket-client
@@ -42,14 +42,14 @@ gitignore-parser
 websockets
 networkx
 google-generativeai
-playwright # used at metagpt/tools/libs/web_scraping.py
+playwright # Used at metagpt/tools/libs/web_scraping.py
 anytree
 ipywidgets
 Pillow
-imap_tools  # Used by metagpt/tools/libs/email_login.py
+imap_tools # Used by metagpt/tools/libs/email_login.py
 qianfan
 dashscope
-rank-bm25  # for tool recommendation
+rank-bm25 # For tool recommendation
 gymnasium
 boto3
 
