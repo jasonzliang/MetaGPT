@@ -201,21 +201,18 @@ class RoleEvolutionGA(object):
         assert self.n_workers > 0
         self.indv_config = self.config.get("indv_config", {})
 
-        self.mutate2_n = self.config.gett("mutate2_n", "5")
+        self.mutate2_n = self.config.get("mutate2_n", 3)
         assert self.mutate2_n >= 0
-        self.crossover2_n = self.config.get("crossover2_n", "5")
+        self.crossover2_n = self.config.get("crossover2_n", 4)
         assert self.crossover2_n >= 2
 
+        self._reset()
         if self.checkpoint:
             self.fitness_logs = \
                 {'fitness': FitnessLog('fitness', self.checkpoint_dir),
                 'true_fitness': FitnessLog('true_fitness', self.checkpoint_dir)}
             chkpt_file = self._find_latest_checkpoint()
-        else:
-            chkpt_file = None
-
-        self._reset()
-        self._deserialize(file_path=chkpt_file)
+            self._deserialize(file_path=chkpt_file)
 
     def get_sorted_individuals(self, individuals):
         return sorted(individuals, reverse=True)
@@ -257,15 +254,13 @@ class RoleEvolutionGA(object):
         with open(file_path, 'w') as f:
             YAML().dump(sanitize_result_dict(pop_dict), f)
 
-    def _deserialize(self, pop_dict=None, file_path=None):
-        assert bool(pop_dict) != bool(file_path)
-        if file_path is not None:
-            assert pop_dict is None
-            self.logger.info("Loading population from %s" % file_path)
-            with open(file_path, "r") as f:
-                pop_dict = YAML().load(f)
-        else:
-            assert pop_dict is not None
+    def _deserialize(self, file_path=None):
+        if file_path is None:
+            return
+
+        self.logger.info("Loading population from %s" % file_path)
+        with open(file_path, "r") as f:
+            pop_dict = YAML().load(f)
 
         assert hasattr(self, "individuals")
         self.gen = pop_dict.get('generation', 0) + 1

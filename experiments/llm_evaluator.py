@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import random
+import traceback
 import time
 
 from metagpt.actions import Action, UserRequirement
@@ -61,13 +62,13 @@ You are a professional engineer; the prompt template that you use for writing th
 
 {prompt}
 
-In addition, here are some coding examples that the prompt has failed to write correct code for:
+In addition, here are some incorrect code that the prompt template has generated:
 
-
+### INCORRECT CODE START HERE
 {negative_examples}
+### INCORRECT CODE END HERE
 
-
-Return an improved version of the example prompt template which writes efficient, accurate, and correct code. The prompt must be able generate correct code for the coding examples above. Output the improved prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
+Return an improved version of the example prompt template which writes efficient, accurate, and correct code. The prompt must be able to avoid writing the incorrect code above. Output the improved prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
 
 PROMPT_TEMPLATE: str = '''
 your_output_here
@@ -85,6 +86,7 @@ your_output_here
     async def run2(self, prompt: str, negative_examples: str):
         prompt = self.PROMPT_TEMPLATE_2.format(prompt=prompt,
             negative_examples=negative_examples)
+        print(prompt)
         code_text = await self._aask(prompt)
         self.code_text = parse_prompt_template(code_text)
         return self.code_text
@@ -98,10 +100,10 @@ class CrossoverAction(Action):
 """
 You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. Here are two example prompt templates that you use for writing code:
 
-### PROMPT TEMPLATE 1 ###
+### PROMPT TEMPLATE 1
 {prompt_1}
 
-### PROMPT TEMPLATE 2 ###
+### PROMPT TEMPLATE 2
 {prompt_2}
 
 Combine and merge these two prompt templates to create a better prompt for writing more efficient, accurate, and correct code. Try to output interesting, original, and creative prompts. Output the combined prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
@@ -112,17 +114,17 @@ your_output_here
 """
     PROMPT_TEMPLATE_2: str = \
 """
-You are a professional engineer; here is the prompt template that you use for writing code:
+You are a professional engineer; here is the main prompt template that you use for writing code:
 
 {prompt}
 
-In addition, here are additional alternative prompt templates that are ranked in order from best to worst:
+In addition, here are additional prompt templates that are ranked in order from best to worst:
 
+### ADDITIONAL PROMPT TEMPLATES START HERE
+{additional_prompts}
+### ADDITIONAL PROMPT TEMPLATES END HERE
 
-{additonal_prompts}
-
-
-Combine and merge elements from these additional prompts into the prompt template that you use for writing code. Make sure to account of the ranking of each additional prompt. Try to create interesting, original, and creative prompts that can write efficient, accurate, and correct code. Output the combined prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
+Combine and merge elements from these additional prompt templates into the main prompt template that you use for writing code. Make sure to account of the ranking of each additional prompt. Try to create interesting, original, and creative prompts that can write efficient, accurate, and correct code. Output the combined prompt template below with NO other texts and make sure the keyword "instruction" is present within the output:
 
 PROMPT_TEMPLATE: str = '''
 your_output_here
@@ -141,6 +143,7 @@ your_output_here
     async def run2(self, prompt: str, additional_prompts: str):
         prompt = self.PROMPT_TEMPLATE_2.format(
             prompt=prompt, additional_prompts=additional_prompts)
+        print(prompt)
         code_text = await self._aask(prompt)
         self.code_text = parse_prompt_template(code_text)
         return self.code_text
@@ -216,9 +219,9 @@ def llm_mutate(prompt, llm_model):
     return improved_prompt
 
 
-# @retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
-#     logger=logging.getLogger('evolve_role'))
-def llm_mutate2(prompt, llm_model, result_dir, n=5):
+@retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
+    logger=logging.getLogger('evolve_role'))
+def llm_mutate2(prompt, llm_model, result_dir, n=3):
     llm_config = Config.default()
     llm_config.llm.model = llm_model
     llm_config.llm.temperature = 0.8
@@ -258,8 +261,8 @@ def llm_crossover(prompt_1, prompt_2, llm_model):
     return improved_prompt
 
 
-# @retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
-#     logger=logging.getLogger('evolve_role'))
+@retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
+    logger=logging.getLogger('evolve_role'))
 def llm_crossover2(prompt, additional_prompts, llm_model):
     llm_config = Config.default()
     llm_config.llm.model = llm_model
@@ -324,7 +327,7 @@ class LLMEvaluator(object):
         with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
             f.write(prompt_template)
 
-        @retry(Exception, tries=5, delay=1, backoff=2, logger=self.logger)
+        # @retry(Exception, tries=5, delay=1, backoff=2, logger=self.logger)
         def eval_prompt(prompt):
             team, coder = create_new_team(self.llm_model)
             coder.set_prompt_template(prompt_template)
@@ -342,8 +345,11 @@ class LLMEvaluator(object):
         for task_id, problem in problems.items():
             prompt = problem['prompt']
             mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % (task_id, prompt))
-            try: output = eval_prompt(prompt)
-            except: output = ""
+            try:
+                output = eval_prompt(prompt)
+            except:
+                mlogger.info(traceback.format_exc())
+                output = ""
             mlogger.info("#### MetaGPT Output:\n%s" % output)
 
             task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
@@ -367,7 +373,6 @@ class LLMEvaluator(object):
 
 #### Unit tests ####
 def _test_mutation_crossover(test_err=False):
-    import traceback
     llm_model = 'N/A' if test_err else 'gpt-4o'
 
     PROMPT_TEMPLATE_1 = '''
@@ -471,7 +476,46 @@ your code:
     print(result_dicts)
 
 
+def _test_mutation_crossover2(
+    result_dir='results/humaneval_results_1713947427', test_err=False):
+    import traceback
+    llm_model = 'N/A' if test_err else 'gpt-4o'
+
+    PROMPT_TEMPLATE_1 = '''
+Write a python function that can {instruction}.
+Return ```python your_code_here ``` with NO other texts,
+your code:
+'''
+    PROMPT_TEMPLATE_2 = '''
+### Task Description
+Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
+
+- **Modularity**: Break down the solution into smaller, reusable components where applicable.
+- **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
+
+### Your Code
+Return your solution in the following format:
+```python your_code_here ```
+with no additional text outside the code block.
+'''
+    try:
+        output = llm_mutate2(PROMPT_TEMPLATE_1, llm_model=llm_model,
+            result_dir=result_dir)
+        print("### LLM_MUTATE RETURN VALUE ###")
+        print(output)
+        print("###############################")
+    except:
+        traceback.print_exc()
+
+    try:
+        output = llm_crossover2(PROMPT_TEMPLATE_1, [PROMPT_TEMPLATE_2] * 5,
+            llm_model=llm_model)
+        print("### LLM_CROSSOVER RETURN VALUE ###")
+        print(output)
+        print("##################################")
+    except:
+        traceback.print_exc()
+
+
 if __name__ == "__main__":
-    _test_mutation_crossover(test_err=False)
-    # _test_evaluator(prompt_fp='config/best_role_5_14.txt', test_err=True)
-    # _test_parallel_eval()
+    _test_evaluator(test_err=False)
