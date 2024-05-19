@@ -369,16 +369,15 @@ class RoleEvolutionGA(object):
             return self.individuals[self.num_elites:]
 
     def tell(self, eval_indvs, result_dicts):
-        fitnesses = [x.get('fitness', None) for x in result_dicts]
-        true_fitnesses = [x.get('true_fitness', None) for x in result_dicts]
         assert self.pop_size == len(self.individuals)
-        assert len(eval_indvs) == len(true_fitnesses) == len(fitnesses)
+        assert len(eval_indvs) == len(result_dicts)
 
         if self.reevaluate_elites:
             assert len(eval_indvs) == len(self.individuals)
 
-        for eval_indv, fitness, true_fitness in \
-            zip(eval_indvs, fitnesses, true_fitnesses):
+        for eval_indv, result_dict in \
+            zip(eval_indvs, result_dicts):
 
-            eval_indv.set_fitness(fitness)
-            eval_indv.set_true_fitness(true_fitness)
+            eval_indv.set_fitness(result_dict.get('fitness', None))
+            eval_indv.set_true_fitness(result_dict.get('true_fitness', None))
+            eval_indv.result_dir = result_dict.get('result_dir', None)
