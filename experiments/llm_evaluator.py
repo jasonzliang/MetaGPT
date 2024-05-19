@@ -204,7 +204,7 @@ def create_new_team(llm_model):
     return team, coder
 
 
-@retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
+@retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
     logger=logging.getLogger('evolve_role'))
 def llm_mutate(prompt, llm_model):
     llm_config = Config.default()
@@ -217,7 +217,7 @@ def llm_mutate(prompt, llm_model):
     return improved_prompt
 
 
-@retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
+@retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
     logger=logging.getLogger('evolve_role'))
 def llm_mutate2(prompt, llm_model, result_dir, n=3):
     llm_config = Config.default()
@@ -245,7 +245,7 @@ def llm_mutate2(prompt, llm_model, result_dir, n=3):
     return improved_prompt
 
 
-@retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
+@retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
     logger=logging.getLogger('evolve_role'))
 def llm_crossover(prompt_1, prompt_2, llm_model):
     llm_config = Config.default()
@@ -259,7 +259,7 @@ def llm_crossover(prompt_1, prompt_2, llm_model):
     return improved_prompt
 
 
-@retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
+@retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
     logger=logging.getLogger('evolve_role'))
 def llm_crossover2(prompt, additional_prompts, llm_model):
     llm_config = Config.default()
