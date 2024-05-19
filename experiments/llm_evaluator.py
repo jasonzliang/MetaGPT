@@ -317,7 +317,7 @@ class LLMEvaluator(object):
             result_dicts = self.pool.map(self._evalplus, population)
         return result_dicts
 
-    # @retry(Exception, tries=5, delay=1, backoff=2, logger=self.logger)
+    @retry(Exception, tries=3, delay=3, backoff=1, logger=self.logger)
     def _eval_prompt(self, prompt_template, prompt):
         team, coder = create_new_team(self.llm_model)
         coder.set_prompt_template(prompt_template)
@@ -348,7 +348,7 @@ class LLMEvaluator(object):
                 output = self._eval_prompt(prompt_template, prompt)
             except:
                 mlogger.info(traceback.format_exc())
-                output = ""; exit()
+                output = ""
             mlogger.info("#### MetaGPT Output:\n%s" % output)
 
             task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
