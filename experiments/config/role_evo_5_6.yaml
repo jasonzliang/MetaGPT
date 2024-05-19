@@ -8,8 +8,8 @@ role_ga_config:
         # initial_role: initial_role_gpt4.txt
 
     num_gen: 50
-    pop_size: 30
-    num_elites: 10
+    pop_size: 32
+    num_elites: 12
     tournament_size: 2
     checkpoint: True
     reevaluate_elites: True
