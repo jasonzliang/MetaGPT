@@ -1,6 +1,5 @@
 import asyncio
 import copy
-import importlib
 import json
 import logging
 import os
@@ -19,7 +18,6 @@ from metagpt.team import Team
 
 from pathos.pools import ProcessPool
 from retry import retry
-from retry.api import retry_call
 
 from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
@@ -193,6 +191,15 @@ class SimpleCoder(Role):
 
 
 def create_new_team(llm_model):
+    try: # Hack to get it running on M1 mac
+        loop = asyncio.get_event_loop()
+    except RuntimeError as e:
+        if str(e).startswith('There is no current event loop in thread'):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        else:
+            raise
+
     llm_config = Config.default()
     llm_config.llm.model = llm_model
     llm_config.llm.temperature = 0.0
