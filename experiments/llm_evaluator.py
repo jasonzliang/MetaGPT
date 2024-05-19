@@ -224,6 +224,7 @@ def llm_mutate2(prompt, llm_model, result_dir, n=3):
     llm_config.llm.model = llm_model
     llm_config.llm.temperature = 0.8
 
+    assert os.path.exists(result_dir)
     with open(os.path.join(result_dir, "eval_results.json"), "r") as f:
         eval_json = json.load(f)
 
