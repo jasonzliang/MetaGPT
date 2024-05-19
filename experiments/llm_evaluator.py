@@ -211,8 +211,7 @@ def llm_mutate(prompt, llm_model):
     llm_config.llm.temperature = 0.8
 
     mutate_operator = MutateAction(config=llm_config)
-    asyncio.run(mutate_operator.run(prompt=prompt))
-    improved_prompt = mutate_operator.get_code_text()
+    improved_prompt = asyncio.run(mutate_operator.run(prompt=prompt))
 
     return improved_prompt
 
@@ -239,29 +238,28 @@ def llm_mutate2(prompt, llm_model, result_dir, n=5):
     negative_examples = "\n".join(negative_examples)
 
     mutate_operator = MutateAction(config=llm_config)
-    asyncio.run(mutate_operator.run2(prompt=prompt,
+    improved_prompt = asyncio.run(mutate_operator.run2(prompt=prompt,
         negative_examples=negative_examples))
-    improved_prompt = mutate_operator.get_code_text()
-
-    return improved_prompt
-
-
-# @retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
-#     logger=logging.getLogger('evolve_role'))
-def llm_crossover(prompt_1, prompt_2, llm_model):
-    llm_config = Config.default()
-    llm_config.llm.model = llm_model
-    llm_config.llm.temperature = 0.8
-
-    crossover_operator = CrossoverAction(config=llm_config)
-    asyncio.run(crossover_operator.run(prompt_1=prompt_1, prompt_2=prompt_2))
-    improved_prompt = crossover_operator.get_code_text()
 
     return improved_prompt
 
 
 @retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
     logger=logging.getLogger('evolve_role'))
+def llm_crossover(prompt_1, prompt_2, llm_model):
+    llm_config = Config.default()
+    llm_config.llm.model = llm_model
+    llm_config.llm.temperature = 0.8
+
+    crossover_operator = CrossoverAction(config=llm_config)
+    improved_prompt = asyncio.run(
+        crossover_operator.run(prompt_1=prompt_1, prompt_2=prompt_2))
+
+    return improved_prompt
+
+
+# @retry(Exception, tries=-1, delay=1, max_delay=20, backoff=2,
+#     logger=logging.getLogger('evolve_role'))
 def llm_crossover2(prompt, additional_prompts, llm_model):
     llm_config = Config.default()
     llm_config.llm.model = llm_model
@@ -272,9 +270,8 @@ def llm_crossover2(prompt, additional_prompts, llm_model):
     additional_prompts = "\n".join(additional_prompts)
 
     crossover_operator = CrossoverAction(config=llm_config)
-    asyncio.run(crossover_operator.run2(prompt=prompt,
+    improved_prompt = asyncio.run(crossover_operator.run2(prompt=prompt,
         additional_prompts=additional_prompts))
-    improved_prompt = crossover_operator.get_code_text()
 
     return improved_prompt
 
@@ -394,6 +391,7 @@ with no additional text outside the code block.
         output = llm_mutate(PROMPT_TEMPLATE_1, llm_model=llm_model)
         print("### LLM_MUTATE RETURN VALUE ###")
         print(output)
+        print("###############################")
     except:
         traceback.print_exc()
 
@@ -402,6 +400,7 @@ with no additional text outside the code block.
             llm_model=llm_model)
         print("### LLM_CROSSOVER RETURN VALUE ###")
         print(output)
+        print("##################################")
     except:
         traceback.print_exc()
 
@@ -473,6 +472,6 @@ your code:
 
 
 if __name__ == "__main__":
-    # _test_mutation_crossover(test_err=True)
+    _test_mutation_crossover(test_err=False)
     # _test_evaluator(prompt_fp='config/best_role_5_14.txt', test_err=True)
-    _test_parallel_eval()
+    # _test_parallel_eval()
