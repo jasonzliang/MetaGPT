@@ -327,7 +327,7 @@ class LLMEvaluator(object):
         with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
             f.write(prompt_template)
 
-        @retry(Exception, tries=3, delay=5, backoff=1, logger=self.logger)
+        @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
         def _eval_prompt(prompt_template, prompt):
             team, coder = create_new_team(self.llm_model)
             coder.set_prompt_template(prompt_template)
