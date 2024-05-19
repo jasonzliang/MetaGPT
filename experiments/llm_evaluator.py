@@ -349,7 +349,7 @@ class LLMEvaluator(object):
                 output = eval_prompt(prompt)
             except:
                 mlogger.info(traceback.format_exc())
-                output = ""
+                output = ""; exit()
             mlogger.info("#### MetaGPT Output:\n%s" % output)
 
             task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
