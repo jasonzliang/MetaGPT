@@ -331,8 +331,6 @@ def multirun_evalplus(prompt=None,
     for indv in population: indv.role = prompt
     result_dicts = evaluator.evaluate(population)
 
-    # print("Evaluation results:")
-    # print(result_dicts)
     combined_results = {}
     evalplus_results = [rs.get('evalplus_result', {}) for rs in result_dicts]
     with open(os.path.join(result_dir, 'summary.txt'), 'w') as f:

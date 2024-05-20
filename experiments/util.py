@@ -32,15 +32,15 @@ def extract_evalplus(result_file, logger=None):
                 assert 0.0 <= score <= 1.0
                 result_dict['plus_score'] = score
             if "peak memory footprint" in line:
-                result_dict['memory_usage'] = float(line.split()[0]) / 1000.0
+                result_dict['memory_usage_mb'] = float(line.split()[0]) / 1e6
             if "Maximum resident set size (kbytes)" in line:
-                result_dict['memory_usage'] = float(line.split()[-1])
+                result_dict['memory_usage_mb'] = float(line.split()[-1]) / 1e3
             if "instructions retired" in line:
-                result_dict['instructions'] = float(line.split()[0])
+                result_dict['num_instructions'] = float(line.split()[0])
             if "Elapsed (wall clock) time" in line:
-                result_dict['time_elapsed'] = get_sec(line.split()[-1])
+                result_dict['time_elapsed_sec'] = get_sec(line.split()[-1])
             if "real" in line:
-                result_dict['time_elapsed'] = float(line.split()[0])
+                result_dict['time_elapsed_sec'] = float(line.split()[0])
     except:
         if logger is None:
             print("Evalplus extraction failed: %s" % result_file)
