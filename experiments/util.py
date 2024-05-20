@@ -38,9 +38,15 @@ def extract_evalplus(result_file, logger=None):
             if "instructions retired" in line:
                 result_dict['num_instructions'] = float(line.split()[0])
             if "Elapsed (wall clock) time" in line:
-                result_dict['time_elapsed_sec'] = get_sec(line.split()[-1])
+                result_dict['wall_time_sec'] = get_sec(line.split()[-1])
+            if "User time" in line:
+                result_dict['user_time_sec'] = float(line.split()[-1])
+            if "System time" in line:
+                result_dict['sys_time_sec'] = float(line.split()[-1])
             if "real" in line:
-                result_dict['time_elapsed_sec'] = float(line.split()[0])
+                result_dict['wall_time_sec'] = float(line.split()[0])
+                result_dict['user_time_sec'] = float(line.split()[2])
+                result_dict['sys_time_sec'] = float(line.split()[4])
     except:
         if logger is None:
             print("Evalplus extraction failed: %s" % result_file)
