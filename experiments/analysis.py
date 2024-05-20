@@ -8,8 +8,8 @@ import traceback
 import time
 
 import matplotlib
-matplotlib.rcParams['pdf.fonttype'] = 42
-matplotlib.rcParams['ps.fonttype'] = 42
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt
 
 from analysis_util import \
@@ -28,13 +28,12 @@ COMBINE_LABELS = None
 # Filter out incomplete experiments
 FILTER_INCOMPLETE_EXP = False
 
-# Which fitness metric to use, overrides TRUE_FITNESS
 # Choose from fitness or true fitness
 FITNESS_METRIC = 'fitness'
 # Whether to plot wall time instead of generations
 PLOT_WALL_TIME = False
 # Whether to plot the mean fitness or not
-PLOT_MEAN = False
+PLOT_MEAN = True
 # Maximum number of generations to plot
 MAX_GEN = None
 # Override intervals for plotting purposes
