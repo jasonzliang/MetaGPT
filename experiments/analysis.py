@@ -331,15 +331,15 @@ def multirun_evalplus(prompt=None,
     for indv in population: indv.role = prompt
     result_dicts = evaluator.evaluate(population)
 
-    combined_results = {}
     evalplus_results = [rs.get('evalplus_result', {}) for rs in result_dicts]
     with open(os.path.join(result_dir, 'summary.txt'), 'w') as f:
         for key in evalplus_results[0]:
-            combined_results[key] = [es[key] for es in evalplus_results]
-            print("mean %s: %s" % (key, np.mean(combined_results[key])))
-            f.write("mean %s: %s\n" % (key, np.mean(combined_results[key])))
-            print("std %s: %s" % (key, np.std(combined_results[key])))
-            f.write("std %s: %s\n" % (key, np.std(combined_results[key])))
+            _results = [es[key] for es in evalplus_results]
+            mean = np.mean(_results); std = np.std(_results)
+            print("mean %s: %s" % (key, mean))
+            f.write("mean %s: %s\n" % (key, mean))
+            print("std %s: %s" % (key, std))
+            f.write("std %s: %s\n" % (key, std))
     with open(os.path.join(result_dir, 'evalplus_results.txt'), 'w') as f:
         f.write(pprint.pformat(evalplus_results))
 
