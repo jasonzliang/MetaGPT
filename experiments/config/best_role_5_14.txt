@@ -1,4 +1,3 @@
-### PROMPT TEMPLATE ###
 Write a Python function that {instruction}. Ensure your code adheres to Google-style principles, emphasizing elegance, readability, and maintainability. Your solution should exhibit the following characteristics:
 
 - **Clarity**: The code should be self-explanatory, utilizing clear, meaningful names that reflect the function's purpose and operation. Documentation should be concise and informative, aiding understanding without overwhelming the reader.

@@ -18,7 +18,6 @@ import numpy as np
 from analysis_util import \
     get_fitness_file, load_checkpoint, get_checkpoints
 from analysis_util import COLORS, FIG_SIZE, PLOT_FMT, PROP_CYCLER
-# from llm_evaluator import LLMEvaluator
 
 # Directory to get results from
 EXPERIMENT_DIRS = []
@@ -299,5 +298,56 @@ def compare_experiments_main():
             PLOT_FMT))[:255]
         compare_experiments()
 
+
+def multirun_evalplus(prompt,
+    n_trials=2,
+    base_dir='results/',
+    n_workers=2,
+    llm_model='gpt-3.5-turbo',
+    dataset='humaneval'):
+
+    from llm_evaluator import LLMEvaluator
+    from role_ga import Individual
+    assert n_trials > 0
+
+    if os.path.exists(prompt):
+        prompt_fp = prompt
+        with open(prompt_fp, "r") as f:
+            prompt = f.read()
+    else:
+        prompt_fp = None
+
+    result_dir = os.path.join(base_dir,
+        "evalplus_multirun_N-%s_T-%s" % (n_trials, int(time.time())))
+    os.makedirs(result_dir, exist_ok=True)
+    eval_config = \
+        {'n_workers': n_workers,
+        'dummy_mode': False,
+        'llm_model': llm_model,
+        'dataset': dataset,
+        'sanitize': True}
+    evaluator = LLMEvaluator(eval_config, evaluator_dir=result_dir)
+
+    population = [Individual({}, gen_created=0) for i in range(n_trials)]
+    for indv in population: indv.role = prompt
+    result_dicts = evaluator.evaluate(population)
+
+    # print("Evaluation results:")
+    # print(result_dicts)
+    combined_results = {}
+    evalplus_results = [rs.get('evalplus_result', {}) for rs in result_dicts]
+    with open(os.path.join(result_dir, 'evalplus_summary.txt'), 'w') as f:
+        for key in evalplus_results[0]:
+            combined_results[key] = [es[key] for es in evalplus_results]
+            print("mean %s: %s" % (key, np.mean(combined_results[key])))
+            f.write("mean %s: %s\n" % (key, np.mean(combined_results[key])))
+            print("std %s: %s" % (key, np.std(combined_results[key])))
+            f.write("std %s: %s\n" % (key, np.std(combined_results[key])))
+
+
 if __name__ == "__main__":
-    compare_experiments_main()
+    from role_ga import DEFAULT_ROLE
+    multirun_evalplus(prompt=DEFAULT_ROLE)
+    # multirun_evalplus(prompt='config/initial_role_gpt4.txt')
+    # multirun_evalplus(prompt='config/best_role_5_14.txt')
+    # multirun_evalplus(prompt='config/best_role_5_19.txt')

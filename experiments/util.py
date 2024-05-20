@@ -16,22 +16,50 @@ from ruamel.yaml import YAML
 from alg_util import is_numpy_type, randomword
 
 
-def extract_evalplus_score(result_file, logger=None):
+def extract_evalplus(result_file, logger=None):
+    result_dict = {}
     try:
         with open(result_file, 'r') as f:
             lines = f.readlines()
+
         for i, line in enumerate(lines):
-            if "humaneval (base tests)" in line:
-                scoreline = lines[i+1]
-        score = float(scoreline.rstrip().rsplit()[1])
-        assert 0.0 <= score <= 1.0
-        return score
+            if "(base tests)" in line:
+                score = float(lines[i+1].rstrip().rsplit()[1])
+                assert 0.0 <= score <= 1.0
+                result_dict['base_score'] = score
+            if "(base + extra tests)" in line:
+                score = float(lines[i+1].rstrip().rsplit()[1])
+                assert 0.0 <= score <= 1.0
+                result_dict['plus_score'] = score
+            if "peak memory footprint" in line:
+                result_dict['memory_usage'] = float(line.split()[0]) / 1000.0
+            if "Maximum resident set size (kbytes)" in line:
+                result_dict['memory_usage'] = float(line.split()[-1])
+            if "instructions retired" in line:
+                result_dict['instructions'] = float(line.split()[0])
+            if "Elapsed (wall clock) time" in line:
+                result_dict['time_elapsed'] = get_sec(line.split()[-1])
+            if "real" in line:
+                result_dict['time_elapsed'] = float(line.split()[0])
     except:
         if logger is None:
-            print("Evalplus score extraction failed: %s" % result_file)
+            print("Evalplus extraction failed: %s" % result_file)
+            traceback.print_exc()
         else:
-            logger.debug("Evalplus score extraction failed: %s" % result_file)
-        return 0.0
+            logger.info("Evalplus extraction failed: %s" % result_file)
+            logger.info(traceback.format_exc())
+    finally:
+        return result_dict
+
+
+def get_sec(time_str):
+    """Get seconds from time."""
+    fields = [float(x) for x in time_str.split(':')]
+    if len(fields) == 2:
+        m, s = fields; h = 0.0
+    else:
+        h, m, s = fields
+    return h * 3600.0 + m * 60.0 + s
 
 
 def unzip(x):

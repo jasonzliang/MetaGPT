@@ -3,6 +3,7 @@ import copy
 import json
 import logging
 import os
+import platform
 import re
 import sys
 import random
@@ -23,7 +24,7 @@ from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
-from util import extract_evalplus_score
+from util import extract_evalplus
 
 
 def parse_code(rsp):
@@ -295,7 +296,10 @@ class LLMEvaluator(object):
         assert self.n_workers > 0
         self.llm_model = self.config.get("llm_model", "gpt-3.5-turbo")
         self.dataset = self.config.get("dataset", "humaneval")
+        assert self.dataset in ['humaneval', 'mbpp']
+        self.sanitize = self.config.get("sanitize", True)
         self.restart_interval = self.config.get("restart_interval", 999)
+        assert self.restart_interval > 0
 
         self.logger = logging.getLogger('evolve_role')
         self.reset()
@@ -367,21 +371,24 @@ class LLMEvaluator(object):
             with open(result_file, 'w') as f:
                 f.write(output)
 
-        os.system("evalplus.sanitize --samples %s >/dev/null" % result_dir)
-        os.system("rsync -avz %s-sanitized/ %s >/dev/null" % \
-            (result_dir, result_dir))
-        os.system("rm -rf %s-sanitized" % result_dir)
+        if self.sanitize:
+            os.system("evalplus.sanitize --samples %s >/dev/null" % result_dir)
+            os.system("rsync -avz %s-sanitized/ %s >/dev/null" % \
+                (result_dir, result_dir))
+            os.system("rm -rf %s-sanitized" % result_dir)
 
+        flag = "-v" if platform.system() == 'Linux' else '-l' # Flag for MacOS
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
-        os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
-            % (self.dataset, result_dir, evalplus_fp))
-        time.sleep(0.1)
-        fitness = extract_evalplus_score(evalplus_fp, self.logger)
+        os.system("/usr/bin/time %s evalplus.evaluate --dataset %s --samples %s 2>&1 | tee %s" \
+            % (flag, self.dataset, result_dir, evalplus_fp))
+        # time.sleep(0.1)
+        evalplus_result = extract_evalplus(evalplus_fp, self.logger)
 
         result_dict = {}
-        result_dict['fitness'] = fitness
-        result_dict['true_fitness'] = fitness
+        result_dict['fitness'] = evalplus_result.get("base_score", 0.0)
+        result_dict['true_fitness'] = result_dict['fitness']
         result_dict['result_dir'] = result_dir
+        result_dict['evalplus_result'] = evalplus_result
         return result_dict
 
 
@@ -448,8 +455,8 @@ your code:
 
 def _test_evalplus_extractor(
     result_dir="results/humaneval_results_1712181961/evalplus.txt"):
-    score = extract_evalplus_score(result_dir)
-    print(score, type(score))
+    result_dict = extract_evalplus(result_dir)
+    print(result_dict)
 
 
 def _test_prompt_extractor():

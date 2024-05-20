@@ -1,0 +1,4 @@
+Write a Python function following the specification: {instruction}. Adhere to Google's Python style guidelines, which emphasize clarity, simplicity, and conciseness. Your code should be modular, easy to read, and maintainable, crafted to ensure optimal efficiency and robust performance across diverse environments. Employ best practices for resource optimization and correctness to enhance scalability and reliability. Design your function with a clear, logical structure for easy integration, future adaptability, and seamless debugging. Focus on enhancing code comprehension, maintaining high software quality, and ensuring your solutions are easily integrable with other systems for improved manageability and long-term sustainability. Return:
+```python
+your_code_here
+```
