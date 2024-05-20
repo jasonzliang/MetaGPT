@@ -299,7 +299,7 @@ def compare_experiments_main():
         compare_experiments()
 
 
-def multirun_evalplus(prompt,
+def multirun_evalplus(prompt=None,
     n_trials=2,
     base_dir='results/',
     n_workers=2,
@@ -307,15 +307,13 @@ def multirun_evalplus(prompt,
     dataset='humaneval'):
 
     from llm_evaluator import LLMEvaluator
-    from role_ga import Individual
-    assert n_trials > 0
-
-    if os.path.exists(prompt):
-        prompt_fp = prompt
-        with open(prompt_fp, "r") as f:
+    from role_ga import Individual, DEFAULT_ROLE
+    if prompt is None:
+        prompt = DEFAULT_ROLE
+    elif os.path.exists(prompt):
+        with open(prompt, "r") as f:
             prompt = f.read()
-    else:
-        prompt_fp = None
+    assert len(prompt) > 0; assert n_trials > 0
 
     result_dir = os.path.join(base_dir,
         "evalplus_multirun_N-%s_T-%s" % (n_trials, int(time.time())))
@@ -346,8 +344,7 @@ def multirun_evalplus(prompt,
 
 
 if __name__ == "__main__":
-    from role_ga import DEFAULT_ROLE
-    multirun_evalplus(prompt=DEFAULT_ROLE)
+    multirun_evalplus()
     # multirun_evalplus(prompt='config/initial_role_gpt4.txt')
     # multirun_evalplus(prompt='config/best_role_5_14.txt')
     # multirun_evalplus(prompt='config/best_role_5_19.txt')
