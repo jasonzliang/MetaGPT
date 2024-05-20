@@ -4,6 +4,7 @@ import glob
 import json
 import operator
 import os
+import pprint
 import random
 import sys
 import time
@@ -300,9 +301,9 @@ def compare_experiments_main():
 
 
 def multirun_evalplus(prompt=None,
-    n_trials=2,
+    n_trials=50,
     base_dir='results/',
-    n_workers=2,
+    n_workers=10,
     llm_model='gpt-3.5-turbo',
     dataset='humaneval'):
 
@@ -334,17 +335,19 @@ def multirun_evalplus(prompt=None,
     # print(result_dicts)
     combined_results = {}
     evalplus_results = [rs.get('evalplus_result', {}) for rs in result_dicts]
-    with open(os.path.join(result_dir, 'evalplus_summary.txt'), 'w') as f:
+    with open(os.path.join(result_dir, 'summary.txt'), 'w') as f:
         for key in evalplus_results[0]:
             combined_results[key] = [es[key] for es in evalplus_results]
             print("mean %s: %s" % (key, np.mean(combined_results[key])))
             f.write("mean %s: %s\n" % (key, np.mean(combined_results[key])))
             print("std %s: %s" % (key, np.std(combined_results[key])))
             f.write("std %s: %s\n" % (key, np.std(combined_results[key])))
+    with open(os.path.join(result_dir, 'evalplus_results.txt'), 'w') as f:
+        f.write(pprint.pformat(evalplus_results))
 
 
 if __name__ == "__main__":
     multirun_evalplus()
-    # multirun_evalplus(prompt='config/initial_role_gpt4.txt')
-    # multirun_evalplus(prompt='config/best_role_5_14.txt')
-    # multirun_evalplus(prompt='config/best_role_5_19.txt')
+    multirun_evalplus(prompt='config/initial_role_gpt4.txt')
+    multirun_evalplus(prompt='config/best_role_5_14.txt')
+    multirun_evalplus(prompt='config/best_role_5_19.txt')
