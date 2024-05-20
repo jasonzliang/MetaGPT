@@ -192,3 +192,7 @@ cov.xml
 .tags_*
 
 experiments/results/*
+*.jpg
+*.jpeg
+*.png
+*.pdf

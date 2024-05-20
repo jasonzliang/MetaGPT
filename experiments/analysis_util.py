@@ -8,7 +8,7 @@ import matplotlib
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 import numpy as np
-import ruamel.yaml as yaml
+from ruamel.yaml import YAML
 
 # Colors for plotting
 COLORS = ['b', 'g', 'r', 'c', 'm', 'y', 'k'] * 100
@@ -83,7 +83,7 @@ def get_config(experiment_dir):
     assert os.path.exists(config_file), \
         "config file: %s does not exist" % config_file
     with open(config_file, 'r') as f:
-        config = yaml.load(f)
+        config = YAML().load(f)
     return config
 
 
@@ -138,7 +138,7 @@ def load_checkpoint(checkpoint, gen=False, cache=True):
     else:
         assert os.path.exists(checkpoint)
         with open(checkpoint, "r") as f:
-            pop_list = yaml.load(f)
+            pop_list = YAML().load(f)
         sorted_pop_list = sorted(pop_list.get("individuals"), reverse=True,
             key=lambda x: get_fitness(x))
         return_data = (sorted_pop_list, pop_list.get("generation"))

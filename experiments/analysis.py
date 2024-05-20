@@ -1,21 +1,24 @@
+#!/usr/bin/env python
 import copy
+import glob
 import json
+import operator
 import os
-import re
-import sys
 import random
-import traceback
+import sys
 import time
+import traceback
 
 import matplotlib
 matplotlib.rcParams["pdf.fonttype"] = 42
 matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt
+import numpy as np
 
 from analysis_util import \
     get_fitness_file, load_checkpoint, get_checkpoints
 from analysis_util import COLORS, FIG_SIZE, PLOT_FMT, PROP_CYCLER
-from llm_evaluator import LLMEvaluator
+# from llm_evaluator import LLMEvaluator
 
 # Directory to get results from
 EXPERIMENT_DIRS = []
@@ -208,21 +211,18 @@ def t_test(experiment_dict):
 def compare_experiments():
     experiment_dict = {}
     for experiment_label, experiment_dir in get_experiment_dirs():
-        experiment_name = os.path.basename(experiment_dir)
-        try:
-            result_dict = load_fitness(experiment_dir)
-        except:
-            result_dict = None
 
-        if result_dict is None:
-            continue
-        if experiment_label is None:
-            experiment_label = experiment_name
+        experiment_name = os.path.basename(experiment_dir)
+        try: result_dict = load_fitness(experiment_dir)
+        except: result_dict = None
+        if result_dict is None: continue
+        if experiment_label is None: experiment_label = experiment_name
+
         experiment_dict[(experiment_name, experiment_label)] = result_dict
 
-    if COMBINE_LABELS is not None:
-        assert not PLOT_WALL_TIME
-        experiment_dict = combine_labels(experiment_dict)
+    # if COMBINE_LABELS is not None:
+    #     assert not PLOT_WALL_TIME
+    #     experiment_dict = combine_labels(experiment_dict)
 
     if FILTER_TOP_EXPERIMENTS is not None:
         experiment_dict = dict(sorted(experiment_dict.items(), reverse=True,
@@ -241,8 +241,7 @@ def compare_experiments():
                 continue
             epochs = result_dict.get('time')
         else:
-            epochs = result_dict.get('interval') * \
-                (np.array((range(len(result_dict.get('best'))))) + 1)
+            epochs = np.array(range(len(result_dict.get('best'))))
 
         kwargs = PROP_CYCLER[i]
         plt.plot(epochs, result_dict.get('best'),
@@ -267,24 +266,23 @@ def compare_experiments():
     hl = sorted(zip(handles, labels), key=operator.itemgetter(1))
     handles2, labels2 = zip(*hl)
     plt.legend(handles2, labels2)
-
-    plt.grid(b=True, which='major', axis='x')
-    plt.grid(b=True, which='major', axis='y')
-    plt.grid(b=True, which='minor', linestyle='--', axis='y')
+    plt.grid(which='major', axis='x')
+    plt.grid(which='major', axis='y')
+    plt.grid(which='minor', linestyle='--', axis='y')
 
     if X_LABEL is not None:
         plt.xlabel(X_LABEL)
     elif PLOT_WALL_TIME:
         plt.xlabel("Wall Time (Seconds)")
     else:
-        plt.xlabel("Epochs of Training")
+        plt.xlabel("Generations")
     plt.ylabel(Y_LABEL) if Y_LABEL is not None else plt.ylabel('Fitness')
     plt.savefig(OUT_FILE, bbox_inches='tight', dpi=200)
 
 
-if __name__ == "__main__":
+def compare_experiments_main():
     _experiment_dirs = [
-        [('5/19 Role GA', '../results/5_19_role_ga')],
+        [('5/19 Role Evolution', 'results/5_19_role_evo')],
     ]
 
     _blacklists = [[]] * len(_experiment_dirs)
@@ -300,3 +298,6 @@ if __name__ == "__main__":
             int(time.time()), MAX_GEN, FITNESS_RANGE, FITNESS_METRIC,
             PLOT_FMT))[:255]
         compare_experiments()
+
+if __name__ == "__main__":
+    compare_experiments_main()
