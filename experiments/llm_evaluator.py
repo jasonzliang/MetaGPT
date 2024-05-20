@@ -367,12 +367,17 @@ class LLMEvaluator(object):
             with open(result_file, 'w') as f:
                 f.write(output)
 
+        os.system("evalplus.sanitize --samples %s >/dev/null" % result_dir)
+        os.system("rsync -avz %s-sanitized/ %s >/dev/null" % \
+            (result_dir, result_dir))
+        os.system("rm -rf %s-sanitized" % result_dir)
+
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
             % (self.dataset, result_dir, evalplus_fp))
-        time.sleep(0.25)
-
+        time.sleep(0.1)
         fitness = extract_evalplus_score(evalplus_fp, self.logger)
+
         result_dict = {}
         result_dict['fitness'] = fitness
         result_dict['true_fitness'] = fitness
@@ -433,7 +438,7 @@ Return ```python your_code_here ``` with NO other texts,
 your code:
 '''
     print(indv.role); population = [indv]
-    llm_model = 'N/A' if test_err else 'gpt-4o'
+    llm_model = 'N/A' if test_err else 'gpt-3.5-turbo'
     eval_config = {'n_workers': 1, 'dummy_mode': False, 'llm_model': llm_model}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
