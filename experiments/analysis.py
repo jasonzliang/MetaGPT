@@ -312,7 +312,7 @@ def multirun_evalplus(prompt=DEFAULT_ROLE,
     dataset='humaneval'):
 
     from llm_evaluator import LLMEvaluator
-    assert n_trials > 0; _id = indv.id if use_prompt else "NO_ID"
+    assert n_trials > 0; _id = indv.id if not use_prompt else "NO_ID"
     result_dir = os.path.join(base_dir,
         "evalplus_multirun_%s_N-%s_T-%s" % (_id, n_trials, int(time.time())))
     os.makedirs(result_dir, exist_ok=True)
