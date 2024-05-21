@@ -368,7 +368,7 @@ def multirun_evalplus_exp(experiment_dir, top_n=5, agg_func=np.mean,
     best_indv = sorted(_fit_dict.items(),
         key=lambda x: x[1][1], reverse=True)[:top_n]
 
-    for indv, agg_fit in best_indv.values():
+    for indv_id, (indv, agg_fit) in best_indv:
         print(indv)
         multirun_evalplus(indv=indv, use_prompt=False, *args, **kwargs)
 
