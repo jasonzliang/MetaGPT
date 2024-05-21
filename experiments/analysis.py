@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import ast
 import copy
 from collections import defaultdict
 import glob
@@ -16,6 +17,8 @@ matplotlib.rcParams["pdf.fonttype"] = 42
 matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt
 import numpy as np
+from ruamel.yaml import YAML
+from scipy.stats import ttest_ind
 
 from analysis_util import \
     get_fitness_file, load_checkpoint, get_checkpoints
@@ -306,79 +309,117 @@ def multirun_evalplus(prompt=DEFAULT_ROLE,
     indv=None,
     use_prompt=True,
     n_trials=50,
-    base_dir='results/',
     n_workers=10,
     llm_model='gpt-3.5-turbo',
-    dataset='humaneval'):
+    dataset='humaneval',
+    base_dir='results/',
+    result_dir=None,
+    baseline_result_dir='results/evalplus_multirun_N-50_T-1716219661/'):
 
-    from llm_evaluator import LLMEvaluator
-    assert n_trials > 0; _id = indv.id if not use_prompt else "NO_ID"
-    result_dir = os.path.join(base_dir,
-        "evalplus_multirun_%s_N-%s_T-%s" % (_id, n_trials, int(time.time())))
-    os.makedirs(result_dir, exist_ok=True)
-
-    if use_prompt:
-        if os.path.exists(prompt):
-            with open(prompt, "r") as f:
-                prompt = f.read()
-        assert len(prompt) > 0
-        population = [Individual({}) for i in range(n_trials)]
-        for indv in population: indv.role = prompt
+    results_file = os.path.join(result_dir, 'evalplus_results.yaml')
+    if os.path.exists(results_file):
+        with open(results_file, "r") as f:
+            # evalplus_results = ast.literal_eval(f.read())
+            evalplus_results = YAML().load(result_file)
     else:
-        assert indv is not None
-        with open(os.path.join(result_dir, "indv.txt"), 'w') as f:
-            f.write(pprint.pformat(indv.serialize()))
-        population = [indv.create_child() for i in range(n_trials)]
+        from llm_evaluator import LLMEvaluator; assert n_trials > 0
+        if not use_prompt: assert indv is not None; _id = indv.id
+        else: _id = "NO_ID"
 
-    eval_config = \
-        {'n_workers': n_workers,
-        'dummy_mode': False,
-        'llm_model': llm_model,
-        'dataset': dataset,
-        'sanitize': True}
-    evaluator = LLMEvaluator(eval_config, evaluator_dir=result_dir)
-    result_dicts = evaluator.evaluate(population)
+        result_dir = os.path.join(base_dir, "evalplus_multirun_%s_N-%s_T-%s" % \
+            (_id, n_trials, int(time.time())))
+        os.makedirs(result_dir, exist_ok=True)
 
-    evalplus_results = [rs.get('evalplus_result', {}) for rs in result_dicts]
+        if use_prompt:
+            if os.path.exists(prompt):
+                with open(prompt, "r") as f:
+                    prompt = f.read()
+            assert len(prompt) > 0
+            population = [Individual({}) for i in range(n_trials)]
+            for indv in population: indv.role = prompt
+        else:
+            with open(os.path.join(result_dir, "indv.yaml"), 'w') as f:
+                # f.write(pprint.pformat(indv.serialize()))
+                YAML().dump(indv.serialize(), f)
+            population = [indv.create_child() for i in range(n_trials)]
+
+        eval_config = \
+            {'n_workers': n_workers,
+            'dummy_mode': False,
+            'llm_model': llm_model,
+            'dataset': dataset,
+            'sanitize': True}
+        evaluator = LLMEvaluator(eval_config, evaluator_dir=result_dir)
+        result_dicts = evaluator.evaluate(population)
+        evalplus_results = [x.get('evalplus_result', {}) for x in result_dicts]
+
+    baseline_results = None
+    if baseline_result_dir is not None:
+        base_results_file = os.path.join(baseline_result_dir,
+            'evalplus_results.yaml'); assert os.path.exists(base_results_file)
+        with open(base_results_file, "r") as f:
+            # baseline_results = ast.literal_eval(f.read())
+            baseline_results = YAML().load(result_file)
+        assert len(baseline_results) > 0
+
+    print("Computing statistics from evalplus results: %s" % result_dir)
+    assert len(evalplus_results) > 0
     with open(os.path.join(result_dir, 'summary.txt'), 'w') as f:
         for key in evalplus_results[0]:
-            _results = [es[key] for es in evalplus_results]
+            _results = [x[key] for x in evalplus_results]
             mean = np.mean(_results); std = np.std(_results)
-            print("mean %s: %s" % (key, mean))
-            f.write("mean %s: %s\n" % (key, mean))
-            print("std %s: %s" % (key, std))
-            f.write("std %s: %s\n" % (key, std))
-    with open(os.path.join(result_dir, 'evalplus_results.txt'), 'w') as f:
-        f.write(pprint.pformat(evalplus_results))
+            f.write("%s mean (std): %.3f (%.3f)\n" % (key, mean, std))
+
+        if baseline_results is not None:
+            print("Computing t-tests from baseline results: %s" % \
+                baseline_result_dir); f.write("\n\n")
+            f.write("Baseline: %s\n" % baseline_result_dir)
+            for key in evalplus_results[0]:
+                if key not in baseline_results[0]: continue
+                _baselines = [x[key] for x in baseline_results]
+                _results = [x[key] for x in evalplus_results]
+                ttest_result = ttest_ind(_baselines, _results, equal_var=False)
+                mean = np.mean(_baselines); std = np.std(_baselines)
+                f.write("%s p-value (baseline: %.3f (%.3f)): %.3f\n" % \
+                    (key, mean, std, ttest_result.pvalue))
+
+    with open(os.path.join(result_dir, 'evalplus_results.yaml'), 'w') as f:
+        # f.write(pprint.pformat(evalplus_results))
+        YAML().dump(evalplus_results, f)
 
 
-def multirun_evalplus_exp(experiment_dir, top_n=5, agg_func=np.mean,
-    *args, **kwargs):
+def multirun_evalplus_exp(experiment_dir,
+    top_n=5,
+    min_evals=1,
+    agg_func=np.mean, # np.mean, np.median, np.max, lambda x: x[-1]
+    *args,
+    **kwargs):
+
     _fit_list_dict = defaultdict(list); _indv_dict = {}
     checkpoints = get_checkpoints(experiment_dir)
     for checkpoint in checkpoints:
         pop_dict = load_checkpoint(checkpoint)
         for indv_dict in pop_dict:
             indv = Individual({}); indv.deserialize(indv_dict)
-            _fit_list_dict[indv.id].append(indv.get_true_fitness())
+            _fit_list_dict[indv.id].append(indv.get_fitness(raw_fitness=True))
             _indv_dict[indv.id] = indv
 
     for indv_id, fit_list in _fit_list_dict.items():
-        _indv_dict[indv_id].set_fitness(agg_func(fit_list))
-        _indv_dict[indv_id].set_true_fitness(agg_func(fit_list))
+        if len(fit_list) < min_evals:
+            del _indv_dict[indv_id]; continue
+
+        agg_fit = agg_func(fit_list)
+        _indv_dict[indv_id].set_fitness(agg_fit)
+        _indv_dict[indv_id].set_true_fitness(agg_fit)
 
     best_indv = sorted(_indv_dict.values(), reverse=True)[:top_n]
 
     for i, indv in enumerate(best_indv):
-        print("#### %s, rank %s ####" % (agg_func, i+1))
-        print(indv)
+        print("#### %s, rank %s ####" % (agg_func, i+1)); print(indv)
         multirun_evalplus(indv=indv, use_prompt=False, *args, **kwargs)
 
 
 if __name__ == "__main__":
-    multirun_evalplus_exp('results/5_19_role_evo', top_n=5, agg_func=np.mean)
-    multirun_evalplus_exp('results/5_19_role_evo', top_n=5, agg_func=np.max)
-    # multirun_evalplus()
-    # multirun_evalplus(prompt='config/initial_role_gpt4.txt')
-    # multirun_evalplus(prompt='config/best_role_5_14.txt')
-    # multirun_evalplus(prompt='config/best_role_5_19.txt')
+    multirun_evalplus_exp("results/5_19_role_evo")
+    # for result_dir in glob.glob("results/evalplus_multirun*"):
+    #     multirun_evalplus(result_dir=result_dir)
