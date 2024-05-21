@@ -312,7 +312,10 @@ def multirun_evalplus(prompt=DEFAULT_ROLE,
     dataset='humaneval'):
 
     from llm_evaluator import LLMEvaluator
-    assert n_trials > 0
+    assert n_trials > 0; _id = indv.id if use_prompt else "NO_ID"
+    result_dir = os.path.join(base_dir,
+        "evalplus_multirun_%s_N-%s_T-%s" % (_id, n_trials, int(time.time())))
+    os.makedirs(result_dir, exist_ok=True)
 
     if use_prompt:
         if os.path.exists(prompt):
@@ -323,12 +326,10 @@ def multirun_evalplus(prompt=DEFAULT_ROLE,
         for indv in population: indv.role = prompt
     else:
         assert indv is not None
+        with open(os.path.join(result_dir, "indv.txt"), 'w') as f:
+            f.write(pprint.pformat(indv.serialize()))
         population = [indv.create_child() for i in range(n_trials)]
 
-    _id = indv.id if indv is not None else "NO_ID"
-    result_dir = os.path.join(base_dir,
-        "evalplus_multirun_%s_N-%s_T-%s" % (_id, n_trials, int(time.time())))
-    os.makedirs(result_dir, exist_ok=True)
     eval_config = \
         {'n_workers': n_workers,
         'dummy_mode': False,
