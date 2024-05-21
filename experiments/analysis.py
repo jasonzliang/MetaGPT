@@ -325,8 +325,9 @@ def multirun_evalplus(prompt=DEFAULT_ROLE,
         assert indv is not None
         population = [indv.create_child() for i in range(n_trials)]
 
+    _id = indv.id if indv is not None else "NO_ID"
     result_dir = os.path.join(base_dir,
-        "evalplus_multirun_N-%s_T-%s" % (n_trials, int(time.time())))
+        "evalplus_multirun_%s_N-%s_T-%s" % (_id, n_trials, int(time.time())))
     os.makedirs(result_dir, exist_ok=True)
     eval_config = \
         {'n_workers': n_workers,
