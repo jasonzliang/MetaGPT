@@ -363,14 +363,14 @@ def multirun_evalplus_exp(experiment_dir, top_n=5, agg_func=np.mean,
             _fit_list_dict[indv.id].append(indv.get_true_fitness())
             _indv_dict[indv.id] = indv
 
-    _fit_dict = {}
     for indv_id, fit_list in _fit_list_dict.items():
-        _fit_dict[indv_id] = (_indv_dict[indv_id], agg_func(fit_list))
+        _indv_dict[indv_id].set_fitness(agg_func(fit_list))
+        _indv_dict[indv_id].set_true_fitness(agg_func(fit_list))
 
-    best_indv = sorted(_fit_dict.items(),
-        key=lambda x: x[1][1], reverse=True)[:top_n]
+    best_indv = sorted(_indv_dict.values(), reverse=True)[:top_n]
 
-    for indv_id, (indv, agg_fit) in best_indv:
+    for i, indv in enumerate(best_indv):
+        print("#### %s, rank %s ####" % (agg_func, i+1))
         print(indv)
         multirun_evalplus(indv=indv, use_prompt=False, *args, **kwargs)
 
