@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import copy
+from collections import defaultdict
 import glob
 import json
 import operator
@@ -19,6 +20,7 @@ import numpy as np
 from analysis_util import \
     get_fitness_file, load_checkpoint, get_checkpoints
 from analysis_util import COLORS, FIG_SIZE, PLOT_FMT, PROP_CYCLER
+from role_ga import Individual, DEFAULT_ROLE
 
 # Directory to get results from
 EXPERIMENT_DIRS = []
@@ -104,108 +106,108 @@ def get_experiment_dirs():
     return sorted(expanded_dirs)
 
 
-def combine_labels(experiment_dict):
-    combined_dict = defaultdict(list)
+# def combine_labels(experiment_dict):
+#     combined_dict = defaultdict(list)
 
-    for (experiment_name, experiment_label), result_dict \
-        in experiment_dict.items():
+#     for (experiment_name, experiment_label), result_dict \
+#         in experiment_dict.items():
 
-        combined_dict[experiment_label].append(result_dict)
+#         combined_dict[experiment_label].append(result_dict)
 
-    new_experiment_dict = {}
-    for experiment_label, result_dicts in combined_dict.items():
-        if len(result_dicts) > COMBINE_LABELS:
-            result_dicts = random.sample(result_dicts, COMBINE_LABELS)
+#     new_experiment_dict = {}
+#     for experiment_label, result_dicts in combined_dict.items():
+#         if len(result_dicts) > COMBINE_LABELS:
+#             result_dicts = random.sample(result_dicts, COMBINE_LABELS)
 
-        best_values = [rs.get('best') for rs in result_dicts]
-        print("Combined label: %s result lengths: %s" % (experiment_label,
-            [len(bv) for bv in best_values]))
-        max_length = max([len(bv) for bv in best_values])
-        for bv in best_values:
-            if len(bv) < max_length:
-                bv.extend([np.nan]*(max_length - len(bv)))
+#         best_values = [rs.get('best') for rs in result_dicts]
+#         print("Combined label: %s result lengths: %s" % (experiment_label,
+#             [len(bv) for bv in best_values]))
+#         max_length = max([len(bv) for bv in best_values])
+#         for bv in best_values:
+#             if len(bv) < max_length:
+#                 bv.extend([np.nan]*(max_length - len(bv)))
 
-        combined_result_dict = {}
-        combined_result_dict['best'] = np.nanmean(best_values, axis=0)
-        combined_result_dict['best_std'] = np.nanstd(best_values, axis=0)
-        combined_result_dict['num_trials'] = len(result_dicts)
+#         combined_result_dict = {}
+#         combined_result_dict['best'] = np.nanmean(best_values, axis=0)
+#         combined_result_dict['best_std'] = np.nanstd(best_values, axis=0)
+#         combined_result_dict['num_trials'] = len(result_dicts)
 
-        intervals = np.array([rs.get('interval') for rs in result_dicts])
-        assert np.all(intervals == intervals[0])
-        combined_result_dict['interval'] = intervals[0]
+#         intervals = np.array([rs.get('interval') for rs in result_dicts])
+#         assert np.all(intervals == intervals[0])
+#         combined_result_dict['interval'] = intervals[0]
 
-        if OVERRIDE_INTERVAL is not None:
-            assert combined_result_dict['interval'] % OVERRIDE_INTERVAL == 0 \
-                or OVERRIDE_INTERVAL % combined_result_dict['interval'] == 0
-            ratio = int(OVERRIDE_INTERVAL/combined_result_dict['interval'])
-            if ratio > 1:
-                combined_result_dict['best'] = \
-                    combined_result_dict['best'][::ratio]
-                combined_result_dict['best_std'] = \
-                    combined_result_dict['best_std'][::ratio]
-            elif ratio == 0:
-                ratio = int(combined_result_dict['interval']/OVERRIDE_INTERVAL)
-                combined_result_dict['interval'] = OVERRIDE_INTERVAL
-                combined_result_dict['best'] = \
-                    np.repeat(combined_result_dict['best'], ratio)
-                combined_result_dict['best_std'] = \
-                    np.repeat(combined_result_dict['best_std'], ratio)
+#         if OVERRIDE_INTERVAL is not None:
+#             assert combined_result_dict['interval'] % OVERRIDE_INTERVAL == 0 \
+#                 or OVERRIDE_INTERVAL % combined_result_dict['interval'] == 0
+#             ratio = int(OVERRIDE_INTERVAL/combined_result_dict['interval'])
+#             if ratio > 1:
+#                 combined_result_dict['best'] = \
+#                     combined_result_dict['best'][::ratio]
+#                 combined_result_dict['best_std'] = \
+#                     combined_result_dict['best_std'][::ratio]
+#             elif ratio == 0:
+#                 ratio = int(combined_result_dict['interval']/OVERRIDE_INTERVAL)
+#                 combined_result_dict['interval'] = OVERRIDE_INTERVAL
+#                 combined_result_dict['best'] = \
+#                     np.repeat(combined_result_dict['best'], ratio)
+#                 combined_result_dict['best_std'] = \
+#                     np.repeat(combined_result_dict['best_std'], ratio)
 
-        new_experiment_dict[(experiment_label, experiment_label)] = \
-            combined_result_dict
-    return new_experiment_dict
+#         new_experiment_dict[(experiment_label, experiment_label)] = \
+#             combined_result_dict
+#     return new_experiment_dict
 
 
-def t_test(experiment_dict):
-    def print_stats(label, result_dict):
-        if 'best_std' not in result_dict or 'best' not in result_dict:
-            return
-        std = result_dict.get("best_std")[-1] * 100
-        best = result_dict.get("best")[-1] * 100
-        print("%s: %.2f (%.2f)" % (label, best, std))
+# def t_test(experiment_dict):
+#     def print_stats(label, result_dict):
+#         if 'best_std' not in result_dict or 'best' not in result_dict:
+#             return
+#         std = result_dict.get("best_std")[-1] * 100
+#         best = result_dict.get("best")[-1] * 100
+#         print("%s: %.2f (%.2f)" % (label, best, std))
 
-    baselines = []
-    experiments = []
-    for (experiment_name, experiment_label), result_dict in \
-        experiment_dict.items():
-        if 'Baseline' in experiment_label:
-            baselines.append((experiment_label, result_dict))
-        else:
-            experiments.append((experiment_label, result_dict))
+#     baselines = []
+#     experiments = []
+#     for (experiment_name, experiment_label), result_dict in \
+#         experiment_dict.items():
+#         if 'Baseline' in experiment_label:
+#             baselines.append((experiment_label, result_dict))
+#         else:
+#             experiments.append((experiment_label, result_dict))
 
-    for exp_label, result_dict in experiments:
-        print_stats(exp_label, result_dict)
-    for b_label, b_result_dict in baselines:
-        print_stats(b_label, b_result_dict)
+#     for exp_label, result_dict in experiments:
+#         print_stats(exp_label, result_dict)
+#     for b_label, b_result_dict in baselines:
+#         print_stats(b_label, b_result_dict)
 
-    for exp_label, result_dict in experiments:
-        if 'best_std' not in result_dict or 'best' not in result_dict:
-            continue
+#     for exp_label, result_dict in experiments:
+#         if 'best_std' not in result_dict or 'best' not in result_dict:
+#             continue
 
-        best_baselines = [(l, max(rd.get('best'))) for l, rd in baselines]
-        exceeded = set()
-        total_epochs = len(result_dict.get('best')) * \
-            result_dict.get('interval')
-        for i, value in enumerate(result_dict.get('best')):
-            epochs = (i + 1) * result_dict.get('interval')
-            for l, bb in best_baselines:
-                if value >= bb and l not in exceeded:
-                    print("Training percentage to exceed baseline %s: %s/%s" % \
-                        (l, epochs, total_epochs))
-                    exceeded.add(l)
+#         best_baselines = [(l, max(rd.get('best'))) for l, rd in baselines]
+#         exceeded = set()
+#         total_epochs = len(result_dict.get('best')) * \
+#             result_dict.get('interval')
+#         for i, value in enumerate(result_dict.get('best')):
+#             epochs = (i + 1) * result_dict.get('interval')
+#             for l, bb in best_baselines:
+#                 if value >= bb and l not in exceeded:
+#                     print("Training percentage to exceed baseline %s: %s/%s" % \
+#                         (l, epochs, total_epochs))
+#                     exceeded.add(l)
 
-        for b_label, b_result_dict in baselines:
+#         for b_label, b_result_dict in baselines:
 
-            s, p = ttest_ind_from_stats(
-                result_dict.get('best')[-1],
-                result_dict.get('best_std')[-1],
-                result_dict.get('num_trials'),
-                b_result_dict.get('best')[-1],
-                b_result_dict.get('best_std')[-1],
-                b_result_dict.get('num_trials'),
-                equal_var=False)
+#             s, p = ttest_ind_from_stats(
+#                 result_dict.get('best')[-1],
+#                 result_dict.get('best_std')[-1],
+#                 result_dict.get('num_trials'),
+#                 b_result_dict.get('best')[-1],
+#                 b_result_dict.get('best_std')[-1],
+#                 b_result_dict.get('num_trials'),
+#                 equal_var=False)
 
-            print("T-test %s/%s: %.2f" % (exp_label, b_label, p))
+#             print("T-test %s/%s: %.2f" % (exp_label, b_label, p))
 
 
 def compare_experiments():
@@ -300,7 +302,9 @@ def compare_experiments_main():
         compare_experiments()
 
 
-def multirun_evalplus(prompt=None,
+def multirun_evalplus(prompt=DEFAULT_ROLE,
+    indv=None,
+    use_prompt=True,
     n_trials=50,
     base_dir='results/',
     n_workers=10,
@@ -308,13 +312,18 @@ def multirun_evalplus(prompt=None,
     dataset='humaneval'):
 
     from llm_evaluator import LLMEvaluator
-    from role_ga import Individual, DEFAULT_ROLE
-    if prompt is None:
-        prompt = DEFAULT_ROLE
-    elif os.path.exists(prompt):
-        with open(prompt, "r") as f:
-            prompt = f.read()
-    assert len(prompt) > 0; assert n_trials > 0
+    assert n_trials > 0
+
+    if use_prompt:
+        if os.path.exists(prompt):
+            with open(prompt, "r") as f:
+                prompt = f.read()
+        assert len(prompt) > 0
+        population = [Individual({}) for i in range(n_trials)]
+        for indv in population: indv.role = prompt
+    else:
+        assert indv is not None
+        population = [indv.create_child() for i in range(n_trials)]
 
     result_dir = os.path.join(base_dir,
         "evalplus_multirun_N-%s_T-%s" % (n_trials, int(time.time())))
@@ -326,9 +335,6 @@ def multirun_evalplus(prompt=None,
         'dataset': dataset,
         'sanitize': True}
     evaluator = LLMEvaluator(eval_config, evaluator_dir=result_dir)
-
-    population = [Individual({}, gen_created=0) for i in range(n_trials)]
-    for indv in population: indv.role = prompt
     result_dicts = evaluator.evaluate(population)
 
     evalplus_results = [rs.get('evalplus_result', {}) for rs in result_dicts]
@@ -344,8 +350,35 @@ def multirun_evalplus(prompt=None,
         f.write(pprint.pformat(evalplus_results))
 
 
+def multirun_evalplus_exp(experiment_dir, top_n=5, agg_func=np.mean,
+    *args, **kwargs):
+    _fit_list_dict = defaultdict(list); _indv_dict = {}
+    checkpoints = get_checkpoints(experiment_dir)
+    for checkpoint in checkpoints:
+        pop_dict = load_checkpoint(checkpoint)
+        for indv_dict in pop_dict:
+            indv = Individual({}); indv.deserialize(indv_dict)
+            _fit_list_dict[indv.id].append(indv.get_true_fitness())
+            _indv_dict[indv.id] = indv
+
+    # print(_fit_list_dict)
+    _fit_dict = {}
+    for indv_id, fit_list in _fit_list_dict.items():
+        _fit_dict[indv_id] = (_indv_dict[indv_id], agg_func(fit_list))
+
+    best_indv = sorted(_fit_dict.items(),
+        key=lambda x: x[1][1], reverse=True)[:top_n]
+    # print("Best Indv: %s" % best_indv)
+
+    for indv, agg_fit in best_indv.values():
+        print(indv)
+        multirun_evalplus(indv=indv, use_prompt=False, *args, **kwargs)
+
+
 if __name__ == "__main__":
-    multirun_evalplus()
-    multirun_evalplus(prompt='config/initial_role_gpt4.txt')
-    multirun_evalplus(prompt='config/best_role_5_14.txt')
-    multirun_evalplus(prompt='config/best_role_5_19.txt')
+    multirun_evalplus_exp('results/5_19_role_evo', top_n=5, agg_func=np.mean)
+    multirun_evalplus_exp('results/5_19_role_evo', top_n=5, agg_func=np.max)
+    # multirun_evalplus()
+    # multirun_evalplus(prompt='config/initial_role_gpt4.txt')
+    # multirun_evalplus(prompt='config/best_role_5_14.txt')
+    # multirun_evalplus(prompt='config/best_role_5_19.txt')

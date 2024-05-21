@@ -62,7 +62,8 @@ def is_outlier(points, threshold=3.5):
 
 
 def get_fitness(indv_dict, override_fitness=None):
-    if type(indv_dict) is not dict:
+    from role_ga import Individual
+    if type(indv_dict) is Individual:
         indv_dict = indv_dict.serialize()
     if TRUE_FITNESS:
         key = 'true_fitness'
@@ -101,6 +102,7 @@ def get_fitness_file(experiment_dir, override_fitness_file=None):
 
 def get_checkpoints(experiment_dir, is_base_dir=True, min_gen=None,
     max_gen=None, verbose=True):
+    assert os.path.exists(experiment_dir)
     if is_base_dir:
         checkpoints = glob.glob(os.path.join(experiment_dir,
             "role_ga/*.yaml"))
@@ -153,62 +155,62 @@ def load_checkpoint(checkpoint, gen=False, cache=True):
     return return_data
 
 
-def collect_ancestry_chain(experiment_dir, indv_id, initial_gen):
-    experiment_dir = glob.glob(experiment_dir)[0] # cleanup wild cards
-    config = get_config(experiment_dir)
-    domain = config.get("domain_name")
-    epoch_per_gen = config.get(domain + "_config").get("num_epochs")
-    assert epoch_per_gen is not None
+# def collect_ancestry_chain(experiment_dir, indv_id, initial_gen):
+#     experiment_dir = glob.glob(experiment_dir)[0] # cleanup wild cards
+#     config = get_config(experiment_dir)
+#     domain = config.get("domain_name")
+#     epoch_per_gen = config.get(domain + "_config").get("num_epochs")
+#     assert epoch_per_gen is not None
 
-    if initial_gen == "last":
-        curr_checkpoint = get_checkpoints(experiment_dir)[-1]
-        pop_list, initial_gen = load_checkpoint(curr_checkpoint, gen=True)
-    else:
-        curr_checkpoint = os.path.join(experiment_dir,
-            "role_ga/checkpoint_%s.yaml" % initial_gen)
-    if indv_id.startswith("rank_"):
-        if 'pop_list' not in locals():
-            pop_list, initial_gen = load_checkpoint(curr_checkpoint, gen=True)
-        rank = int(indv_id.split("_")[-1]) - 1
-        assert rank >= 0 and rank < len(pop_list)
-        indv_id = max(pop_list, key=lambda x: get_fitness(x)).get('id')
-        # indv_id = pop_list[rank].get("id")
+#     if initial_gen == "last":
+#         curr_checkpoint = get_checkpoints(experiment_dir)[-1]
+#         pop_list, initial_gen = load_checkpoint(curr_checkpoint, gen=True)
+#     else:
+#         curr_checkpoint = os.path.join(experiment_dir,
+#             "role_ga/checkpoint_%s.yaml" % initial_gen)
+#     if indv_id.startswith("rank_"):
+#         if 'pop_list' not in locals():
+#             pop_list, initial_gen = load_checkpoint(curr_checkpoint, gen=True)
+#         rank = int(indv_id.split("_")[-1]) - 1
+#         assert rank >= 0 and rank < len(pop_list)
+#         indv_id = max(pop_list, key=lambda x: get_fitness(x)).get('id')
+#         # indv_id = pop_list[rank].get("id")
 
-    print("Collecting ancestry for indv %s" % indv_id)
-    curr_indv_id = indv_id
-    curr_gen = initial_gen
-    ancestry_chain = {}
-    while True:
-        pop_list, gen = load_checkpoint(curr_checkpoint, gen=True)
+#     print("Collecting ancestry for indv %s" % indv_id)
+#     curr_indv_id = indv_id
+#     curr_gen = initial_gen
+#     ancestry_chain = {}
+#     while True:
+#         pop_list, gen = load_checkpoint(curr_checkpoint, gen=True)
 
-        found_next_indv = False
-        for indv in pop_list:
-            if indv.get("id") == curr_indv_id:
-                if indv.get("gen_created") != curr_gen:
-                    curr_gen = indv.get("gen_created")
-                    found_next_indv = True
-                    break
-                else:
-                    assert indv.get("gen_created") == gen
-                    training_info = indv.get("training_info")
-                    history = training_info.get("history")
-                    num_epochs_trained = training_info.get(
-                        "num_epochs_trained")
-                    num_epochs_at_start = num_epochs_trained - epoch_per_gen
-                    ancestry_chain[gen] = (num_epochs_at_start, indv)
+#         found_next_indv = False
+#         for indv in pop_list:
+#             if indv.get("id") == curr_indv_id:
+#                 if indv.get("gen_created") != curr_gen:
+#                     curr_gen = indv.get("gen_created")
+#                     found_next_indv = True
+#                     break
+#                 else:
+#                     assert indv.get("gen_created") == gen
+#                     training_info = indv.get("training_info")
+#                     history = training_info.get("history")
+#                     num_epochs_trained = training_info.get(
+#                         "num_epochs_trained")
+#                     num_epochs_at_start = num_epochs_trained - epoch_per_gen
+#                     ancestry_chain[gen] = (num_epochs_at_start, indv)
 
-                    if len(indv.get("ancestry")) > 0:
-                        curr_gen = indv.get("ancestry")[0].get(
-                            "gen_created")
-                        curr_indv_id = indv.get("ancestry")[0].get("id")
-                        found_next_indv = True
-                    break
+#                     if len(indv.get("ancestry")) > 0:
+#                         curr_gen = indv.get("ancestry")[0].get(
+#                             "gen_created")
+#                         curr_indv_id = indv.get("ancestry")[0].get("id")
+#                         found_next_indv = True
+#                     break
 
-        if not found_next_indv:
-            break
-        else:
-            curr_checkpoint = os.path.join(experiment_dir,
-                "pbt_algorithm/checkpoint_%s.yaml" % curr_gen)
+#         if not found_next_indv:
+#             break
+#         else:
+#             curr_checkpoint = os.path.join(experiment_dir,
+#                 "role_ga/checkpoint_%s.yaml" % curr_gen)
 
-    assert(len(ancestry_chain)) > 0
-    return ancestry_chain
+#     assert(len(ancestry_chain)) > 0
+#     return ancestry_chain
