@@ -420,6 +420,6 @@ def multirun_evalplus_exp(experiment_dir,
 
 
 if __name__ == "__main__":
-    multirun_evalplus_exp("results/5_19_role_evo")
-    # for result_dir in glob.glob("results/evalplus_multirun*"):
-    #     multirun_evalplus(result_dir=result_dir)
+    # multirun_evalplus_exp("results/5_19_role_evo")
+    for result_dir in glob.glob("results/evalplus_multirun*"):
+        multirun_evalplus(result_dir=result_dir)
