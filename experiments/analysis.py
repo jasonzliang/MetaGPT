@@ -337,8 +337,11 @@ def multirun_evalplus(prompt=DEFAULT_ROLE,
             assert len(prompt) > 0
             population = [Individual({}) for i in range(n_trials)]
             for indv in population: indv.role = prompt
+            with open(
+                os.path.join(result_dir, 'prompt_template.txt'), 'w') as f:
+                f.write(prompt)
         else:
-            with open(os.path.join(result_dir, "indv.yaml"), 'w') as f:
+            with open(os.path.join(result_dir, 'indv.yaml'), 'w') as f:
                 # f.write(pprint.pformat(indv.serialize()))
                 YAML().dump(indv.serialize(), f)
             population = [indv.create_child() for i in range(n_trials)]
