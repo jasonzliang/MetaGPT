@@ -1,6 +1,6 @@
 {instruction}
 
-The above is an incomplete Python code fragment. Return the complete and correct code with no additional text and in the following format:
+The above is an incomplete Python code fragment. Return the complete and correct code in the following format with no additional text:
 
 ```python
 your_code_here
