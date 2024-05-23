@@ -6,8 +6,8 @@ role_ga_config:
         # mutate_rate: 0.75
         llm_config:
             model: gpt-4-turbo
-            temperature: 1.5
-            top_p: 1.0
+            temperature: 1.0
+            top_p: 0.5
         initial_role: initial_role_james.txt
 
     num_gen: 50
