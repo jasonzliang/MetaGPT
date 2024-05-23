@@ -33,7 +33,7 @@ class Individual(object):
         self.dummy_mode = self.config.get("dummy_mode", False)
         self.mutate_rate = self.config.get("mutate_rate", 0.5)
         assert 0 <= self.mutate_rate <= 1.0
-        self.llm_model = self.config.get("llm_model", "gpt-4-turbo")
+        self.llm_config = self.config.get("llm_config", {})
 
         self.id = self._set_id(gen_created) # Ids are unique, names are not
         self._load_initial_role()
@@ -119,28 +119,28 @@ class Individual(object):
         if self.dummy_mode:
             self.role += randomword(ID_LENGTH)
         elif random.random() < mutate_rate:
-            self.role = llm_mutate(self.role, self.llm_model)
+            self.role = llm_mutate(self.role, self.llm_config)
 
     def mutate2(self, n):
         if self.dummy_mode:
             self.mutate()
         else:
             assert n >= 0 and self.result_dir is not None
-            self.role = llm_mutate2(self.role, self.llm_model, self.result_dir,
-                n=n)
+            self.role = llm_mutate2(self.role, self.result_dir, n=n,
+                self.llm_config)
 
     def crossover(self, other):
         if self.dummy_mode:
             self.role, other.role = other.role, self.role
         else:
-            self.role = llm_crossover(self.role, other.role, self.llm_model)
+            self.role = llm_crossover(self.role, other.role, self.llm_config)
 
     def crossover2(self, others):
         if self.dummy_mode:
             self.crossover(others[0])
         else:
             other_roles = [indv.role for indv in others]
-            self.role = llm_crossover2(self.role, other_roles, self.llm_model)
+            self.role = llm_crossover2(self.role, other_roles, self.llm_config)
 
     def serialize(self):
         return {'id': self.id,

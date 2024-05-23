@@ -191,7 +191,7 @@ class SimpleCoder(Role):
         self.actions[0].PROMPT_TEMPLATE = new_prompt
 
 
-def create_new_team(llm_model):
+def create_new_team(llm_config):
     try: # Hack to get it running on M1 mac
         loop = asyncio.get_event_loop()
     except RuntimeError as e:
@@ -201,12 +201,13 @@ def create_new_team(llm_model):
         else:
             raise
 
-    llm_config = Config.default()
-    llm_config.llm.model = llm_model
-    llm_config.llm.temperature = 0.0
+    config = Config.default()
+    config.llm.model = llm_config.get("model", "gpt-3.5-turbo")
+    config.llm.temperature = llm_config.get("temperature", 0.5)
+    config.llm.top_p = llm_config.get("top_p", 0.5)
 
     team = Team()
-    coder = SimpleCoder(config=llm_config)
+    coder = SimpleCoder(config=config)
     team.hire([coder])
     team.invest(investment=1e308)
     return team, coder
@@ -214,12 +215,13 @@ def create_new_team(llm_model):
 
 @retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
     logger=logging.getLogger('evolve_role'))
-def llm_mutate(prompt, llm_model):
-    llm_config = Config.default()
-    llm_config.llm.model = llm_model
-    llm_config.llm.temperature = 0.8
+def llm_mutate(prompt, llm_config):
+    config = Config.default()
+    config.llm.model = llm_config.get("model", "gpt-4-turbo")
+    config.llm.temperature = llm_config.get("temperature", 1.5)
+    config.llm.top_p = llm_config.get("top_p", 1.0)
 
-    mutate_operator = MutateAction(config=llm_config)
+    mutate_operator = MutateAction(config=config)
     improved_prompt = asyncio.run(mutate_operator.run(prompt=prompt))
 
     return improved_prompt
@@ -227,10 +229,11 @@ def llm_mutate(prompt, llm_model):
 
 @retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
     logger=logging.getLogger('evolve_role'))
-def llm_mutate2(prompt, llm_model, result_dir, n=3):
-    llm_config = Config.default()
-    llm_config.llm.model = llm_model
-    llm_config.llm.temperature = 0.8
+def llm_mutate2(prompt, result_dir, n=3, llm_config={}):
+    config = Config.default()
+    config.llm.model = llm_config.get("model", "gpt-4-turbo")
+    config.llm.temperature = llm_config.get("temperature", 1.5)
+    config.llm.top_p = llm_config.get("top_p", 1.0)
 
     eval_json_fp = os.path.join(result_dir, "eval_results.json")
     assert os.path.exists(eval_json_fp)
@@ -248,7 +251,7 @@ def llm_mutate2(prompt, llm_model, result_dir, n=3):
         negative_examples = random.sample(negative_examples, n)
     negative_examples = "\n".join(negative_examples)
 
-    mutate_operator = MutateAction(config=llm_config)
+    mutate_operator = MutateAction(config=config)
     improved_prompt = asyncio.run(mutate_operator.run2(prompt=prompt,
         negative_examples=negative_examples))
 
@@ -257,12 +260,13 @@ def llm_mutate2(prompt, llm_model, result_dir, n=3):
 
 @retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
     logger=logging.getLogger('evolve_role'))
-def llm_crossover(prompt_1, prompt_2, llm_model):
-    llm_config = Config.default()
-    llm_config.llm.model = llm_model
-    llm_config.llm.temperature = 0.8
+def llm_crossover(prompt_1, prompt_2, llm_config):
+    config = Config.default()
+    config.llm.model = llm_config.get("model", "gpt-4-turbo")
+    config.llm.temperature = llm_config.get("temperature", 1.5)
+    config.llm.top_p = llm_config.get("top_p", 1.0)
 
-    crossover_operator = CrossoverAction(config=llm_config)
+    crossover_operator = CrossoverAction(config=config)
     improved_prompt = asyncio.run(
         crossover_operator.run(prompt_1=prompt_1, prompt_2=prompt_2))
 
@@ -271,16 +275,17 @@ def llm_crossover(prompt_1, prompt_2, llm_model):
 
 @retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
     logger=logging.getLogger('evolve_role'))
-def llm_crossover2(prompt, additional_prompts, llm_model):
-    llm_config = Config.default()
-    llm_config.llm.model = llm_model
-    llm_config.llm.temperature = 0.8
+def llm_crossover2(prompt, additional_prompts, llm_config):
+    config = Config.default()
+    config.llm.model = llm_config.get("model", "gpt-4-turbo")
+    config.llm.temperature = llm_config.get("temperature", 1.5)
+    config.llm.top_p = llm_config.get("top_p", 1.0)
 
     if len(additional_prompts) == 0:
         additional_prompts = ["No additional prompts exist!"]
     additional_prompts = "\n".join(additional_prompts)
 
-    crossover_operator = CrossoverAction(config=llm_config)
+    crossover_operator = CrossoverAction(config=config)
     improved_prompt = asyncio.run(crossover_operator.run2(prompt=prompt,
         additional_prompts=additional_prompts))
 
@@ -294,7 +299,7 @@ class LLMEvaluator(object):
         self.dummy_mode = self.config.get("dummy_mode", False)
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
-        self.llm_model = self.config.get("llm_model", "gpt-3.5-turbo")
+        self.llm_config = self.config.get("llm_config", {})
         self.dataset = self.config.get("dataset", "humaneval")
         assert self.dataset in ['humaneval', 'mbpp']
         self.sanitize = self.config.get("sanitize", True)
@@ -342,7 +347,7 @@ class LLMEvaluator(object):
 
         @retry(Exception, tries=5, delay=1, backoff=2, logger=self.logger)
         def _eval_prompt(prompt_template, prompt):
-            team, coder = create_new_team(self.llm_model)
+            team, coder = create_new_team(self.llm_config)
             coder.set_prompt_template(prompt_template)
             team.run_project(prompt)
             asyncio.run(team.run(n_round=1))
@@ -414,7 +419,7 @@ with no additional text outside the code block.
 
     llm_model = 'N/A' if test_err else 'gpt-4o'
     try:
-        output = llm_mutate(PROMPT_TEMPLATE_1, llm_model=llm_model)
+        output = llm_mutate(PROMPT_TEMPLATE_1, llm_config={'model': llm_model})
         print("### LLM_MUTATE RETURN VALUE ###")
         print(output)
         print("###############################")
@@ -423,7 +428,7 @@ with no additional text outside the code block.
 
     try:
         output = llm_crossover(PROMPT_TEMPLATE_1, PROMPT_TEMPLATE_2,
-            llm_model=llm_model)
+            llm_config={'model': llm_model})
         print("### LLM_CROSSOVER RETURN VALUE ###")
         print(output)
         print("##################################")
@@ -446,7 +451,8 @@ your code:
 '''
     print(indv.role); population = [indv]
     llm_model = 'N/A' if test_err else 'gpt-3.5-turbo'
-    eval_config = {'n_workers': 1, 'dummy_mode': False, 'llm_model': llm_model}
+    eval_config = {'n_workers': 1, 'dummy_mode': False,
+        'llm_config': {'model': llm_model}}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
     print("Evaluation results:")
@@ -519,8 +525,8 @@ with no additional text outside the code block.
 
     llm_model = 'N/A' if test_err else 'gpt-4o'
     try:
-        output = llm_mutate2(PROMPT_TEMPLATE_1, llm_model=llm_model,
-            result_dir=result_dir)
+        output = llm_mutate2(PROMPT_TEMPLATE_1, result_dir,
+            llm_config={'model': llm_model}, n=3)
         print("### LLM_MUTATE RETURN VALUE ###")
         print(output)
         print("###############################")
@@ -529,7 +535,7 @@ with no additional text outside the code block.
 
     try:
         output = llm_crossover2(PROMPT_TEMPLATE_1, [PROMPT_TEMPLATE_2] * 5,
-            llm_model=llm_model)
+            llm_config={'model': llm_model})
         print("### LLM_CROSSOVER RETURN VALUE ###")
         print(output)
         print("##################################")
