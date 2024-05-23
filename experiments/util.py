@@ -15,9 +15,16 @@ from ruamel.yaml import YAML
 
 from alg_util import is_numpy_type, randomword
 
+OBJECTIVES = {'base_score': lambda x: x,
+    'wall_time_sec': lambda x: -x,
+    'user_time_sec': lambda x: -x,
+    'sys_time_sec': lambda x: -x,
+    'num_instructions': lambda x: -x,
+    'memory_usage_mb': lambda x: -x}
+
 
 def extract_evalplus(result_file, logger=None):
-    result_dict = {}
+    assert os.path.exists(results_file); result_dict = {}
     try:
         with open(result_file, 'r') as f:
             lines = f.readlines()

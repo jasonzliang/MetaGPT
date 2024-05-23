@@ -24,7 +24,7 @@ from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
-from util import extract_evalplus
+from util import extract_evalplus, OBJECTIVES
 
 
 def parse_code(rsp):
@@ -302,6 +302,8 @@ class LLMEvaluator(object):
         self.llm_config = self.config.get("llm_config", {})
         self.dataset = self.config.get("dataset", "humaneval")
         assert self.dataset in ['humaneval', 'mbpp']
+        self.objective = self.config.get("objective", "base_score")
+        assert self.objective in OBJECTIVES
         self.sanitize = self.config.get("sanitize", True)
         self.restart_interval = self.config.get("restart_interval", 999)
         assert self.restart_interval > 0
@@ -325,19 +327,17 @@ class LLMEvaluator(object):
             for indv in population:
                 if self.dummy_mode:
                     fitness = random.random()
+                    result_dict = {}
+                    result_dict['fitness'] = fitness
+                    result_dict['true_fitness'] = fitness
                 else:
-                    fitness = self._evalplus(indv)
-                result_dict = {}
-                result_dict['fitness'] = fitness
-                result_dict['true_fitness'] = fitness
+                    result_dict = self._eval_indv(indv)
                 result_dicts.append(result_dict)
         else:
-            result_dicts = self.pool.map(self._evalplus, population)
+            result_dicts = self.pool.map(self._eval_indv, population)
         return result_dicts
 
-
-
-    def _evalplus(self, indv):
+    def _eval_indv(self, indv):
         prompt_template, eval_id = indv.role, indv.id
         result_dir = os.path.join(self.evaluator_dir,
             "%s_%s_T-%d" % (self.dataset, eval_id, time.time()))
@@ -382,16 +382,23 @@ class LLMEvaluator(object):
                 (result_dir, result_dir))
             os.system("rm -rf %s-sanitized" % result_dir)
 
+        return self._run_evalplus(result_dir)
+
+    def _run_evalplus(self, result_dir):
         flag = "-v" if platform.system() == 'Linux' else '-l' # Flag for MacOS
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
-        os.system("/usr/bin/time %s evalplus.evaluate --dataset %s --samples %s 2>&1 | tee %s" \
+        os.system("/usr/bin/time %s evalplus.evaluate " \
+            "--dataset %s --samples %s 2>&1 | tee %s" \
             % (flag, self.dataset, result_dir, evalplus_fp))
-        # time.sleep(0.1)
         evalplus_result = extract_evalplus(evalplus_fp, self.logger)
 
+        assert self.objective in evalplus_result
+        assert "base_score" in evalplus_result
+        scaling_fn = OBJECTIVES[self.objective]
+
         result_dict = {}
-        result_dict['fitness'] = evalplus_result.get("base_score", 0.0)
-        result_dict['true_fitness'] = result_dict['fitness']
+        result_dict['fitness'] = scaling_fn(evalplus_result[self.objective])
+        result_dict['true_fitness'] = evalplus_result["base_score"]
         result_dict['result_dir'] = result_dir
         result_dict['evalplus_result'] = evalplus_result
         return result_dict
