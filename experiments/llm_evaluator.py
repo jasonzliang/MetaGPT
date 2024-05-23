@@ -203,8 +203,8 @@ def create_new_team(llm_config):
 
     config = Config.default()
     config.llm.model = llm_config.get("model", "gpt-3.5-turbo")
-    config.llm.temperature = llm_config.get("temperature", 0.5)
-    config.llm.top_p = llm_config.get("top_p", 0.5)
+    config.llm.temperature = llm_config.get("temperature", 0.2)
+    config.llm.top_p = llm_config.get("top_p", 1.0)
 
     team = Team()
     coder = SimpleCoder(config=config)
@@ -218,7 +218,7 @@ def create_new_team(llm_config):
 def llm_mutate(prompt, llm_config):
     config = Config.default()
     config.llm.model = llm_config.get("model", "gpt-4-turbo")
-    config.llm.temperature = llm_config.get("temperature", 1.5)
+    config.llm.temperature = llm_config.get("temperature", 1.0)
     config.llm.top_p = llm_config.get("top_p", 1.0)
 
     mutate_operator = MutateAction(config=config)
@@ -232,7 +232,7 @@ def llm_mutate(prompt, llm_config):
 def llm_mutate2(prompt, result_dir, n=3, llm_config={}):
     config = Config.default()
     config.llm.model = llm_config.get("model", "gpt-4-turbo")
-    config.llm.temperature = llm_config.get("temperature", 1.5)
+    config.llm.temperature = llm_config.get("temperature", 1.0)
     config.llm.top_p = llm_config.get("top_p", 1.0)
 
     eval_json_fp = os.path.join(result_dir, "eval_results.json")
@@ -263,7 +263,7 @@ def llm_mutate2(prompt, result_dir, n=3, llm_config={}):
 def llm_crossover(prompt_1, prompt_2, llm_config):
     config = Config.default()
     config.llm.model = llm_config.get("model", "gpt-4-turbo")
-    config.llm.temperature = llm_config.get("temperature", 1.5)
+    config.llm.temperature = llm_config.get("temperature", 1.0)
     config.llm.top_p = llm_config.get("top_p", 1.0)
 
     crossover_operator = CrossoverAction(config=config)
@@ -278,7 +278,7 @@ def llm_crossover(prompt_1, prompt_2, llm_config):
 def llm_crossover2(prompt, additional_prompts, llm_config):
     config = Config.default()
     config.llm.model = llm_config.get("model", "gpt-4-turbo")
-    config.llm.temperature = llm_config.get("temperature", 1.5)
+    config.llm.temperature = llm_config.get("temperature", 1.0)
     config.llm.top_p = llm_config.get("top_p", 1.0)
 
     if len(additional_prompts) == 0:
