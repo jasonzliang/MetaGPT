@@ -127,7 +127,7 @@ class Individual(object):
         else:
             assert n >= 0 and self.result_dir is not None
             self.role = llm_mutate2(self.role, self.result_dir, n=n,
-                self.llm_config)
+                llm_config=self.llm_config)
 
     def crossover(self, other):
         if self.dummy_mode:
