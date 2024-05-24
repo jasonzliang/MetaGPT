@@ -15,7 +15,8 @@ MAX_CROWDING_DIST = 1.0
 ID_LENGTH = 12
 EPSILON = 1e-14
 MIN_POP_SIZE = 2
-MIN_FITNESS = 1e-12
+MIN_FITNESS = -1e12
+# MIN_FITNESS = 1e-12
 
 def moving_average(arr, n):
     avg = np.zeros(len(arr))
