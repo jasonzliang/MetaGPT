@@ -17,6 +17,7 @@ from ruamel.yaml import YAML
 from alg_util import is_numpy_type, randomword
 
 OBJECTIVES = {'base_score': lambda x: x,
+    'plus_score': lambda x: x,
     'wall_time_sec': lambda x: -x,
     'user_time_sec': lambda x: -x,
     'sys_time_sec': lambda x: -x,
