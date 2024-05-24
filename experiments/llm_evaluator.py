@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import glob
 import json
 import logging
 import os
@@ -492,12 +493,12 @@ def _test_parallel_eval(n=10):
     print(result_dicts)
 
 
-def _test_mutation_crossover2(
-    result_dir='results/humaneval_G-0_ID-0E6aFZaLKB7F_T-1716231246',
-    test_err=False):
-
+def _test_mutation_crossover2(test_err=False):
+    result_dirs = sorted(glob.glob('results/**/humaneval_*'))
+    assert len(result_dirs) > 0; result_dir = result_dirs[0]; print(result_dir)
     llm_model = 'N/A' if test_err else 'gpt-4o'
     llm_config = {'model': llm_model, 'temperature': 1.2, 'top_p': 1.0}
+
     try:
         output = llm_mutate2(PROMPT_TEMPLATE_1, result_dir,
             llm_config=llm_config, n=3)
