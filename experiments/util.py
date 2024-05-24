@@ -38,18 +38,20 @@ def extract_evalplus(result_file, logger=None):
                 score = float(lines[i+1].rstrip().rsplit()[1])
                 assert 0.0 <= score <= 1.0
                 result_dict['plus_score'] = score
-            if "peak memory footprint" in line:
-                result_dict['memory_usage_mb'] = float(line.split()[0]) / 1e6
+            # Linux performance metrics
             if "Maximum resident set size (kbytes)" in line:
                 result_dict['memory_usage_mb'] = float(line.split()[-1]) / 1e3
-            if "instructions retired" in line:
-                result_dict['num_instructions'] = float(line.split()[0])
             if "Elapsed (wall clock) time" in line:
                 result_dict['wall_time_sec'] = get_sec(line.split()[-1])
             if "User time" in line:
                 result_dict['user_time_sec'] = float(line.split()[-1])
             if "System time" in line:
                 result_dict['sys_time_sec'] = float(line.split()[-1])
+            # MacOS performance metrics
+            if "peak memory footprint" in line:
+                result_dict['memory_usage_mb'] = float(line.split()[0]) / 1e6
+            if "instructions retired" in line:
+                result_dict['num_instructions'] = float(line.split()[0])
             if "real" in line:
                 result_dict['wall_time_sec'] = float(line.split()[0])
                 result_dict['user_time_sec'] = float(line.split()[2])
