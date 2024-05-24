@@ -24,7 +24,7 @@ OBJECTIVES = {'base_score': lambda x: x,
 
 
 def extract_evalplus(result_file, logger=None):
-    assert os.path.exists(results_file); result_dict = {}
+    assert os.path.exists(result_file); result_dict = {}
     try:
         with open(result_file, 'r') as f:
             lines = f.readlines()
