@@ -405,13 +405,12 @@ class LLMEvaluator(object):
 
 
 #### Unit tests ####
-def _test_mutation_crossover(test_err=False):
-    PROMPT_TEMPLATE_1 = '''
+PROMPT_TEMPLATE_1 = '''
 Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
 your code:
 '''
-    PROMPT_TEMPLATE_2 = '''
+PROMPT_TEMPLATE_2 = '''
 ### Task Description
 Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
 
@@ -424,9 +423,12 @@ Return your solution in the following format:
 with no additional text outside the code block.
 '''
 
+def _test_mutation_crossover(test_err=False):
     llm_model = 'N/A' if test_err else 'gpt-4o'
+    llm_config = {'model': llm_model, 'temperature': 1.2, 'top_p': 1.0}
+
     try:
-        output = llm_mutate(PROMPT_TEMPLATE_1, llm_config={'model': llm_model})
+        output = llm_mutate(PROMPT_TEMPLATE_1, llm_config=llm_config)
         print("### LLM_MUTATE RETURN VALUE ###")
         print(output)
         print("###############################")
@@ -435,7 +437,7 @@ with no additional text outside the code block.
 
     try:
         output = llm_crossover(PROMPT_TEMPLATE_1, PROMPT_TEMPLATE_2,
-            llm_config={'model': llm_model})
+            llm_config=llm_config)
         print("### LLM_CROSSOVER RETURN VALUE ###")
         print(output)
         print("##################################")
@@ -450,12 +452,8 @@ def _test_evaluator(prompt_fp=None, test_err=False):
         with open(prompt_fp, "r") as f:
             indv.role = f.read()
     else:
-        indv.role = \
-'''
-Write a python function that can {instruction}.
-Return ```python your_code_here ``` with NO other texts,
-your code:
-'''
+        indv.role = PROMPT_TEMPLATE_1
+
     print(indv.role); population = [indv]
     llm_model = 'N/A' if test_err else 'gpt-3.5-turbo'
     eval_config = {'n_workers': 1, 'dummy_mode': False,
@@ -473,19 +471,7 @@ def _test_evalplus_extractor(
 
 
 def _test_prompt_extractor():
-    PROMPT_TEMPLATE = \
-"""PROMPT_TEMPLATE: str = '''
-### Task Description
-Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
-
-### Your Code
-Return your solution in the following format:
-```python
-# Your code here
-```
-with no additional text outside the code block.
-'''"""
-
+    PROMPT_TEMPLATE = """PROMPT_TEMPLATE: str = '''%s'''""" % PROMPT_TEMPLATE_1
     print("Original prompt template:")
     print(PROMPT_TEMPLATE)
     print("Extracted prompt template:")
@@ -496,13 +482,9 @@ def _test_parallel_eval(n=10):
     from role_ga import Individual
     population = [Individual({}, gen_created=0) for i in range(n)]
     for indv in population:
-        indv.role = \
-'''
-Write a python function that can {instruction}.
-Return ```python your_code_here ``` with NO other texts,
-your code:
-'''
+        indv.role = PROMPT_TEMPLATE_1
     print(indv.role)
+
     eval_config = {'n_workers': n, 'dummy_mode': False}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
@@ -511,29 +493,14 @@ your code:
 
 
 def _test_mutation_crossover2(
-    result_dir='results/humaneval_results_1713947427', test_err=False):
-    PROMPT_TEMPLATE_1 = '''
-Write a python function that can {instruction}.
-Return ```python your_code_here ``` with NO other texts,
-your code:
-'''
-    PROMPT_TEMPLATE_2 = '''
-### Task Description
-Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
-
-- **Modularity**: Break down the solution into smaller, reusable components where applicable.
-- **Readability**: Use meaningful variable and function names that clearly indicate their purpose or the data they hold.
-
-### Your Code
-Return your solution in the following format:
-```python your_code_here ```
-with no additional text outside the code block.
-'''
+    result_dir='results/humaneval_G-0_ID-0E6aFZaLKB7F_T-1716231246',
+    test_err=False):
 
     llm_model = 'N/A' if test_err else 'gpt-4o'
+    llm_config = {'model': llm_model, 'temperature': 1.2, 'top_p': 1.0}
     try:
         output = llm_mutate2(PROMPT_TEMPLATE_1, result_dir,
-            llm_config={'model': llm_model}, n=3)
+            llm_config=llm_config, n=3)
         print("### LLM_MUTATE RETURN VALUE ###")
         print(output)
         print("###############################")
@@ -542,7 +509,7 @@ with no additional text outside the code block.
 
     try:
         output = llm_crossover2(PROMPT_TEMPLATE_1, [PROMPT_TEMPLATE_2] * 5,
-            llm_config={'model': llm_model})
+            llm_config=llm_config)
         print("### LLM_CROSSOVER RETURN VALUE ###")
         print(output)
         print("##################################")
@@ -551,4 +518,4 @@ with no additional text outside the code block.
 
 
 if __name__ == "__main__":
-    _test_evaluator(test_err=False)
+    _test_mutation_crossover2(test_err=False)
