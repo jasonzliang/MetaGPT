@@ -29,7 +29,7 @@ async def autogpt(prompt):
     async with ApiClient(configuration) as api_client:
         # Create an instance of the API class
         api_instance = AgentApi(api_client)
-        task_request_body = TaskRequestBody(input="Complete the following python code and write to result.txt, while ensuring correctness and accuracy:\n%s" % prompt)
+        task_request_body = TaskRequestBody(input="Complete or implement the following Python code and write the output to result.txt. Write correct, efficient, correct code with NO other texts. Python code:\n%s" % prompt)
 
         response = await api_instance.create_agent_task(
             task_request_body=task_request_body
