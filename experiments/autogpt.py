@@ -20,6 +20,8 @@ from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
+from util import get_time
+
 
 async def autogpt(prompt):
     # Defining the host is optional and defaults to http://localhost
@@ -29,7 +31,8 @@ async def autogpt(prompt):
     async with ApiClient(configuration) as api_client:
         # Create an instance of the API class
         api_instance = AgentApi(api_client)
-        task_request_body = TaskRequestBody(input="Complete or implement the following Python code and write the output to result.txt. Write correct, efficient, correct code with NO other texts. Python code:\n%s" % prompt)
+        task_request_body = TaskRequestBody(input="Complete the following python code and write to result.txt, while ensuring correctness and accuracy:\n%s" % prompt)
+        # task_request_body = TaskRequestBody(input="Complete or implement the following Python code and write the output to result.txt. Write correct, efficient, correct code with NO other texts. Python code:\n%s" % prompt)
 
         response = await api_instance.create_agent_task(
             task_request_body=task_request_body
@@ -77,9 +80,8 @@ def generate_code_prompt(example: dict) -> str:
 
 
 async def eval_humaneval(
-    # result_dir="results/humaneval_results_%s" % int(time.time()),
-    result_dir="results/humaneval_results_1718192504",
-
+    result_dir="results/humaneval_results_%s" % get_time(space=False),
+    # result_dir="results/humaneval_results_1718192504",
 ):
     problems = get_human_eval_plus()
     eval_name = "humaneval"
@@ -109,9 +111,6 @@ async def eval_humaneval(
     os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
         % (eval_name, result_dir, os.path.join(result_dir, "evalplus.txt")))
     os.system("cp %s %s" % (__file__, result_dir))
-    # os.system("cp ~/.metagpt/config2.yaml %s" % result_dir)
-    # with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
-    #     f.write(coder.get_prompt_template())
 
 
 if __name__ == "__main__":

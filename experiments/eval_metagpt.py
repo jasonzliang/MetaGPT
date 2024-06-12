@@ -21,6 +21,8 @@ from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
+from util import get_time
+
 
 def parse_code(rsp):
     pattern = r"```python(.*)```"
@@ -321,7 +323,7 @@ def create_new_team():
 
 async def eval_humaneval(
     n_round=5,
-    result_dir="results/humaneval_results_%s" % int(time.time()),
+    result_dir="results/humaneval_results_%s" % get_time(space=False),
     template_mode=True
 ):
     problems = get_human_eval_plus()
