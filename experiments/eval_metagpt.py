@@ -318,10 +318,11 @@ def create_new_team():
     return team, coder
 
 
+
 async def eval_humaneval(
     n_round=5,
     result_dir="results/humaneval_results_%s" % int(time.time()),
-    template_mode=False
+    template_mode=True
 ):
     problems = get_human_eval_plus()
     eval_name = "humaneval"
