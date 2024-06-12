@@ -520,4 +520,4 @@ def _test_mutation_crossover2(test_err=False):
 
 
 if __name__ == "__main__":
-    _test_mutation_crossover2(test_err=False)
+    _test_evaluator(test_err=False)

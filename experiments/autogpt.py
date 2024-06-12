@@ -74,7 +74,7 @@ def generate_code_prompt(example: dict) -> str:
 
 
 async def eval_humaneval(
-    result_dir="results/humaneval_results_%s" % int(time.time()),
+    result_dir="results/humaneval_results_1718192504",
 ):
     problems = get_human_eval_plus()
     eval_name = "humaneval"
