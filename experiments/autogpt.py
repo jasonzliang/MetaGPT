@@ -54,19 +54,22 @@ async def autogpt(prompt):
 
         artifacts = await api_instance.list_agent_task_artifacts(task_id=task_id)
         for artifact in artifacts:
-            if type(artifact) is tuple:
-                artifact = artifact[1]
-            if type(artifact) is list:
-                artifact = artifact[0]
-            if artifact.file_name == "result.txt":
-                content = await api_instance.download_agent_task_artifact(
-                    task_id=task_id, artifact_id=artifact.artifact_id
-                )
-                print(f'The content of the result.txt is {content})')
-                return content.decode()
-        else:
-            print("The agent did not create the result.txt file.")
-            return ""
+            try:
+                if type(artifact) is tuple:
+                    artifact = artifact[1]
+                if type(artifact) is list:
+                    artifact = artifact[0]
+                if artifact.file_name == "result.txt":
+                    content = await api_instance.download_agent_task_artifact(
+                        task_id=task_id, artifact_id=artifact.artifact_id
+                    )
+                    print(f'The content of the result.txt is {content})')
+                    return content.decode()
+            except:
+                continue
+
+        print("The agent did not create the result.txt file.")
+        return ""
 
 
 def generate_code_prompt(example: dict) -> str:
@@ -86,7 +89,7 @@ async def eval_humaneval(
         task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
         os.makedirs(task_id_dir, exist_ok=True)
         result_file = os.path.join(task_id_dir, "0.py")
-        if os.path.exists(result_file):
+        if os.path.exists(result_file) and os.path.getsize(result_file) > 0:
             continue
 
         sample = {"instruction": problem['prompt'],
