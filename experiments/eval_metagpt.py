@@ -320,9 +320,9 @@ def create_new_team():
 
 async def eval_humaneval(
     n_round=5,
-    result_dir="humaneval_results_%s" % int(time.time())
+    result_dir="results/humaneval_results_%s" % int(time.time()),
+    template_mode=False
 ):
-
     problems = get_human_eval_plus()
     eval_name = "humaneval"
     results = []
@@ -333,11 +333,14 @@ async def eval_humaneval(
         prompt = generate_code_prompt(sample)
         logger.info("\n\n#### Task ID: %s, Prompt:\n%s" % (task_id, prompt))
 
-        team, coder = create_new_team()
-        team.run_project(prompt)
-        await team.run(n_round=n_round)
-        output = coder.get_code_text()
-        logger.info("#### MetaGPT Output:\n%s" % output)
+        if template_mode:
+            output = prompt
+        else:
+            team, coder = create_new_team()
+            team.run_project(prompt)
+            await team.run(n_round=n_round)
+            output = coder.get_code_text()
+            logger.info("#### MetaGPT Output:\n%s" % output)
 
         task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
         os.makedirs(task_id_dir, exist_ok=True)
@@ -347,12 +350,13 @@ async def eval_humaneval(
 
         results.append({'task_id': task_id, 'solution': output})
 
+    if template_mode:
+        return
+
     os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
         % (eval_name, result_dir, os.path.join(result_dir, "evalplus.txt")))
     os.system("cp %s %s" % (__file__, result_dir))
     os.system("cp ~/.metagpt/config2.yaml %s" % result_dir)
-    # with open(os.path.join(result_dir, "config.txt"), "w") as f:
-    #     f.write(pprint.pformat(locals(), compact=True))
     with open(os.path.join(result_dir, "prompt_template.txt"), "w") as f:
         f.write(coder.get_prompt_template())
 
