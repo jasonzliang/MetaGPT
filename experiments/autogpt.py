@@ -80,8 +80,8 @@ def generate_code_prompt(example: dict) -> str:
 
 
 async def eval_humaneval(
-    # result_dir="results/humaneval_results_%s" % get_time(space=False),
-    result_dir="results/humaneval_results_1718217224",
+    result_dir="results/humaneval_results_%s" % get_time(space=False),
+    # result_dir="results/humaneval_results_1718217224",
 ):
     problems = get_human_eval_plus()
     eval_name = "humaneval"
