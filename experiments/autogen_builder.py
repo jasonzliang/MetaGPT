@@ -50,7 +50,7 @@ config_list = autogen.config_list_from_json(config_file_or_env,
     filter_dict={"model": ["gpt-4-turbo"]})
 
 
-def start_task(execution_task: str, agent_list: list, coding=False):
+def start_task(execution_task: str, agent_list: list, coding=True):
     group_chat = autogen.GroupChat(
         agents=agent_list,
         messages=[],
@@ -99,7 +99,8 @@ building_task = "Generate a team of 4 agents that can work together to generate 
 
 save_path = "autogen_builder_cfg.json"
 if not os.path.exists(save_path):
-    agent_list, agent_configs = builder.build(building_task, llm_config)
+    agent_list, agent_configs = builder.build(building_task, llm_config,
+        coding=True)
     save_path = builder.save(save_path)
 else:
     # load previous agent configs
