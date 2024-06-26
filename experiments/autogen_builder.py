@@ -91,7 +91,7 @@ def init_builder(work_dir, builder_cfg=None):
     if not os.path.exists(builder_cfg):
         print("Creating new builder cfg: %s" % builder_cfg)
         code_execution_config = {
-            "last_n_messages": 1,
+            "last_n_messages": "auto",
             "work_dir": work_dir,
             "use_docker": False,
             "timeout": 10,
