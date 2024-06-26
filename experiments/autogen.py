@@ -121,15 +121,12 @@ def generate_code_prompt(example: dict) -> str:
     prompt_template = \
 """
 Complete the following problem:
-
 ### PROBLEM BEGINS HERE
 %s
 ### PROBLEM ENDS HERE
-
 Write the completed code to disk to the following file:
 %s
 Verify that the completed code is indeed written to disk. If not, restart the process.
-
 """
     return prompt_template % (example['instruction'], example['result_file'])
 
