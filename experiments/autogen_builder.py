@@ -74,7 +74,7 @@ def start_task(execution_task: str, agent_list: list, coding=True):
 builder = AgentBuilder(
     config_file_or_env=config_file_or_env,
     builder_model=["gpt-4-turbo"],
-    agent_model=["gpt-3.5-turbo"]
+    agent_model=["gpt-3.5-turbo"],
 )
 
 
@@ -133,8 +133,8 @@ Verify that the completed code is indeed written to disk. If not, restart the pr
 
 
 def eval_humaneval(
-    result_dir="results/humaneval_results_%s" % get_time(space=False),
-    # result_dir="results/humaneval_results_1718217224",
+    # result_dir="results/humaneval_results_%s" % get_time(space=False),
+    result_dir="results/humaneval_results_2024-06-26_10-13-15",
 ):
     os.makedirs("groupchat", exist_ok=True)
     problems = get_human_eval_plus()
@@ -176,15 +176,6 @@ def eval_humaneval(
 
 if __name__ == "__main__":
     eval_humaneval()
-
-# start_task(
-#     execution_task="Solve the following task",
-#     agent_list=agent_list,
-#     coding=agent_configs["coding"],
-# )
-
-
-# builder.clear_all_agents()
 
 
 # ## Step 6 (Optional): clear all agents and prepare for the next task
