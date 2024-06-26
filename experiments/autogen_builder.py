@@ -55,7 +55,7 @@ def start_task(execution_task: str, agent_list: list, coding=True):
     group_chat = autogen.GroupChat(
         agents=agent_list,
         messages=[],
-        max_round=20,
+        max_round=25,
         allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list,
     )
     manager = autogen.GroupChatManager(
@@ -146,33 +146,29 @@ def generate_code_prompt(example: dict) -> str:
     # return example['instruction']
     prompt_template = \
 """
-Complete the following problem using python code:
-### PROBLEM BEGINS HERE
-%s
-### PROBLEM ENDS HERE
+Write a python function that can %s.
+Return ```python your_code_here ``` with NO other texts
 
-Write the completed code to the following file:
+Test the function and if it is correct, write the function to disk with the following file name:
 %s
 """
-    return prompt_template % (
-        example['instruction'],
-        example['result_file'])
+    return prompt_template % (example['instruction'], example['result_file'])
 
 
-def parse_code(rsp):
-    if rsp is None: return ""
-    pattern = r"```python(.*)```"
-    match = re.search(pattern, rsp, re.DOTALL)
-    if match:
-        return match.group(1)
-    else:
-        return ""
+def extract_code_from_chat(chat_result):
+    def parse_code(rsp):
+        if rsp is None: return None
+        pattern = r"```python(.*)```"
+        match = re.search(pattern, rsp, re.DOTALL)
+        if match:
+            return match.group(1)
+        else:
+            return None
 
-
-def get_code(chat_result):
     code = ""
     for msg_dict in chat_result.chat_history:
         result = parse_code(msg_dict['content'])
+        if result is not None: code = result
     return code
 
 
@@ -215,7 +211,7 @@ def eval_humaneval(
         if os.path.exists(autogen_file):
             os.system("mv %s %s" % (autogen_file, result_file))
         else:
-            code = get_code(chat_result)
+            code = extract_code_from_chat(chat_result)
             with open(result_file, "w") as f:
                 f.write(code)
         # pprint.pprint(chat_result); exit()
