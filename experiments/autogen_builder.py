@@ -55,7 +55,7 @@ def start_task(execution_task: str, agent_list: list, coding=True):
     group_chat = autogen.GroupChat(
         agents=agent_list,
         messages=[],
-        max_round=24,
+        max_round=99,
         allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list,
     )
     manager = autogen.GroupChatManager(
@@ -150,16 +150,17 @@ Complete the following problem:
 ### PROBLEM BEGINS HERE
 %s
 ### PROBLEM ENDS HERE
-Write the completed code to disk to the following file:
+Write the solution to the following file name:
 %s
-Verify that the completed code is indeed written to disk. If not, restart the process.
 """
-    return prompt_template % (example['instruction'], example['result_file'])
+    return prompt_template % (
+        example['instruction'],
+        example['result_file'])
 
 
 def eval_humaneval(
-    result_dir="results/humaneval_results_%s" % get_time(space=False),
-    # result_dir="results/humaneval_results_2024-06-26_10-13-15",
+    # result_dir="results/humaneval_results_%s" % get_time(space=False),
+    result_dir="results/humaneval_results_2024-06-26_12-02-12",
     builder_cfg="autogen_builder_cfg.json",
     work_dir="groupchat",
     clear_cache=True,
