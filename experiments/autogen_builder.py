@@ -55,7 +55,7 @@ def start_task(execution_task: str, agent_list: list, coding=True):
     group_chat = autogen.GroupChat(
         agents=agent_list,
         messages=[],
-        max_round=99,
+        max_round=20,
         allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list,
     )
     manager = autogen.GroupChatManager(
@@ -146,16 +146,34 @@ def generate_code_prompt(example: dict) -> str:
     # return example['instruction']
     prompt_template = \
 """
-Complete the following problem:
+Complete the following problem using python code:
 ### PROBLEM BEGINS HERE
 %s
 ### PROBLEM ENDS HERE
-Write the solution to the following file name:
+
+Write the completed code to the following file:
 %s
 """
     return prompt_template % (
         example['instruction'],
         example['result_file'])
+
+
+def parse_code(rsp):
+    if rsp is None: return ""
+    pattern = r"```python(.*)```"
+    match = re.search(pattern, rsp, re.DOTALL)
+    if match:
+        return match.group(1)
+    else:
+        return ""
+
+
+def get_code(chat_result):
+    code = ""
+    for msg_dict in chat_result.chat_history:
+        result = parse_code(msg_dict['content'])
+    return code
 
 
 def eval_humaneval(
@@ -197,7 +215,9 @@ def eval_humaneval(
         if os.path.exists(autogen_file):
             os.system("mv %s %s" % (autogen_file, result_file))
         else:
-            os.system("touch %s" % result_file)
+            code = get_code(chat_result)
+            with open(result_file, "w") as f:
+                f.write(code)
         # pprint.pprint(chat_result); exit()
 
     os.system("evalplus.sanitize --samples %s >/dev/null" % result_dir)
