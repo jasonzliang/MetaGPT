@@ -157,6 +157,7 @@ def eval_humaneval(
             agent_list=agent_list,
             coding=agent_configs["coding"],
         )
+        builder.clear_all_agents(recycle_endpoint=True)
 
         autogen_file = os.path.join("groupchat", "0.py")
         assert os.path.exists(autogen_file)
