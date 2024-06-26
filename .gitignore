@@ -191,7 +191,10 @@ cov.xml
 .tags
 .tags_*
 
-experiments/results/*
+experiments/results
+experiments/groupchat
+experiments/*.json
+
 *.jpg
 *.jpeg
 *.png
