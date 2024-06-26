@@ -27,6 +27,7 @@
 
 import copy
 import fire
+import json
 import os
 import pprint
 import re
@@ -71,11 +72,53 @@ def start_task(execution_task: str, agent_list: list, coding=True):
 # In[2]:
 
 
-builder = AgentBuilder(
-    config_file_or_env=config_file_or_env,
-    builder_model=["gpt-4-turbo"],
-    agent_model=["gpt-3.5-turbo"],
-)
+def init_builder(work_dir, builder_cfg=None):
+    os.makedirs(work_dir, exist_ok=True)
+
+    builder = AgentBuilder(
+        config_file_or_env=config_file_or_env,
+        builder_model=["gpt-4-turbo"],
+        agent_model=["gpt-3.5-turbo"],
+    )
+
+    building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities. Make the team can write files to disk."
+
+    if builder_cfg is None:
+        builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
+    else:
+        assert os.path.exists(builder_cfg)
+
+    if not os.path.exists(builder_cfg):
+        print("Creating new builder cfg: %s" % builder_cfg)
+        code_execution_config = {
+            "last_n_messages": 1,
+            "work_dir": work_dir,
+            "use_docker": False,
+            "timeout": 10,
+        }
+        agent_list, agent_configs = builder.build(
+            building_task,
+            llm_config,
+            coding=True,
+            code_execution_config=code_execution_config)
+        builder_cfg = builder.save(builder_cfg)
+    else:
+        # overwrite builder cfg with current work_dir
+        with open(builder_cfg, "r") as f:
+            builder_dict = json.load(f)
+        builder_dict["code_execution_config"]["work_dir"] = work_dir
+        with open(builder_cfg, "w") as f:
+            json.dump(builder_dict, f)
+
+        # load previous agent configs
+        print("Using existing builder cfg: %s" % builder_cfg)
+        agent_list, agent_configs = builder.load(builder_cfg)
+
+    print("Save path: %s" % builder_cfg)
+    print("Agent list: %s" % agent_list)
+    print("Agent configs:")
+    pprint.pprint(agent_configs)
+    return agent_list, agent_configs, builder
 
 
 # ## Step 3: specify a building task
@@ -83,10 +126,6 @@ builder = AgentBuilder(
 # Specify a building task with a general description. Building task will help build manager (a LLM) decide what agents should be built.
 
 # In[3]:
-
-
-building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities. Make the team can write files to disk."
-
 
 # ## Step 4: build group chat agents
 # Use `build()` to let build manager (the specified `builder_model`) complete the group chat agents generation. If you think coding is necessary in your task, you can use `coding=True` to add a user proxy (an automatic code interpreter) into the agent list, like: 
@@ -96,20 +135,6 @@ building_task = "Generate a team of 4 agents that can work together to generate 
 # If `coding` is not specified, AgentBuilder will determine on its own whether the user proxy should be added or not according to the task.
 
 # In[4]:
-
-save_path = "autogen_builder_cfg.json"
-if not os.path.exists(save_path):
-    agent_list, agent_configs = builder.build(building_task, llm_config,
-        coding=True)
-    save_path = builder.save(save_path)
-else:
-    # load previous agent configs
-    agent_list, agent_configs = builder.load(save_path)
-
-print("Save path: %s" % save_path)
-print("Agent list: %s" % agent_list)
-print("Agent configs:")
-pprint.pprint(agent_configs)
 
 # ## Step 5: execute task
 # Let agents generated in `build()` to complete the task collaboratively in a group chat.
@@ -133,14 +158,21 @@ Verify that the completed code is indeed written to disk. If not, restart the pr
 
 
 def eval_humaneval(
-    # result_dir="results/humaneval_results_%s" % get_time(space=False),
-    result_dir="results/humaneval_results_2024-06-26_10-13-15",
+    result_dir="results/humaneval_results_%s" % get_time(space=False),
+    # result_dir="results/humaneval_results_2024-06-26_10-13-15",
+    builder_cfg="autogen_builder_cfg.json",
+    work_dir="groupchat",
+    clear_cache=True,
 ):
-    os.makedirs("groupchat", exist_ok=True)
+
+    if work_dir is None: work_dir = result_dir
+    if clear_cache: os.system("rm -rf .cache")
+    agent_list, agent_configs, builder = init_builder(work_dir,
+        builder_cfg=builder_cfg)
     problems = get_human_eval_plus()
     eval_name = "humaneval"
 
-    for task_id, problem in problems.items():
+    for i, (task_id, problem) in enumerate(problems.items()):
         task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
         os.makedirs(task_id_dir, exist_ok=True)
         result_file = os.path.join(task_id_dir, "0.py")
@@ -158,11 +190,13 @@ def eval_humaneval(
             agent_list=agent_list,
             coding=agent_configs["coding"],
         )
-        builder.clear_all_agents(recycle_endpoint=True)
+        builder.clear_all_agents()
 
-        autogen_file = os.path.join("groupchat", "0.py")
-        assert os.path.exists(autogen_file)
-        os.system("cp %s %s" % (autogen_file, result_file))
+        autogen_file = os.path.join(work_dir, "0.py")
+        if os.path.exists(autogen_file):
+            os.system("mv %s %s" % (autogen_file, result_file))
+        else:
+            os.system("touch %s" % result_file)
         # pprint.pprint(chat_result); exit()
 
     os.system("evalplus.sanitize --samples %s >/dev/null" % result_dir)
