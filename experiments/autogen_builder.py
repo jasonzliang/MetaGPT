@@ -34,13 +34,14 @@ import re
 import sys
 import time
 
-from evalplus.data.humaneval import get_human_eval_plus
-from evalplus.data.mbpp import get_mbpp_plus
-from evalplus.data import write_jsonl
-
 import autogen
 from autogen.agentchat.contrib.agent_builder import AgentBuilder
 from autogen.code_utils import extract_code
+from evalplus.data.humaneval import get_human_eval_plus
+from evalplus.data.mbpp import get_mbpp_plus
+from evalplus.data import write_jsonl
+import timeout_decorator
+from timeout_decorator import TimeoutError
 
 from util import get_time
 
@@ -48,9 +49,10 @@ from util import get_time
 config_file_or_env = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
 llm_config = {"temperature": 0}
 config_list = autogen.config_list_from_json(config_file_or_env,
-    filter_dict={"model": ["gpt-4-turbo"]})
+    filter_dict={"model": ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]})
 
 
+@timeout_decorator.timeout(120)
 def start_task(execution_task: str, agent_list: list, coding=True):
     group_chat = autogen.GroupChat(
         agents=agent_list,
@@ -77,16 +79,14 @@ def init_builder(work_dir, builder_cfg=None):
 
     builder = AgentBuilder(
         config_file_or_env=config_file_or_env,
-        builder_model=["gpt-4-turbo"],
-        agent_model=["gpt-3.5-turbo"],
+        builder_model=["gpt-4o"],
+        agent_model=["gpt-4o"],
     )
 
-    building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities. Make the team can write files to disk."
+    building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities. At least one of the agents should be capable of writing files to disk."
 
     if builder_cfg is None:
         builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
-    else:
-        assert os.path.exists(builder_cfg)
 
     if not os.path.exists(builder_cfg):
         print("Creating new builder cfg: %s" % builder_cfg)
@@ -174,7 +174,7 @@ def extract_code_from_chat(chat_result):
 
 def eval_humaneval(
     # result_dir="results/humaneval_results_%s" % get_time(space=False),
-    result_dir="results/humaneval_results_2024-06-26_12-02-12",
+    result_dir="results/humaneval_results_2024-06-29_21-35-10",
     builder_cfg="autogen_builder_cfg.json",
     work_dir="groupchat",
     clear_cache=True,
@@ -200,20 +200,21 @@ def eval_humaneval(
         prompt = generate_code_prompt(sample)
         print("\n\n#### Task ID: %s, Prompt:\n%s" % (task_id, prompt))
 
-        chat_result = start_task(
-            execution_task=prompt,
-            agent_list=agent_list,
-            coding=agent_configs["coding"],
-        )
-        builder.clear_all_agents()
-
-        autogen_file = os.path.join(work_dir, "0.py")
-        if os.path.exists(autogen_file):
-            os.system("mv %s %s" % (autogen_file, result_file))
-        else:
-            code = extract_code_from_chat(chat_result)
-            with open(result_file, "w") as f:
-                f.write(code)
+        try:
+            chat_result = start_task(
+                execution_task=prompt,
+                agent_list=agent_list,
+                coding=agent_configs["coding"],
+            )
+            builder.clear_all_agents()
+            autogen_file = os.path.join(work_dir, "0.py")
+            if os.path.exists(autogen_file):
+                os.system("mv %s %s" % (autogen_file, result_file))
+            else:
+                code = extract_code_from_chat(chat_result)
+        except TimeoutError:
+            code = ""
+        with open(result_file, "w") as f: f.write(code)
         # pprint.pprint(chat_result); exit()
 
     os.system("evalplus.sanitize --samples %s >/dev/null" % result_dir)

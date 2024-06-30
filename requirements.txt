@@ -66,3 +66,4 @@ simplejson
 pathos
 retry
 # git+https://github.com/evalplus/evalplus.git
+# git+https://github.com/jasonzliang/autogen.git
