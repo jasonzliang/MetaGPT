@@ -197,7 +197,7 @@ class SimpleCoder(Role):
         super().__init__(**kwargs)
         self._watch([UserRequirement])
         # self.set_actions([SimpleWriteCode])
-        self.set_actions([SimpleWriteCodeWC])
+        self.set_actions([SimpleWriteCode])
 
     # System prompt override for wizardcoder LLM
     # def _get_prefix(self):
@@ -324,7 +324,7 @@ def create_new_team():
 async def eval_humaneval(
     n_round=5,
     result_dir="results/humaneval_results_%s" % get_time(space=False),
-    template_mode=True
+    template_mode=False
 ):
     problems = get_human_eval_plus()
     eval_name = "humaneval"
