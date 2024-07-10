@@ -62,18 +62,19 @@ max_chat_hist_len = 128000
 @timeout_decorator.timeout(120)
 def start_task(execution_task: str, agent_list: list, coding=True):
     # last agent is user proxy, remove it and replace with new one
-    # _agent_list = []; user_proxy = None
-    # for agent in agent_list:
-    #     if type(agent) != autogen.UserProxyAgent:
-    #         _agent_list.append(agent)
-    #     else:
-    #         user_proxy = agent
+    _agent_list = []; user_proxy = None
+    for agent in agent_list:
+        if type(agent) != autogen.UserProxyAgent:
+            _agent_list.append(agent)
+        else:
+            user_proxy = agent
 
     # limit out of control output
     context_handling = transform_messages.TransformMessages(
         transforms=[transforms.MessageTokenLimiter(max_tokens=max_chat_hist_len,
             max_tokens_per_message=max_msg_len)])
-    for agent in agent_list: context_handling.add_to_agent(agent)
+    context_handling.add_to_agent(user_proxy)
+    # for agent in agent_list: context_handling.add_to_agent(agent)
 
     group_chat = autogen.GroupChat(
         agents=agent_list,
