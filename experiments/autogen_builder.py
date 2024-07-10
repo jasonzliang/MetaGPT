@@ -51,6 +51,8 @@ config_file_or_env = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
 llm_config = {"temperature": 0}
 config_list = autogen.config_list_from_json(config_file_or_env,
     filter_dict={"model": ["gpt-4o"]})
+builder_model = "gpt-4o"
+agent_model = "gpt-3.5-turbo"
 
 
 @timeout_decorator.timeout(120)
@@ -100,16 +102,21 @@ def start_task(execution_task: str, agent_list: list, coding=True):
 # In[2]:
 
 
-def init_builder(work_dir, builder_cfg=None):
+def init_builder(building_task,
+    work_dir='groupchat',
+    builder_cfg=None,
+    builder_llm_config=llm_config,
+    max_agents=5,
+    clear_cache=True):
+
     os.makedirs(work_dir, exist_ok=True)
+    if clear_cache: os.system("rm -rf .cache")
 
     builder = AgentBuilder(
         config_file_or_env=config_file_or_env,
-        builder_model=["gpt-4o"],
-        agent_model=["gpt-3.5-turbo"],
+        builder_model=builder_model,
+        agent_model=agent_model,
     )
-
-    building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities."
 
     if builder_cfg is None:
         builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
@@ -124,7 +131,7 @@ def init_builder(work_dir, builder_cfg=None):
         }
         agent_list, agent_configs = builder.build(
             building_task,
-            llm_config,
+            builder_llm_config,
             coding=True,
             code_execution_config=code_execution_config)
         builder_cfg = builder.save(builder_cfg)
@@ -146,6 +153,60 @@ def init_builder(work_dir, builder_cfg=None):
     pprint.pprint(agent_configs)
     return agent_list, agent_configs, builder
 
+
+def autogen_mutate(builder_cfg="autogen_builder_cfg.json",
+    output_file="autogen_mutate2.json"):
+    if os.path.exists(builder_cfg):
+        with open(builder_cfg, "r") as f:
+            builder_dict = json.load(f)
+        if 'building_task' in builder_dict: del builder_dict['building_task']
+        builder_str = json.dumps(builder_dict)
+    else:
+        builder_str = builder_cfg
+
+    mutate_prompt = \
+"""
+Here is a JSON string that describes an existing team of agents for generating code.
+
+%s
+
+Build a new and improved version of the team that generates more efficient, accurate, and correct code. Make sure the new team contain interesting, original, and creative roles not seen in the existing team. The size of the new team can be larger or smaller than the existing team.
+"""
+
+    building_task = mutate_prompt % builder_str
+    print(building_task)
+    return init_builder(building_task=building_task,
+        builder_cfg=output_file,
+        builder_llm_config={'temperature': 1.0})
+
+def autogen_crossover(builder_cfgs=
+    ["autogen_mutate.json", "autogen_mutate2.json"],
+    output_file="autogen_crossover.json"):
+    builder_strs = []
+    for builder_cfg in builder_cfgs:
+        if os.path.exists(builder_cfg):
+            with open(builder_cfg, "r") as f:
+                builder_dict = json.load(f)
+            if 'building_task' in builder_dict: del builder_dict['building_task']
+            builder_str = json.dumps(builder_dict)
+        else:
+            builder_str = builder_cfg
+        builder_strs.append(builder_str)
+
+    crossover_prompt = \
+"""
+Here are multiple JSON strings where each JSON describes an existing team of agents for generating code.
+
+%s
+
+Combine and merge these teams to create a new and improved team for generating more efficient, accurate, and correct code. Make sure the new team contain interesting, original, and creative combination of roles that are not seen in existing teams. The size of the new team can be larger or smaller than the existing teams.
+"""
+
+    building_task = crossover_prompt % "\n\n".join(builder_strs)
+    print(building_task)
+    return init_builder(building_task=building_task,
+        builder_cfg=output_file,
+        builder_llm_config={'temperature': 1.0})
 
 # ## Step 3: specify a building task
 # 
@@ -201,15 +262,17 @@ def extract_code_from_chat(chat_result):
 def eval_humaneval(
     result_dir="results/humaneval_results_%s" % get_time(space=False),
     # result_dir="results/humaneval_results_2024-06-29_21-35-10",
-    builder_cfg="autogen_builder_cfg.json",
+    builder_cfg="autogen_mutate.json",
     work_dir="groupchat",
     clear_cache=True,
 ):
-
     if work_dir is None: work_dir = result_dir
-    if clear_cache: os.system("rm -rf .cache")
-    agent_list, agent_configs, builder = init_builder(work_dir,
-        builder_cfg=builder_cfg)
+    building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities."
+
+    agent_list, agent_configs, builder = init_builder(building_task,
+        work_dir=work_dir,
+        builder_cfg=builder_cfg,
+        clear_cache=clear_cache)
     problems = get_human_eval_plus()
     eval_name = "humaneval"
 
@@ -221,8 +284,8 @@ def eval_humaneval(
             continue
 
         sample = {"instruction": problem['prompt'],
-            "input": problem['base_input'],
-            "result_file": "0.py"}
+            "input": problem['base_input']}
+            # "result_file": "0.py"}
         prompt = generate_code_prompt(sample)
         print("\n\n#### Task ID: %s, Prompt:\n%s" % (task_id, prompt))
 
@@ -255,6 +318,8 @@ def eval_humaneval(
 
 
 if __name__ == "__main__":
+    # autogen_mutate()
+    # autogen_crossover()
     eval_humaneval()
 
 
