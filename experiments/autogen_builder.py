@@ -303,23 +303,20 @@ def eval_humaneval(
         prompt = generate_code_prompt(sample)
         print("\n\n#### Task ID: %s, Prompt:\n%s" % (task_id, prompt))
 
-        try:
-            chat_result = start_task(
-                execution_task=prompt,
-                agent_list=agent_list,
-                coding=agent_configs["coding"],
-            )
-            # pprint.pprint(chat_result); exit()
-            code = extract_code_from_chat(chat_result)
-            # autogen_file = os.path.join(work_dir, "0.py")
-            # if os.path.exists(autogen_file):
-            #     os.system("mv %s %s" % (autogen_file, result_file))
-            # else:
-            #     code = extract_code_from_chat(chat_result)
-        except TimeoutError:
-            code = ""
+        code = ""; n_tries = 3
+        while n_tries > 0:
+            try:
+                chat_result = start_task(
+                    execution_task=prompt,
+                    agent_list=agent_list,
+                    coding=agent_configs["coding"])
+                code = extract_code_from_chat(chat_result)
+                builder.clear_all_agents(recycle_endpoint=True)
+                break
+            except TimeoutError:
+                builder.clear_all_agents(recycle_endpoint=False)
+                n_tries -= 1
 
-        builder.clear_all_agents()
         with open(result_file, "w") as f: f.write(code)
 
     builder.save(os.path.join(result_dir, "autogen_builder_cfg.json"))
