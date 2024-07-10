@@ -52,7 +52,7 @@ llm_config = {"temperature": 0}
 config_list = autogen.config_list_from_json(config_file_or_env,
     filter_dict={"model": ["gpt-4o"]})
 builder_model = "gpt-4o"
-agent_model = "gpt-3.5-turbo"
+agent_model = "gpt-4o"
 
 
 @timeout_decorator.timeout(120)
@@ -262,7 +262,7 @@ def extract_code_from_chat(chat_result):
 def eval_humaneval(
     result_dir="results/humaneval_results_%s" % get_time(space=False),
     # result_dir="results/humaneval_results_2024-06-29_21-35-10",
-    builder_cfg="autogen_mutate.json",
+    builder_cfg="autogen_builder_cfg.json",
     work_dir="groupchat",
     clear_cache=True,
 ):
