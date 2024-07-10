@@ -269,6 +269,7 @@ def eval_humaneval(
     work_dir="groupchat",
     clear_cache=True,
 ):
+    print(locals().keys()); time.sleep(2)
     if work_dir is None: work_dir = result_dir
     building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities."
 
@@ -324,7 +325,7 @@ def eval_humaneval(
 if __name__ == "__main__":
     # autogen_mutate()
     # autogen_crossover()
-    eval_humaneval()
+    eval_humaneval(builder_cfg=sys.argv[1])
 
 
 # ## Step 6 (Optional): clear all agents and prepare for the next task
