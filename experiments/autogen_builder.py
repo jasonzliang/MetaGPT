@@ -35,9 +35,11 @@ import sys
 import time
 
 import autogen
-from autogen.agentchat.contrib.society_of_mind_agent import SocietyOfMindAgent
 from autogen.agentchat.contrib.agent_builder import AgentBuilder
+from autogen.agentchat.contrib.capabilities import transform_messages, transforms
+from autogen.agentchat.contrib.society_of_mind_agent import SocietyOfMindAgent
 from autogen.code_utils import extract_code
+
 from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
@@ -53,6 +55,8 @@ config_list = autogen.config_list_from_json(config_file_or_env,
     filter_dict={"model": ["gpt-4o"]})
 builder_model = "gpt-4o"
 agent_model = "gpt-4o"
+max_msg_len = 4000
+max_chat_hist_len = 128000
 
 
 @timeout_decorator.timeout(120)
@@ -64,7 +68,12 @@ def start_task(execution_task: str, agent_list: list, coding=True):
     #         _agent_list.append(agent)
     #     else:
     #         user_proxy = agent
-    # agent_list = _agent_list
+
+    # limit out of control output
+    context_handling = transform_messages.TransformMessages(
+        transforms=[transforms.MessageTokenLimiter(max_tokens=max_chat_hist_len,
+            max_tokens_per_message=max_msg_len)])
+    for agent in agent_list: context_handling.add_to_agent(agent)
 
     group_chat = autogen.GroupChat(
         agents=agent_list,
@@ -325,17 +334,18 @@ def eval_humaneval(
 if __name__ == "__main__":
     # autogen_mutate()
     # autogen_crossover()
+
+    print("Usage:")
+    print("./autogen_builder.py")
+    print("./autogen_builder.py [builder_cfg]")
+    print("./autogen_builder.py [result_dir] [builder_cfg]")
+
     if len(sys.argv) == 1:
         eval_humaneval()
     if len(sys.argv) == 2:
         eval_humaneval(builder_cfg=sys.argv[1])
     elif len(sys.argv) == 3:
         eval_humaneval(result_dir=sys.argv[1], builder_cfg=sys.argv[2])
-    else:
-        print("Usage:")
-        print("./autogen_builder.py")
-        print("./autogen_builder.py [builder_cfg]")
-        print("./autogen_builder.py [result_dir] [builder_cfg]")
 
 # ## Step 6 (Optional): clear all agents and prepare for the next task
 # You can clear all agents generated in this task by the following code if your task is completed or the next task is largely different from the current task. If the agent's backbone is an open-source LLM, this process will also shut down the endpoint server. If necessary, you can use `recycle_endpoint=False` to retain the previous open-source LLMs' endpoint server.
