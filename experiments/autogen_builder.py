@@ -136,12 +136,12 @@ def init_builder(building_task,
             code_execution_config=code_execution_config)
         builder_cfg = builder.save(builder_cfg)
     else:
-        # overwrite builder cfg with current work_dir
         with open(builder_cfg, "r") as f:
             builder_dict = json.load(f)
         # overwrite model used by agents
         for agent_config in builder_dict["agent_configs"]:
             agent_config["model"] = [agent_model]
+        # overwrite builder cfg with current work_dir
         builder_dict["code_execution_config"]["work_dir"] = work_dir
         with open(builder_cfg, "w") as f:
             json.dump(builder_dict, f)
