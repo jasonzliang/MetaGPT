@@ -35,6 +35,7 @@ import sys
 import time
 
 import autogen
+from autogen.agentchat.contrib.society_of_mind_agent import SocietyOfMindAgent
 from autogen.agentchat.contrib.agent_builder import AgentBuilder
 from autogen.code_utils import extract_code
 from evalplus.data.humaneval import get_human_eval_plus
@@ -49,22 +50,47 @@ from util import get_time
 config_file_or_env = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
 llm_config = {"temperature": 0}
 config_list = autogen.config_list_from_json(config_file_or_env,
-    filter_dict={"model": ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]})
+    filter_dict={"model": ["gpt-4o"]})
 
 
 @timeout_decorator.timeout(120)
 def start_task(execution_task: str, agent_list: list, coding=True):
+    # last agent is user proxy, remove it and replace with new one
+    # _agent_list = []; user_proxy = None
+    # for agent in agent_list:
+    #     if type(agent) != autogen.UserProxyAgent:
+    #         _agent_list.append(agent)
+    #     else:
+    #         user_proxy = agent
+    # agent_list = _agent_list
+
     group_chat = autogen.GroupChat(
         agents=agent_list,
         messages=[],
-        max_round=25,
+        max_round=20,
+        # allow_repeat_speaker=agent_list,
         allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list,
     )
     manager = autogen.GroupChatManager(
         groupchat=group_chat,
+        llm_config={"config_list": config_list, **llm_config}
+    )
+
+    society_of_mind_agent = SocietyOfMindAgent(
+        "society_of_mind",
+        chat_manager=manager,
         llm_config={"config_list": config_list, **llm_config},
     )
-    return agent_list[0].initiate_chat(manager, message=execution_task)
+    society_user_proxy = autogen.UserProxyAgent(
+        "user_proxy",
+        human_input_mode="NEVER",
+        code_execution_config=False,
+        default_auto_reply="",
+        is_termination_msg=lambda x: True,
+    )
+    return society_user_proxy.initiate_chat(society_of_mind_agent,
+        message=execution_task)
+    # return agent_list[0].initiate_chat(manager, message=execution_task)
 
 
 # ## Step 2: create a AgentBuilder
@@ -80,10 +106,10 @@ def init_builder(work_dir, builder_cfg=None):
     builder = AgentBuilder(
         config_file_or_env=config_file_or_env,
         builder_model=["gpt-4o"],
-        agent_model=["gpt-4o"],
+        agent_model=["gpt-3.5-turbo"],
     )
 
-    building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities. At least one of the agents should be capable of writing files to disk."
+    building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities."
 
     if builder_cfg is None:
         builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
@@ -143,16 +169,14 @@ def init_builder(work_dir, builder_cfg=None):
 
 
 def generate_code_prompt(example: dict) -> str:
-    # return example['instruction']
     prompt_template = \
 """
 Write a python function that can %s.
-Return ```python your_code_here ``` with NO other texts
-
-Test the function and if it is correct, write the function to disk with the following file name:
-%s
+Test the function and ensure that it performs correctly and efficiently.
+Return ```python your_code_here ``` with NO other texts,
+your code:
 """
-    return prompt_template % (example['instruction'], example['result_file'])
+    return prompt_template % example['instruction']
 
 
 def extract_code_from_chat(chat_result):
@@ -166,15 +190,17 @@ def extract_code_from_chat(chat_result):
             return None
 
     code = ""
-    for msg_dict in chat_result.chat_history:
-        result = parse_code(msg_dict['content'])
-        if result is not None: code = result
+    result = parse_code(chat_result.summary)
+    if result is not None: code = result
+    # for msg_dict in chat_result.chat_history:
+    #     result = parse_code(msg_dict['content'])
+    #     if result is not None: code = result
     return code
 
 
 def eval_humaneval(
-    # result_dir="results/humaneval_results_%s" % get_time(space=False),
-    result_dir="results/humaneval_results_2024-06-29_21-35-10",
+    result_dir="results/humaneval_results_%s" % get_time(space=False),
+    # result_dir="results/humaneval_results_2024-06-29_21-35-10",
     builder_cfg="autogen_builder_cfg.json",
     work_dir="groupchat",
     clear_cache=True,
@@ -206,16 +232,18 @@ def eval_humaneval(
                 agent_list=agent_list,
                 coding=agent_configs["coding"],
             )
-            builder.clear_all_agents()
-            autogen_file = os.path.join(work_dir, "0.py")
-            if os.path.exists(autogen_file):
-                os.system("mv %s %s" % (autogen_file, result_file))
-            else:
-                code = extract_code_from_chat(chat_result)
+            # pprint.pprint(chat_result); exit()
+            code = extract_code_from_chat(chat_result)
+            # autogen_file = os.path.join(work_dir, "0.py")
+            # if os.path.exists(autogen_file):
+            #     os.system("mv %s %s" % (autogen_file, result_file))
+            # else:
+            #     code = extract_code_from_chat(chat_result)
         except TimeoutError:
             code = ""
+
+        builder.clear_all_agents()
         with open(result_file, "w") as f: f.write(code)
-        # pprint.pprint(chat_result); exit()
 
     os.system("evalplus.sanitize --samples %s >/dev/null" % result_dir)
     os.system("rsync -avz %s-sanitized/ %s >/dev/null" % \

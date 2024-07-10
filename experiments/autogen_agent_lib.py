@@ -145,7 +145,7 @@ for pos in position_list:
 # In[5]:
 
 
-sys_msg_list
+print(sys_msg_list)
 
 
 # We can save the generated agents' information into a json file.
