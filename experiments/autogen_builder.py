@@ -262,7 +262,7 @@ def extract_code_from_chat(chat_result):
 def eval_humaneval(
     result_dir="results/humaneval_results_%s" % get_time(space=False),
     # result_dir="results/humaneval_results_2024-06-29_21-35-10",
-    builder_cfg="autogen_mutate.json",
+    builder_cfg="autogen_crossover.json",
     work_dir="groupchat",
     clear_cache=True,
 ):
