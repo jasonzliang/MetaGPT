@@ -71,8 +71,7 @@ def start_task(execution_task: str, agent_list: list, coding=True):
 
     # limit out of control output
     context_handling = transform_messages.TransformMessages(
-        transforms=[transforms.MessageTokenLimiter(max_tokens=max_chat_hist_len,
-            max_tokens_per_message=max_msg_len)])
+        transforms=[transforms.MessageTokenLimiter(max_tokens=max_chat_hist_len)])
     context_handling.add_to_agent(user_proxy)
     # for agent in agent_list: context_handling.add_to_agent(agent)
 
