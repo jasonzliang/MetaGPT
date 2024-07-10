@@ -333,8 +333,9 @@ if __name__ == "__main__":
         eval_humaneval(result_dir=sys.argv[1], builder_cfg=sys.argv[2])
     else:
         print("Usage:")
-        print("./autogen_builder.py [result_dir] [builder_cfg]")
+        print("./autogen_builder.py")
         print("./autogen_builder.py [builder_cfg]")
+        print("./autogen_builder.py [result_dir] [builder_cfg]")
 
 # ## Step 6 (Optional): clear all agents and prepare for the next task
 # You can clear all agents generated in this task by the following code if your task is completed or the next task is largely different from the current task. If the agent's backbone is an open-source LLM, this process will also shut down the endpoint server. If necessary, you can use `recycle_endpoint=False` to retain the previous open-source LLMs' endpoint server.
