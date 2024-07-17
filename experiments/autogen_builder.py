@@ -55,26 +55,29 @@ config_list = autogen.config_list_from_json(config_file_or_env,
     filter_dict={"model": ["gpt-4o"]})
 builder_model = "gpt-4o"
 agent_model = "gpt-4o"
-max_msg_len = 4000
-max_chat_hist_len = 128000
+min_chat_hist_len = 3500
+max_chat_hist_len = 125000
+max_msg_len = 4500
 
 
 @timeout_decorator.timeout(120)
 def start_task(execution_task: str, agent_list: list, coding=True):
     # last agent is user proxy, remove it and replace with new one
-    _agent_list = []; user_proxy = None
-    for agent in agent_list:
-        if type(agent) != autogen.UserProxyAgent:
-            _agent_list.append(agent)
-        else:
-            user_proxy = agent
+    # _agent_list = []; user_proxy = None
+    # for agent in agent_list:
+    #     if type(agent) != autogen.UserProxyAgent:
+    #         _agent_list.append(agent)
+    #     else:
+    #         user_proxy = agent
 
     # limit out of control output
     context_handling = transform_messages.TransformMessages(
-        transforms=[transforms.MessageTokenLimiter(max_tokens=max_chat_hist_len,
-            min_tokens=max_msg_len)])
-    context_handling.add_to_agent(user_proxy)
-    # for agent in agent_list: context_handling.add_to_agent(agent)
+            transforms=[transforms.MessageTokenLimiter(
+                min_tokens=min_chat_hist_len,
+                max_tokens=max_chat_hist_len,
+                max_tokens_per_message=max_msg_len)])
+    # context_handling.add_to_agent(user_proxy)
+    for agent in agent_list: context_handling.add_to_agent(agent)
 
     group_chat = autogen.GroupChat(
         agents=agent_list,
@@ -168,7 +171,7 @@ def init_builder(building_task,
 
 
 def autogen_mutate(builder_cfg="autogen_builder_cfg.json",
-    output_file="autogen_mutate2.json"):
+    output_file="autogen_mutate.json"):
     if os.path.exists(builder_cfg):
         with open(builder_cfg, "r") as f:
             builder_dict = json.load(f)
@@ -179,7 +182,7 @@ def autogen_mutate(builder_cfg="autogen_builder_cfg.json",
 
     mutate_prompt = \
 """
-Here is a JSON string that describes an existing team of agents for generating code.
+Here is a JSON string that describes an existing team that contains agents with different roles for generating code.
 
 %s
 
@@ -193,7 +196,7 @@ Build a new and improved version of the team that generates more efficient, accu
         builder_llm_config={'temperature': 1.0})
 
 def autogen_crossover(builder_cfgs=
-    ["autogen_mutate.json", "autogen_mutate2.json"],
+    ["autogen_builder_cfg.json", "autogen_mutate.json"],
     output_file="autogen_crossover.json"):
     builder_strs = []
     for builder_cfg in builder_cfgs:
@@ -208,11 +211,11 @@ def autogen_crossover(builder_cfgs=
 
     crossover_prompt = \
 """
-Here are multiple JSON strings where each JSON describes an existing team of agents for generating code.
+Here are multiple JSON strings where each JSON describes an existing team containing agents with different roles for generating code.
 
 %s
 
-Combine and merge these teams to create a new and improved team for generating more efficient, accurate, and correct code. Make sure the new team contain interesting, original, and creative combination of roles that are not seen in existing teams. The size of the new team can be larger or smaller than the existing teams.
+Combine and merge these teams to create a new and improved team for generating more efficient, accurate, and correct code. Make sure the new team contain interesting, original, and creative combination of roles. The size of the new team can be larger or smaller than the existing teams.
 """
 
     building_task = crossover_prompt % "\n\n".join(builder_strs)
@@ -279,7 +282,7 @@ def eval_humaneval(
     work_dir="groupchat",
     clear_cache=True,
 ):
-    print(locals()); time.sleep(2)
+    print(locals()); time.sleep(3)
     if work_dir is None: work_dir = result_dir
     building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities."
 
@@ -313,7 +316,7 @@ def eval_humaneval(
                 code = extract_code_from_chat(chat_result)
                 builder.clear_all_agents(recycle_endpoint=True)
                 break
-            except TimeoutError:
+            except:
                 builder.clear_all_agents(recycle_endpoint=False)
                 n_tries -= 1
 
@@ -332,18 +335,19 @@ def eval_humaneval(
 if __name__ == "__main__":
     # autogen_mutate()
     # autogen_crossover()
+    # exit()
 
-    print("Usage:")
+    print("Script Usage:")
     print("./autogen_builder.py")
     print("./autogen_builder.py [builder_cfg]")
-    print("./autogen_builder.py [result_dir] [builder_cfg]")
+    print("./autogen_builder.py [builder_cfg] [result_dir]")
 
     if len(sys.argv) == 1:
         eval_humaneval()
     if len(sys.argv) == 2:
         eval_humaneval(builder_cfg=sys.argv[1])
     elif len(sys.argv) == 3:
-        eval_humaneval(result_dir=sys.argv[1], builder_cfg=sys.argv[2])
+        eval_humaneval(builder_cfg=sys.argv[1], result_dir=sys.argv[2])
 
 # ## Step 6 (Optional): clear all agents and prepare for the next task
 # You can clear all agents generated in this task by the following code if your task is completed or the next task is largely different from the current task. If the agent's backbone is an open-source LLM, this process will also shut down the endpoint server. If necessary, you can use `recycle_endpoint=False` to retain the previous open-source LLMs' endpoint server.
