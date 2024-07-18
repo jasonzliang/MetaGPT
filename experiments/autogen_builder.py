@@ -156,7 +156,7 @@ def init_builder(building_task,
         # overwrite builder cfg with current work_dir
         builder_dict["code_execution_config"]["work_dir"] = work_dir
         with open(builder_cfg, "w") as f:
-            json.dump(builder_dict, f)
+            json.dump(builder_dict, f, indent=4)
 
         # load previous agent configs
         print("Using existing builder cfg: %s" % builder_cfg)
@@ -175,7 +175,7 @@ def autogen_mutate(builder_cfg="autogen_builder_cfg.json",
         with open(builder_cfg, "r") as f:
             builder_dict = json.load(f)
         if 'building_task' in builder_dict: del builder_dict['building_task']
-        builder_str = json.dumps(builder_dict)
+        builder_str = json.dumps(builder_dict, indent=4)
     else:
         builder_str = builder_cfg
 
@@ -203,7 +203,7 @@ def autogen_crossover(builder_cfgs=
             with open(builder_cfg, "r") as f:
                 builder_dict = json.load(f)
             if 'building_task' in builder_dict: del builder_dict['building_task']
-            builder_str = json.dumps(builder_dict)
+            builder_str = json.dumps(builder_dict, indent=4)
         else:
             builder_str = builder_cfg
         builder_strs.append(builder_str)
