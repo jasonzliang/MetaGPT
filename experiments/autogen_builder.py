@@ -46,8 +46,7 @@ from evalplus.data import write_jsonl
 import timeout_decorator
 from timeout_decorator import TimeoutError
 
-from util import get_time
-
+from util import get_time, killtree
 
 config_file_or_env = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
 llm_config = {"temperature": 0}
@@ -137,10 +136,10 @@ def init_builder(building_task,
     if not os.path.exists(builder_cfg):
         print("Creating new builder cfg: %s" % builder_cfg)
         code_execution_config = {
-            "last_n_messages": "auto",
-            "work_dir": work_dir,
-            "use_docker": False,
+            "last_n_messages": 1,
             "timeout": 10,
+            "use_docker": False,
+            "work_dir": work_dir
         }
         agent_list, agent_configs = builder.build(
             building_task,
@@ -317,7 +316,7 @@ def eval_humaneval(
                 builder.clear_all_agents(recycle_endpoint=True)
                 break
             except:
-                builder.clear_all_agents(recycle_endpoint=False)
+                builder.clear_all_agents(recycle_endpoint=True)
                 n_tries -= 1
 
         with open(result_file, "w") as f: f.write(code)
@@ -330,6 +329,8 @@ def eval_humaneval(
     os.system("evalplus.evaluate --dataset %s --samples %s | tee %s"
         % (eval_name, result_dir, os.path.join(result_dir, "evalplus.txt")))
     os.system("cp %s %s" % (__file__, result_dir))
+
+    killtree(os.getpid(), including_parent=False) # Kill all child processes
 
 
 if __name__ == "__main__":

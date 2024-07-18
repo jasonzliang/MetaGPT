@@ -5,6 +5,7 @@ import functools
 import os
 import math
 import pickle
+import psutil
 import sys
 import time
 import traceback
@@ -23,6 +24,16 @@ OBJECTIVES = {'base_score': lambda x: x,
     'sys_time_sec': lambda x: -x,
     'num_instructions': lambda x: -x,
     'memory_usage_mb': lambda x: -x}
+
+
+def killtree(pid, including_parent=True):
+    parent = psutil.Process(pid)
+    for child in parent.children(recursive=True):
+        print "child", child
+        child.kill()
+
+    if including_parent:
+        parent.kill()
 
 
 def extract_evalplus(result_file, logger=None):
