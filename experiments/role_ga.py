@@ -13,7 +13,8 @@ from ruamel.yaml import YAML
 
 from alg_util import randomword
 from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
-from llm_evaluator import llm_mutate, llm_crossover, parse_prompt_template
+from llm_evaluator import llm_mutate, llm_crossover, parse_prompt_template,
+    llm_mutate_team, llm_crossover_team
 from util import get_time, sanitize_result_dict
 
 DEFAULT_ROLE = \
@@ -30,6 +31,8 @@ class Individual(object):
         self.config = config
         self.logger = logging.getLogger('evolve_role')
 
+        self.evolve_main_role = self.config.get("evolve_main_role", True)
+        self.evolve_team_role = self.config.get("evolve_team_role", False)
         self.dummy_mode = self.config.get("dummy_mode", False)
         self.mutate_rate = self.config.get("mutate_rate", 0.5)
         assert 0 <= self.mutate_rate <= 1.0
@@ -40,13 +43,20 @@ class Individual(object):
         self.reset()
 
     def _load_initial_role(self):
-        self.initial_role = self.config.get("initial_role", DEFAULT_ROLE)
-        initial_role_fp = os.path.join(os.path.abspath(
-            os.path.dirname(__file__)), "config/%s" % self.initial_role)
-        if os.path.exists(initial_role_fp):
-            with open(initial_role_fp, "r") as f:
-                self.initial_role = f.read()
-        self.logger.info("Initial Role:\n%s" % self.initial_role)
+        self.initial_main_role = self.config.get("initial_main_role",
+            DEFAULT_ROLE)
+        _initial_main_role = os.path.join(os.path.abspath(
+            os.path.dirname(__file__)), "config/%s" % self.initial_main_role)
+        if os.path.exists(_initial_main_role):
+            with open(_initial_main_role, "r") as f:
+                self.initial_main_role = f.read()
+        self.logger.info("Initial Main Role:\n%s" % self.initial_main_role)
+
+        self.initial_team_role = self.config.get("initial_team_role", None)
+        if evolve_team_role:
+            assert os.path.exists(self.initial_team_role)
+            self.logger.info("Initial Team Role:\n%s" % \
+                self.initial_team_role)
 
     def _set_id(self, gen_created):
         self.gen_created = gen_created
@@ -69,13 +79,15 @@ class Individual(object):
 
     def __str__(self):
         return "[Indv] Id: %s, Fitness: %s\n%s" % (self.id, self.fitness,
-            self.role)
+            self.main_role)
 
     def _reset_roles(self):
-        self.role = self.initial_role
+        self.main_role = self.initial_main_role
+        self.team_role = self.initial_team_role
 
     def _inherit_roles(self, parent):
-        self.role = parent.role
+        self.main_role = parent.main_role
+        self.team_role = parent.team_role
 
     def reset(self):
         self._reset_roles()
@@ -117,37 +129,52 @@ class Individual(object):
         assert 0 <= mutate_rate <= 1.0
 
         if self.dummy_mode:
-            self.role += randomword(ID_LENGTH)
+            self.main_role += randomword(ID_LENGTH)
         elif random.random() < mutate_rate:
-            self.role = llm_mutate(self.role, self.llm_config)
+            self.main_role = llm_mutate(self.main_role, self.llm_config)
+            if self.evolve_team_role:
+                self.team_role = llm_mutate_team(self.team_role,
+                    self.llm_config)
 
     def mutate2(self, n):
         if self.dummy_mode:
             self.mutate()
-        else:
+        elif random.random() < mutate_rate:
             assert n >= 0 and self.result_dir is not None
-            self.role = llm_mutate2(self.role, self.result_dir, n=n,
+            self.main_role = llm_mutate2(self.main_role, self.result_dir, n=n,
                 llm_config=self.llm_config)
+            if self.evolve_team_role:
+                self.team_role = llm_mutate_team(self.team_role,
+                    self.llm_config)
 
     def crossover(self, other):
         if self.dummy_mode:
-            self.role, other.role = other.role, self.role
+            self.main_role, other.role = other.role, self.main_role
         else:
-            self.role = llm_crossover(self.role, other.role, self.llm_config)
+            self.main_role = llm_crossover(self.main_role, other.role,
+                self.llm_config)
+            if self.evolve_team_role:
+                self.team_role = llm_crossover_team(self.team_role,
+                    other.team_role, self.llm_config)
 
     def crossover2(self, others):
         if self.dummy_mode:
             self.crossover(others[0])
         else:
             other_roles = [indv.role for indv in others]
-            self.role = llm_crossover2(self.role, other_roles, self.llm_config)
+            self.main_role = llm_crossover2(self.main_role, other_roles,
+                self.llm_config)
+            if self.evolve_team_role:
+                self.team_role = llm_crossover_team(self.team_role,
+                    other.team_role, self.llm_config)
 
     def serialize(self):
         return {'id': self.id,
             'gen_created': self.gen_created,
             'fitness': self.fitness,
             'true_fitness': self.true_fitness,
-            'role': self.role,
+            'main_role': self.main_role,
+            'team_role': self.team_role,
             'result_dir': self.result_dir}
 
     def deserialize(self, indv_dict):
@@ -155,7 +182,8 @@ class Individual(object):
         self.gen_created = indv_dict.get("gen_created", self.gen_created)
         self.fitness = indv_dict.get("fitness", None)
         self.true_fitness = indv_dict.get("true_fitness", None)
-        self.role = parse_prompt_template(indv_dict.get("role", ""))
+        self.main_role = parse_prompt_template(indv_dict.get("main_role", ""))
+        self.team_role = indv_dict.get("team_role", None)
         self.result_dir = indv_dict.get("result_dir", None)
 
 
@@ -319,7 +347,7 @@ class RoleEvolutionGA(object):
         return np.max(chosen_ones)
 
     def _generate_individual_wrapper(self, idx):
-        return self._generate_individual()
+        return self._generate_individual2()
 
     def _generate_individual(self):
         parent_a = self._tournament_selection()
