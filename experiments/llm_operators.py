@@ -27,21 +27,14 @@ from evalplus.data import write_jsonl
 
 from alg_util import randomword
 from autgen_builder import autogen_mutate, autogen_crossover, BUILDER_LLM_CONFIG
-from util import extract_evalplus, OBJECTIVES
+from util import extract_evalplus, parse_code, parse_prompt_template
 
-def parse_code(rsp):
-    pattern = r"```python(.*)```"
-    match = re.search(pattern, rsp, re.DOTALL)
-    code_text = match.group(1) if match else rsp
-    return code_text
-
-
-def parse_prompt_template(rsp):
-    pattern = r"PROMPT_TEMPLATE: str = '''(.*)'''"
-    match = re.search(pattern, rsp, re.DOTALL)
-    code_text = match.group(1) if match else rsp
-    code_text = code_text.lstrip().rstrip()
-    return code_text
+DEFAULT_ROLE = \
+"""
+Write a python function that can {instruction}.
+Return ```python your_code_here ``` with NO other texts,
+your code:
+"""
 
 
 class MutateAction(Action):
@@ -333,11 +326,7 @@ def llm_crosover_team(team_role, other_team_role, llm_config):
 
 
 #### Unit tests ####
-PROMPT_TEMPLATE_1 = '''
-Write a python function that can {instruction}.
-Return ```python your_code_here ``` with NO other texts,
-your code:
-'''
+PROMPT_TEMPLATE_1 = DEFAULT_ROLE
 PROMPT_TEMPLATE_2 = '''
 ### Task Description
 Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:

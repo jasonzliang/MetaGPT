@@ -25,18 +25,19 @@ from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
+from llm_operators import DEFAULT_ROLE
 from util import extract_evalplus, OBJECTIVES
-from role_ga import DEFAULT_ROLE
-
 
 class LLMEvaluator(object):
     def __init__(self, config, evaluator_dir):
         self.config = config
         self.evaluator_dir = evaluator_dir
         self.dummy_mode = self.config.get("dummy_mode", False)
+        self.max_problems = self.config.get("max_problems", 9999)
+        assert self.max_problems > 0
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
-        self.llm_config = self.config.get("llm_config", {})
+        # self.llm_config = self.config.get("llm_config", {})
         self.dataset = self.config.get("dataset", "humaneval")
         assert self.dataset in ['humaneval', 'mbpp']
         self.objective = self.config.get("objective", "base_score")
@@ -72,7 +73,7 @@ class LLMEvaluator(object):
                 elif self.eval_mode == "single":
                     result_dict = self._eval_indv_main_role(indv)
 
-                else: # self.eval_mode in ["both", "team"]
+                else: # self.eval_mode in ["team", "both"]
                     result_dict = self._eval_indv_team_role(indv)
 
                 result_dicts.append(result_dict)
@@ -80,7 +81,7 @@ class LLMEvaluator(object):
             result_dicts = self.pool.map(self._eval_indv, population)
         return result_dicts
 
-    def _setup_result_dir(self, eval_id)
+    def _setup_result_dir(self, eval_id):
         result_dir = os.path.join(self.evaluator_dir,
             "%s_%s_T-%d" % (self.dataset, eval_id, time.time()))
         os.makedirs(result_dir, exist_ok=True)
@@ -94,12 +95,12 @@ class LLMEvaluator(object):
     def _run_evalplus(self, result_dir, eval_func):
         if self.dataset == 'humaneval':
             problems = get_human_eval_plus()
-        else:
-            assert self.dataset == 'mbpp'; problems = get_mbpp_plus()
+        else: # self.dataset == 'mbpp'
+            problems = get_mbpp_plus()
 
-        for task_id, problem in problems.items():
+        for i, (task_id, problem) in enumerate(problems.items()):
+            if i >= self.max_problems: break
             mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % (task_id, prompt))
-
             try:
                 output = eval_func(problem)
             except:
@@ -139,9 +140,10 @@ class LLMEvaluator(object):
         result_dict['evalplus_result'] = evalplus_result
         return result_dict
 
-    def _eval_indv_team_role(indv):
+    def _eval_indv_team_role(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
-        if self.eval_mode == "team": main_role = DEFAULT_ROLE
+        if self.eval_mode != "both": main_role = DEFAULT_ROLE
+        assert team_role is not None
 
         builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
         builder_llm_config.update(indv.llm_config.get("builder_llm_config", {}))
@@ -177,7 +179,7 @@ class LLMEvaluator(object):
 
         @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
         def _eval_prompt(prompt_template, prompt):
-            team, coder = create_new_team(self.llm_config)
+            team, coder = create_new_team(indv.llm_config)
             coder.set_prompt_template(prompt_template)
             team.run_project(prompt)
             asyncio.run(team.run(n_round=1))
@@ -195,19 +197,31 @@ class LLMEvaluator(object):
 
 
 #### Unit tests ####
-def _test_evaluator(prompt_fp=None, test_err=False):
+def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
+    max_problems=1):
     from role_ga import Individual
+    eval_mode = "single"
     indv = Individual({}, gen_created=0)
-    if prompt_fp is not None and os.path.exists(prompt_fp):
-        with open(prompt_fp, "r") as f:
-            indv.role = f.read()
+    if main_role_fp is not None:
+        assert os.path.exists(main_role_fp)
+        with open(main_role_fp, "r") as f:
+            indv.main_role = f.read()
     else:
-        indv.role = PROMPT_TEMPLATE_1
+        indv.main_role = DEFAULT_ROLE
+    if team_role_fp is not None:
+        assert os.path.exists(team_role_fp)
+        indv.team_role = team_role_fp
+        eval_mode = "both"
+    else:
+        indv.team_role = None
 
-    print(indv.role); population = [indv]
+    print(indv.main_role); print(indv.team_role); population = [indv]
     llm_model = 'N/A' if test_err else 'gpt-3.5-turbo'
-    eval_config = {'n_workers': 1, 'dummy_mode': False,
-        'llm_config': {'model': llm_model}}
+    indv.llm_config = {'model': llm_model}
+    eval_config = {'n_workers': 1,
+        'dummy_mode': False,
+        'eval_mode': eval_mode,
+        'max_problems': max_problems}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
     print("Evaluation results:")
@@ -224,8 +238,8 @@ def _test_parallel_eval(n=10):
     from role_ga import Individual
     population = [Individual({}, gen_created=0) for i in range(n)]
     for indv in population:
-        indv.role = PROMPT_TEMPLATE_1
-    print(indv.role)
+        indv.main_role = DEFAULT_ROLE
+    print(indv.main_role)
 
     eval_config = {'n_workers': n, 'dummy_mode': False}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
@@ -235,4 +249,4 @@ def _test_parallel_eval(n=10):
 
 
 if __name__ == "__main__":
-    _test_evaluator(test_err=False)
+    _test_evaluator(team_role_fp='autogen_builder_cfg.json', test_err=False)

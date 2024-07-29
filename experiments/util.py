@@ -26,6 +26,21 @@ OBJECTIVES = {'base_score': lambda x: x,
     'memory_usage_mb': lambda x: -x}
 
 
+def parse_code(rsp):
+    pattern = r"```python(.*)```"
+    match = re.search(pattern, rsp, re.DOTALL)
+    code_text = match.group(1) if match else rsp
+    return code_text
+
+
+def parse_prompt_template(rsp):
+    pattern = r"PROMPT_TEMPLATE: str = '''(.*)'''"
+    match = re.search(pattern, rsp, re.DOTALL)
+    code_text = match.group(1) if match else rsp
+    code_text = code_text.lstrip().rstrip()
+    return code_text
+
+
 def killtree(pid, including_parent=True):
     parent = psutil.Process(pid)
     for child in parent.children(recursive=True):
