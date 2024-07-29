@@ -301,8 +301,8 @@ def llm_crossover2(prompt, additional_prompts, llm_config):
 def llm_mutate_team(team_role, llm_config):
     assert type(team_role) is dict
     builder_cfg = json.dumps(team_role)
-    builder_llm_config = llm_config.get("builder_llm_config", {})
-    builder_llm_config.update(BUILDER_LLM_CONFIG)
+    builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
+    builder_llm_config.update(llm_config.get("builder_llm_config", {}))
 
     agent_list, agent_configs, builder, builder_dict = autogen_mutate(
         builder_cfg=builder_cfg,
@@ -319,8 +319,8 @@ def llm_mutate_team(team_role, llm_config):
 def llm_crosover_team(team_role, other_team_role, llm_config):
     assert type(team_role) is dict; assert type(other_team_role) is dict
     builder_cfgs = [json.dumps(team_role), json.dumps(other_team_role)]
-    builder_llm_config = llm_config.get("builder_llm_config", {})
-    builder_llm_config.update(BUILDER_LLM_CONFIG)
+    builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
+    builder_llm_config.update(llm_config.get("builder_llm_config", {}))
 
     agent_list, agent_configs, builder, builder_dict = autogen_crossover(
         builder_cfgs=builder_cfgs,
