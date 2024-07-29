@@ -91,7 +91,15 @@ class LLMEvaluator(object):
         return result_dir
 
     def _eval_indv_team_role(indv):
-        pass
+        result_dir = self._setup_result_dir()
+        if self.dataset == 'humaneval':
+            problems = get_human_eval_plus()
+        else:
+            assert self.dataset == 'mbpp'; problems = get_mbpp_plus()
+
+        for task_id, problem in problems.items():
+            prompt = problem['prompt']
+            mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % (task_id, prompt))
 
     def _eval_indv_main_role(self, indv):
         @retry(Exception, tries=5, delay=1, backoff=2, logger=self.logger)
@@ -104,7 +112,7 @@ class LLMEvaluator(object):
             assert len(output) > 0
             return output
 
-        self._setup_result_dir()
+        result_dir = self._setup_result_dir()
         if self.dataset == 'humaneval':
             problems = get_human_eval_plus()
         else:
