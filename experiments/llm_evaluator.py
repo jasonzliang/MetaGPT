@@ -26,6 +26,7 @@ from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
 from util import extract_evalplus, OBJECTIVES
+from role_ga import DEFAULT_ROLE
 
 
 class LLMEvaluator(object):
@@ -43,8 +44,8 @@ class LLMEvaluator(object):
         self.sanitize = self.config.get("sanitize", True)
         self.restart_interval = self.config.get("restart_interval", 999)
         assert self.restart_interval > 0
-        self.eval_method = self.config.get("eval_method", "single")
-        assert self.eval_method in ['single', 'team']
+        self.eval_mode = self.config.get("eval_mode", "single")
+        assert self.eval_mode in ['single', 'team', 'both']
 
         self.logger = logging.getLogger('evolve_role')
         self.reset()
@@ -68,10 +69,12 @@ class LLMEvaluator(object):
                     result_dict = {}
                     result_dict['fitness'] = fitness
                     result_dict['true_fitness'] = fitness
-                elif self.eval_method == "single":
+                elif self.eval_mode == "single":
                     result_dict = self._eval_indv_main_role(indv)
-                else: # self.eval_method == "team"
+
+                else: # self.eval_mode in ["both", "team"]
                     result_dict = self._eval_indv_team_role(indv)
+
                 result_dicts.append(result_dict)
         else:
             result_dicts = self.pool.map(self._eval_indv, population)
@@ -102,7 +105,7 @@ class LLMEvaluator(object):
             except:
                 mlogger.info(traceback.format_exc())
                 output = ""
-            mlogger.info("#### MetaGPT Output:\n%s" % output)
+            mlogger.info("#### Evalplus Problem Output:\n%s" % output)
 
             task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
             os.makedirs(task_id_dir, exist_ok=True)
@@ -138,6 +141,8 @@ class LLMEvaluator(object):
 
     def _eval_indv_team_role(indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
+        if self.eval_mode == "team": main_role = DEFAULT_ROLE
+
         builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
         builder_llm_config.update(indv.llm_config.get("builder_llm_config", {}))
         chat_llm_config = copy.copy(CHAT_LLM_CONFIG)

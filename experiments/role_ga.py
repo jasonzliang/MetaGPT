@@ -29,10 +29,10 @@ your code:
 class Individual(object):
     def __init__(self, config, gen_created=None):
         self.config = config
-        self.logger = logging.getLogger('evolve_role')
+        self.logger = logging.getLogger('role_ga')
 
-        self.evolve_main_role = self.config.get("evolve_main_role", True)
-        self.evolve_team_role = self.config.get("evolve_team_role", False)
+        self.evolve_mode = self.config.get("evolve_mode", "single")
+        assert self.evolve_mode in ["single", "team", "both"]
         self.dummy_mode = self.config.get("dummy_mode", False)
         self.mutate_rate = self.config.get("mutate_rate", 0.5)
         assert 0 <= self.mutate_rate <= 1.0
@@ -45,15 +45,16 @@ class Individual(object):
     def _load_initial_role(self):
         self.initial_main_role = self.config.get("initial_main_role",
             DEFAULT_ROLE)
-        _initial_main_role = os.path.join(os.path.abspath(
-            os.path.dirname(__file__)), "config/%s" % self.initial_main_role)
-        if os.path.exists(_initial_main_role):
-            with open(_initial_main_role, "r") as f:
-                self.initial_main_role = f.read()
-        self.logger.info("Initial Main Role:\n%s" % self.initial_main_role)
+        if self.evolve_mode in ["single", "both"]:
+            _initial_main_role = os.path.join(os.path.abspath(
+                os.path.dirname(__file__)), "config/%s" % self.initial_main_role)
+            if os.path.exists(_initial_main_role):
+                with open(_initial_main_role, "r") as f:
+                    self.initial_main_role = f.read()
+            self.logger.info("Initial Main Role:\n%s" % self.initial_main_role)
 
         self.initial_team_role = self.config.get("initial_team_role", None)
-        if evolve_team_role:
+        if self.evolve_mode in ["team", "both"]:
             assert os.path.exists(self.initial_team_role)
             self.logger.info("Initial Team Role:\n%s" % \
                 self.initial_team_role)
@@ -131,8 +132,9 @@ class Individual(object):
         if self.dummy_mode:
             self.main_role += randomword(ID_LENGTH)
         elif random.random() < mutate_rate:
-            self.main_role = llm_mutate(self.main_role, self.llm_config)
-            if self.evolve_team_role:
+            if self.evolve_mode in ["single", "both"]:
+                self.main_role = llm_mutate(self.main_role, self.llm_config)
+            if self.evolve_mode in ["team", "both"]:
                 self.team_role = llm_mutate_team(self.team_role,
                     self.llm_config)
 
@@ -151,9 +153,10 @@ class Individual(object):
         if self.dummy_mode:
             self.main_role, other.role = other.role, self.main_role
         else:
-            self.main_role = llm_crossover(self.main_role, other.role,
-                self.llm_config)
-            if self.evolve_team_role:
+            if self.evolve_mode in ["single", "both"]:
+                self.main_role = llm_crossover(self.main_role, other.role,
+                    self.llm_config)
+            if self.evolve_mode in ["team", "both"]:
                 self.team_role = llm_crossover_team(self.team_role,
                     other.team_role, self.llm_config)
 
