@@ -301,17 +301,15 @@ def llm_crossover2(prompt, additional_prompts, llm_config):
 def llm_mutate_team(team_role, llm_config):
     assert type(team_role) is dict
     builder_cfg = json.dumps(team_role)
-    output_cfg = "/tmp/%s.json" % randomword(16)
     builder_llm_config = llm_config.get("builder_llm_config", {})
     builder_llm_config.update(BUILDER_LLM_CONFIG)
 
-    autogen_mutate(builder_cfg=builder_cfg,
-        output_cfg=output_cfg,
-        builder_llm_config=builder_llm_config)
-    assert os.path.exists(output_cfg)
-    with open(output_cfg, 'r') as f:
-        new_team_role = json.load(f)
-    return new_team_role
+    agent_list, agent_configs, builder, builder_dict = autogen_mutate(
+        builder_cfg=builder_cfg,
+        output_cfg=None,
+        builder_llm_config=builder_llm_config,
+        dict_out=True)
+    return builder_dict
 
 
 # @retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
@@ -319,17 +317,15 @@ def llm_mutate_team(team_role, llm_config):
 def llm_crosover_team(team_role, other_team_role, llm_config):
     assert type(team_role) is dict; assert type(other_team_role) is dict
     builder_cfgs = [json.dumps(team_role), json.dumps(other_team_role)]
-    output_cfg = "/tmp/%s.json" % randomword(16)
     builder_llm_config = llm_config.get("builder_llm_config", {})
     builder_llm_config.update(BUILDER_LLM_CONFIG)
 
-    autogen_crossover(builder_cfgs=builder_cfgs,
-        output_cfg=output_cfg,
-        builder_llm_config=builder_llm_config)
-    assert os.path.exists(output_cfg)
-    with open(output_cfg, 'r') as f:
-        new_team_role = json.load(f)
-    return new_team_role
+    agent_list, agent_configs, builder, builder_dict = autogen_crossover(
+        builder_cfgs=builder_cfgs,
+        output_cfg=None,
+        builder_llm_config=builder_llm_config,
+        dict_out=True)
+    return builder_dict
 
 
 #### Unit tests ####

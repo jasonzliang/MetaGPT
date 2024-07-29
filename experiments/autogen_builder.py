@@ -120,7 +120,7 @@ def init_builder(building_task,
     builder_llm_config=llm_config,
     max_agents=5,
     clear_cache=True,
-    str_in_str_out=False):
+    dict_out=False):
 
     os.makedirs(work_dir, exist_ok=True)
     if clear_cache: os.system("rm -rf .cache")
@@ -147,33 +147,47 @@ def init_builder(building_task,
             builder_llm_config,
             coding=True,
             code_execution_config=code_execution_config)
-        builder_cfg = builder.save(builder_cfg)
+
+        if dict_out:
+            builder_dict = builder.cached_configs
+        else:
+            builder_cfg = builder.save(builder_cfg)
     else:
+        # load previous agent configs
+        print("Using existing builder cfg: %s" % builder_cfg)
+
+    if not dict_out:
         with open(builder_cfg, "r") as f:
             builder_dict = json.load(f)
-        # overwrite model used by agents
-        for agent_config in builder_dict["agent_configs"]:
-            agent_config["model"] = [agent_model]
-        # overwrite builder cfg with current work_dir
-        builder_dict["code_execution_config"]["work_dir"] = work_dir
+
+    # overwrite model used by agents
+    for agent_config in builder_dict["agent_configs"]:
+        agent_config["model"] = [builder_llm_config['agent_model']]
+    # overwrite builder cfg with current work_dir
+    builder_dict["code_execution_config"]["work_dir"] = work_dir
+
+    if dict_out:
+        builder_cfg = json.dumps(builder_dict)
+        agent_list, agent_configs = builder.load(builder_cfg)
+        return agent_list, agent_configs, builder, builder_dict
+    else:
         with open(builder_cfg, "w") as f:
             json.dump(builder_dict, f, indent=4)
 
-        # load previous agent configs
-        print("Using existing builder cfg: %s" % builder_cfg)
         agent_list, agent_configs = builder.load(builder_cfg)
 
-    print("Save path: %s" % builder_cfg)
-    print("Agent list: %s" % agent_list)
-    print("Agent configs:")
-    pprint.pprint(agent_configs)
-    return agent_list, agent_configs, builder
+        print("Save path: %s" % builder_cfg)
+        print("Agent list: %s" % agent_list)
+        print("Agent configs:")
+        pprint.pprint(agent_configs)
+        return agent_list, agent_configs, builder, builder_cfg
 
 
 def autogen_mutate(
     builder_cfg="autogen_builder_cfg.json",
     output_cfg="autogen_mutate.json",
-    builder_llm_config=BUILDER_LLM_CONFIG):
+    builder_llm_config=BUILDER_LLM_CONFIG,
+    dict_out=False):
 
     assert type(builder_cfg) is str
     if os.path.exists(builder_cfg):
@@ -197,13 +211,15 @@ Build a new and improved version of the team that generates more efficient, accu
     print(building_task)
     return init_builder(building_task=building_task,
         builder_cfg=output_cfg,
-        builder_llm_config=builder_llm_config)
+        builder_llm_config=builder_llm_config,
+        dict_out=dict_out)
 
 
 def autogen_crossover(
     builder_cfgs=["autogen_builder_cfg.json", "autogen_mutate.json"],
     output_cfg="autogen_crossover.json",
-    builder_llm_config=BUILDER_LLM_CONFIG):
+    builder_llm_config=BUILDER_LLM_CONFIG,
+    dict_out=False):
 
     builder_strs = []
     for builder_cfg in builder_cfgs:
@@ -230,7 +246,8 @@ Combine and merge these teams to create a new and improved team for generating m
     print(building_task)
     return init_builder(building_task=building_task,
         builder_cfg=output_cfg,
-        builder_llm_config=builder_llm_config)
+        builder_llm_config=builder_llm_config,
+        dict_out=dict_out)
 
 # ## Step 3: specify a building task
 # 
@@ -294,10 +311,11 @@ def eval_humaneval(
     if work_dir is None: work_dir = result_dir
     building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities."
 
-    agent_list, agent_configs, builder = init_builder(building_task,
-        work_dir=work_dir,
-        builder_cfg=builder_cfg,
-        clear_cache=clear_cache)
+    agent_list, agent_configs, builder, builder_cfg = \
+        init_builder(building_task,
+            work_dir=work_dir,
+            builder_cfg=builder_cfg,
+            clear_cache=clear_cache)
     problems = get_human_eval_plus()
     eval_name = "humaneval"
 
