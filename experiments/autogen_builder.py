@@ -21,7 +21,7 @@
 
 
 # ## Step 1: prepare configuration and some useful functions
-# Prepare a `config_file_or_env` for assistant agent to limit the choice of LLM you want to use in this task. This config can be a path of json file or a name of environment variable. A `default_llm_config` is also required for initialize the specific config of LLMs like seed, temperature, etc...
+# Prepare a `CONFIG_FILE_OR_ENV` for assistant agent to limit the choice of LLM you want to use in this task. This config can be a path of json file or a name of environment variable. A `default_llm_config` is also required for initialize the specific config of LLMs like seed, temperature, etc...
 
 # In[1]:
 
@@ -48,19 +48,17 @@ from timeout_decorator import TimeoutError
 
 from util import get_time, killtree
 
-config_file_or_env = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
-llm_config = {"temperature": 0}
-config_list = autogen.config_list_from_json(config_file_or_env,
-    filter_dict={"model": ["gpt-4o"]})
-builder_model = "gpt-4o"
-agent_model = "gpt-4o"
-min_chat_hist_len = 3500
-max_chat_hist_len = 125000
-max_msg_len = 4500
+CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
+CHAT_LLM_CONFIG = {"temperature": 0, "model": "gpt-4o"}
+BUILDER_LLM_CONFIG = {'temperature': 1.0, 'builder_model': 'gpt-4o', 'agent_model': 'gpt-4o'}
+MIN_CHAT_HIST_LEN = 3500
+MAX_CHAT_HIST_LEN = 125000
+MAX_MSG_LEN = 4500
 
 
 @timeout_decorator.timeout(120)
-def start_task(execution_task: str, agent_list: list, coding=True):
+def start_task(execution_task: str, agent_list: list, coding=True,
+    chat_llm_config=CHAT_LLM_CONFIG):
     # last agent is user proxy, remove it and replace with new one
     # _agent_list = []; user_proxy = None
     # for agent in agent_list:
@@ -69,12 +67,14 @@ def start_task(execution_task: str, agent_list: list, coding=True):
     #     else:
     #         user_proxy = agent
 
+    config_list = autogen.config_list_from_json(CONFIG_FILE_OR_ENV,
+        filter_dict={"model": [chat_llm_config['model']]})
     # limit out of control output
     context_handling = transform_messages.TransformMessages(
             transforms=[transforms.MessageTokenLimiter(
-                min_tokens=min_chat_hist_len,
-                max_tokens=max_chat_hist_len,
-                max_tokens_per_message=max_msg_len)])
+                min_tokens=MIN_CHAT_HIST_LEN,
+                max_tokens=MAX_CHAT_HIST_LEN,
+                max_tokens_per_message=MAX_MSG_LEN)])
     # context_handling.add_to_agent(user_proxy)
     for agent in agent_list: context_handling.add_to_agent(agent)
 
@@ -87,13 +87,13 @@ def start_task(execution_task: str, agent_list: list, coding=True):
     )
     manager = autogen.GroupChatManager(
         groupchat=group_chat,
-        llm_config={"config_list": config_list, **llm_config}
+        llm_config={"config_list": config_list, **chat_llm_config}
     )
 
     society_of_mind_agent = SocietyOfMindAgent(
         "society_of_mind",
         chat_manager=manager,
-        llm_config={"config_list": config_list, **llm_config},
+        llm_config={"config_list": config_list, **chat_llm_config},
     )
     society_user_proxy = autogen.UserProxyAgent(
         "user_proxy",
@@ -119,15 +119,16 @@ def init_builder(building_task,
     builder_cfg=None,
     builder_llm_config=llm_config,
     max_agents=5,
-    clear_cache=True):
+    clear_cache=True,
+    str_in_str_out=False):
 
     os.makedirs(work_dir, exist_ok=True)
     if clear_cache: os.system("rm -rf .cache")
 
     builder = AgentBuilder(
-        config_file_or_env=config_file_or_env,
-        builder_model=builder_model,
-        agent_model=agent_model,
+        CONFIG_FILE_OR_ENV=CONFIG_FILE_OR_ENV,
+        builder_model=builder_llm_config['builder_model'],
+        agent_model=builder_llm_config['agent_model'],
     )
 
     if builder_cfg is None:
@@ -169,8 +170,12 @@ def init_builder(building_task,
     return agent_list, agent_configs, builder
 
 
-def autogen_mutate(builder_cfg="autogen_builder_cfg.json",
-    output_file="autogen_mutate.json"):
+def autogen_mutate(
+    builder_cfg="autogen_builder_cfg.json",
+    output_cfg="autogen_mutate.json",
+    builder_llm_config=BUILDER_LLM_CONFIG):
+
+    assert type(builder_cfg) is str
     if os.path.exists(builder_cfg):
         with open(builder_cfg, "r") as f:
             builder_dict = json.load(f)
@@ -191,14 +196,18 @@ Build a new and improved version of the team that generates more efficient, accu
     building_task = mutate_prompt % builder_str
     print(building_task)
     return init_builder(building_task=building_task,
-        builder_cfg=output_file,
-        builder_llm_config={'temperature': 1.0})
+        builder_cfg=output_cfg,
+        builder_llm_config=builder_llm_config)
 
-def autogen_crossover(builder_cfgs=
-    ["autogen_builder_cfg.json", "autogen_mutate.json"],
-    output_file="autogen_crossover.json"):
+
+def autogen_crossover(
+    builder_cfgs=["autogen_builder_cfg.json", "autogen_mutate.json"],
+    output_cfg="autogen_crossover.json",
+    builder_llm_config=BUILDER_LLM_CONFIG):
+
     builder_strs = []
     for builder_cfg in builder_cfgs:
+        assert type(builder_cfg) is str
         if os.path.exists(builder_cfg):
             with open(builder_cfg, "r") as f:
                 builder_dict = json.load(f)
@@ -220,8 +229,8 @@ Combine and merge these teams to create a new and improved team for generating m
     building_task = crossover_prompt % "\n\n".join(builder_strs)
     print(building_task)
     return init_builder(building_task=building_task,
-        builder_cfg=output_file,
-        builder_llm_config={'temperature': 1.0})
+        builder_cfg=output_cfg,
+        builder_llm_config=builder_llm_config)
 
 # ## Step 3: specify a building task
 # 
@@ -422,7 +431,7 @@ if __name__ == "__main__":
 # In[8]:
 
 
-# new_builder = AgentBuilder(config_file_or_env=config_file_or_env)
+# new_builder = AgentBuilder(CONFIG_FILE_OR_ENV=CONFIG_FILE_OR_ENV)
 # agent_list, agent_configs = new_builder.load(
 #     "./save_config_c52224ebd16a2e60b348f3f04ac15e79.json"
 # )  # load previous agent configs

@@ -136,16 +136,16 @@ class Individual(object):
                 self.team_role = llm_mutate_team(self.team_role,
                     self.llm_config)
 
-    def mutate2(self, n):
-        if self.dummy_mode:
-            self.mutate()
-        elif random.random() < mutate_rate:
-            assert n >= 0 and self.result_dir is not None
-            self.main_role = llm_mutate2(self.main_role, self.result_dir, n=n,
-                llm_config=self.llm_config)
-            if self.evolve_team_role:
-                self.team_role = llm_mutate_team(self.team_role,
-                    self.llm_config)
+    # def mutate2(self, n):
+    #     if self.dummy_mode:
+    #         self.mutate()
+    #     elif random.random() < mutate_rate:
+    #         assert n >= 0 and self.result_dir is not None
+    #         self.main_role = llm_mutate2(self.main_role, self.result_dir, n=n,
+    #             llm_config=self.llm_config)
+    #         if self.evolve_team_role:
+    #             self.team_role = llm_mutate_team(self.team_role,
+    #                 self.llm_config)
 
     def crossover(self, other):
         if self.dummy_mode:
@@ -157,16 +157,16 @@ class Individual(object):
                 self.team_role = llm_crossover_team(self.team_role,
                     other.team_role, self.llm_config)
 
-    def crossover2(self, others):
-        if self.dummy_mode:
-            self.crossover(others[0])
-        else:
-            other_roles = [indv.role for indv in others]
-            self.main_role = llm_crossover2(self.main_role, other_roles,
-                self.llm_config)
-            if self.evolve_team_role:
-                self.team_role = llm_crossover_team(self.team_role,
-                    other.team_role, self.llm_config)
+    # def crossover2(self, others):
+    #     if self.dummy_mode:
+    #         self.crossover(others[0])
+    #     else:
+    #         other_roles = [indv.role for indv in others]
+    #         self.main_role = llm_crossover2(self.main_role, other_roles,
+    #             self.llm_config)
+    #         if self.evolve_team_role:
+    #             self.team_role = llm_crossover_team(self.team_role,
+    #                 other.team_role, self.llm_config)
 
     def serialize(self):
         return {'id': self.id,
