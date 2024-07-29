@@ -165,7 +165,7 @@ class LLMEvaluator(object):
 
         result_dir = self._setup_result_dir(eval_id)
         self._run_evalplus(result_dir, eval_func)
-        self.sanitize()
+        self.sanitize(result_dir)
         return self._get_evalplus_results(result_dir)
 
     def _eval_indv_main_role(self, indv):
@@ -186,7 +186,7 @@ class LLMEvaluator(object):
 
         result_dir = self._setup_result_dir(eval_id)
         self._run_evalplus(result_dir, eval_func)
-        self.sanitize()
+        self.sanitize(result_dir)
         return self._get_evalplus_results(result_dir)
 
 
