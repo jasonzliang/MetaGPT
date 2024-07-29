@@ -77,8 +77,7 @@ class LLMEvaluator(object):
             result_dicts = self.pool.map(self._eval_indv, population)
         return result_dicts
 
-    def _setup_result_dir(self, indv)
-        main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
+    def _setup_result_dir(self, eval_id)
         result_dir = os.path.join(self.evaluator_dir,
             "%s_%s_T-%d" % (self.dataset, eval_id, time.time()))
         os.makedirs(result_dir, exist_ok=True)
@@ -89,42 +88,17 @@ class LLMEvaluator(object):
                 os.path.join(result_dir, "team_role.json")))
         return result_dir
 
-    def _run_evalplus(self):
-        pass
-
-    def _eval_indv_team_role(indv):
-        result_dir = self._setup_result_dir()
+    def _run_evalplus(self, result_dir, eval_func):
         if self.dataset == 'humaneval':
             problems = get_human_eval_plus()
         else:
             assert self.dataset == 'mbpp'; problems = get_mbpp_plus()
 
         for task_id, problem in problems.items():
-            prompt = problem['prompt']
             mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % (task_id, prompt))
 
-    def _eval_indv_main_role(self, indv):
-        @retry(Exception, tries=5, delay=1, backoff=2, logger=self.logger)
-        def _eval_prompt(prompt_template, prompt):
-            team, coder = create_new_team(self.llm_config)
-            coder.set_prompt_template(prompt_template)
-            team.run_project(prompt)
-            asyncio.run(team.run(n_round=1))
-            output = coder.get_code_text()
-            assert len(output) > 0
-            return output
-
-        result_dir = self._setup_result_dir()
-        if self.dataset == 'humaneval':
-            problems = get_human_eval_plus()
-        else:
-            assert self.dataset == 'mbpp'; problems = get_mbpp_plus()
-
-        for task_id, problem in problems.items():
-            prompt = problem['prompt']
-            mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % (task_id, prompt))
             try:
-                output = _eval_prompt(prompt_template, prompt)
+                output = eval_func(problem)
             except:
                 mlogger.info(traceback.format_exc())
                 output = ""
@@ -135,9 +109,6 @@ class LLMEvaluator(object):
             result_file = os.path.join(task_id_dir, "0.py")
             with open(result_file, 'w') as f:
                 f.write(output)
-
-        self.sanitize()
-        return self._run_evalplus(result_dir)
 
     def _sanitize(self, result_dir):
         if not self.sanitize: return
@@ -164,6 +135,59 @@ class LLMEvaluator(object):
         result_dict['result_dir'] = result_dir
         result_dict['evalplus_result'] = evalplus_result
         return result_dict
+
+    def _eval_indv_team_role(indv):
+        main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
+        builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
+        builder_llm_config.update(indv.llm_config.get("builder_llm_config", {}))
+        chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
+        chat_llm_config.update(indv.llm_config.get("chat_llm_config", {}))
+
+        @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
+        def eval_func(problem):
+            agent_list, agent_configs, builder, builder_dict = \
+                init_builder(building_task=None,
+                    work_dir='/tmp',
+                    builder_cfg=json.dumps(team_role),
+                    builder_llm_config=builder_llm_config,
+                    clear_cache=True,
+                    dict_out=True)
+
+            chat_result = start_task(
+                execution_task=main_role % problem['prompt'],
+                agent_list=agent_list,
+                coding=agent_configs["coding"],
+                chat_llm_config=chat_llm_config)
+            builder.clear_all_agents(recycle_endpoint=True)
+            output = extract_code_from_chat(chat_result)
+            assert len(output) > 0
+            return output
+
+        result_dir = self._setup_result_dir(eval_id)
+        self._run_evalplus(result_dir, eval_func)
+        self.sanitize()
+        return self._get_evalplus_results(result_dir)
+
+    def _eval_indv_main_role(self, indv):
+        main_role, eval_id = indv.main_role, indv.id
+
+        @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
+        def _eval_prompt(prompt_template, prompt):
+            team, coder = create_new_team(self.llm_config)
+            coder.set_prompt_template(prompt_template)
+            team.run_project(prompt)
+            asyncio.run(team.run(n_round=1))
+            output = coder.get_code_text()
+            assert len(output) > 0
+            return output
+
+        def eval_func(problem):
+            return _eval_prompt(main_role, problem['prompt'])
+
+        result_dir = self._setup_result_dir(eval_id)
+        self._run_evalplus(result_dir, eval_func)
+        self.sanitize()
+        return self._get_evalplus_results(result_dir)
 
 
 #### Unit tests ####

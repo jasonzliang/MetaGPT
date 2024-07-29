@@ -115,7 +115,7 @@ def start_task(execution_task: str, agent_list: list, coding=True,
 # In[2]:
 
 
-def init_builder(building_task,
+def init_builder(building_task=None,
     work_dir='groupchat',
     builder_cfg=None,
     builder_llm_config=llm_config,
@@ -127,7 +127,7 @@ def init_builder(building_task,
     if clear_cache: os.system("rm -rf .cache")
 
     builder = AgentBuilder(
-        CONFIG_FILE_OR_ENV=CONFIG_FILE_OR_ENV,
+        config_file_or_env=CONFIG_FILE_OR_ENV,
         builder_model=builder_llm_config['builder_model'],
         agent_model=builder_llm_config['agent_model'],
     )
@@ -136,6 +136,7 @@ def init_builder(building_task,
         builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
 
     if not os.path.exists(builder_cfg):
+        assert building_task is not None
         print("Creating new builder cfg: %s" % builder_cfg)
         code_execution_config = {
             "last_n_messages": 1,
