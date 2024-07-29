@@ -136,8 +136,8 @@ def init_builder(building_task=None,
         builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
 
     if not os.path.exists(builder_cfg):
-        assert building_task is not None
         print("Creating new builder cfg: %s" % builder_cfg)
+        assert building_task is not None
         code_execution_config = {
             "last_n_messages": 1,
             "timeout": 10,
