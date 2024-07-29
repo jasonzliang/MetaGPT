@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import platform
+import pprint
 import re
 import sys
 import random
@@ -26,7 +27,8 @@ from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
 from alg_util import randomword
-from autgen_builder import autogen_mutate, autogen_crossover, BUILDER_LLM_CONFIG
+from autogen_builder import autogen_mutate, autogen_crossover
+from autogen_builder import BUILDER_LLM_CONFIG
 from util import extract_evalplus, parse_code, parse_prompt_template
 
 DEFAULT_ROLE = \
@@ -157,10 +159,10 @@ class SimpleWriteCode(Action):
             # If {instruction} not found, search for first pair of braces
             special_word = prompt[prompt.find("{"):prompt.find("}")+1]
             prompt = prompt.replace(special_word, instruction)
-        finally:
-            rsp = await self._aask(prompt)
-            self.code_text = parse_code(rsp)
-            return self.code_text
+        # finally:
+        rsp = await self._aask(prompt)
+        self.code_text = parse_code(rsp)
+        return self.code_text
 
 
 class SimpleCoder(Role):
@@ -293,15 +295,14 @@ def llm_crossover2(prompt, additional_prompts, llm_config):
 #     logger=logging.getLogger('evolve_role'))
 def llm_mutate_team(team_role, llm_config):
     assert type(team_role) is dict
-    builder_cfg = json.dumps(team_role)
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config.update(llm_config.get("builder_llm_config", {}))
 
     agent_list, agent_configs, builder, builder_dict = autogen_mutate(
-        builder_cfg=builder_cfg,
+        builder_cfg=team_role,
         output_cfg=None,
         builder_llm_config=builder_llm_config,
-        dict_out=True,
+        eval_mode=True,
         work_dir="/tmp")
     if 'building_task' in builder_dict: del builder_dict['building_task']
     return builder_dict
@@ -309,17 +310,16 @@ def llm_mutate_team(team_role, llm_config):
 
 # @retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
 #     logger=logging.getLogger('evolve_role'))
-def llm_crosover_team(team_role, other_team_role, llm_config):
+def llm_crossover_team(team_role, other_team_role, llm_config):
     assert type(team_role) is dict; assert type(other_team_role) is dict
-    builder_cfgs = [json.dumps(team_role), json.dumps(other_team_role)]
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config.update(llm_config.get("builder_llm_config", {}))
 
     agent_list, agent_configs, builder, builder_dict = autogen_crossover(
-        builder_cfgs=builder_cfgs,
+        builder_cfgs=[team_role, other_team_role],
         output_cfg=None,
         builder_llm_config=builder_llm_config,
-        dict_out=True,
+        eval_mode=True,
         work_dir="/tmp")
     if 'building_task' in builder_dict: del builder_dict['building_task']
     return builder_dict
@@ -388,6 +388,34 @@ def _test_mutation_crossover2(test_err=False):
         traceback.print_exc()
 
 
+def _test_autogen_mutation_crossover(
+    team_role="autogen_builder_cfg.json",
+    other_team_role='autogen_mutate.json'):
+    # llm_model = 'N/A' if test_err else 'gpt-4o'
+    # llm_config = {'model': llm_model, 'temperature': 1.2, 'top_p': 1.0}
+    llm_config = {'temperature': 1.0,
+        'builder_model': 'gpt-4o', 'agent_model': 'gpt-4o', "cache_seed": None}
+    with open(team_role, 'r') as f: team_role = json.load(f)
+    with open(other_team_role, 'r') as f: other_team_role = json.load(f)
+
+    try:
+        output = llm_mutate_team(team_role, llm_config=llm_config)
+        print("### LLM_MUTATE RETURN VALUE ###")
+        pprint.pprint(output)
+        print("###############################")
+    except:
+        traceback.print_exc()
+
+    try:
+        output = llm_crossover_team(team_role, other_team_role,
+            llm_config=llm_config)
+        print("### LLM_CROSSOVER RETURN VALUE ###")
+        pprint.pprint(output)
+        print("##################################")
+    except:
+        traceback.print_exc()
+
+
 def _test_prompt_extractor():
     PROMPT_TEMPLATE = """PROMPT_TEMPLATE: str = '''%s'''""" % PROMPT_TEMPLATE_1
     print("Original prompt template:")
@@ -397,4 +425,4 @@ def _test_prompt_extractor():
 
 
 if __name__ == "__main__":
-    _test_mutation_crossover(test_err=False)
+    _test_autogen_mutation_crossover()

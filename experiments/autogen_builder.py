@@ -30,6 +30,7 @@ import fire
 import json
 import os
 import pprint
+import random
 import re
 import sys
 import time
@@ -46,20 +47,22 @@ from evalplus.data import write_jsonl
 import timeout_decorator
 from timeout_decorator import TimeoutError
 
-from util import get_time, killtree
+from util import get_time, killtree, extract_code_from_chat
 
 CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
-CHAT_LLM_CONFIG = {"temperature": 0, "model": "gpt-4o", "cache_seed": None}
+CHAT_LLM_CONFIG = {"temperature": 0.0, "model": "gpt-4o", "cache_seed": None}
 BUILDER_LLM_CONFIG = {'temperature': 1.0,
     'builder_model': 'gpt-4o', 'agent_model': 'gpt-4o', "cache_seed": None}
 MIN_CHAT_HIST_LEN = 3500
 MAX_CHAT_HIST_LEN = 125000
 MAX_MSG_LEN = 4500
+MIN_AGENTS=3
+MAX_AGENTS=5
 
 
 @timeout_decorator.timeout(120)
 def start_task(execution_task: str, agent_list: list, coding=True,
-    chat_llm_config=CHAT_LLM_CONFIG):
+    chat_llm_config=CHAT_LLM_CONFIG, max_round=20):
     # last agent is user proxy, remove it and replace with new one
     # _agent_list = []; user_proxy = None
     # for agent in agent_list:
@@ -82,7 +85,7 @@ def start_task(execution_task: str, agent_list: list, coding=True,
     group_chat = autogen.GroupChat(
         agents=agent_list,
         messages=[],
-        max_round=20,
+        max_round=max_round,
         # allow_repeat_speaker=agent_list,
         allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list,
     )
@@ -118,25 +121,28 @@ def start_task(execution_task: str, agent_list: list, coding=True,
 def init_builder(building_task=None,
     work_dir='groupchat',
     builder_cfg=None,
-    builder_llm_config=llm_config,
+    builder_dict=None,
+    builder_llm_config=BUILDER_LLM_CONFIG,
     max_agents=5,
     clear_cache=False,
-    dict_out=False):
+    use_builder_dict=False):
 
     os.makedirs(work_dir, exist_ok=True)
     if clear_cache: os.system("rm -rf .cache")
+    if builder_cfg is None:
+        builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
 
     builder = AgentBuilder(
         config_file_or_env=CONFIG_FILE_OR_ENV,
         builder_model=builder_llm_config['builder_model'],
         agent_model=builder_llm_config['agent_model'],
+        max_agents=max_agents
     )
 
-    if builder_cfg is None:
-        builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
+    if (use_builder_dict and builder_dict is None) or \
+        (not use_builder_dict and not os.path.exists(builder_cfg)):
 
-    if not os.path.exists(builder_cfg):
-        print("Creating new builder cfg: %s" % builder_cfg)
+        print("init_builder: creating new builder: %s" % builder_cfg)
         assert building_task is not None
         code_execution_config = {
             "last_n_messages": 1,
@@ -149,58 +155,59 @@ def init_builder(building_task=None,
             builder_llm_config,
             coding=True,
             code_execution_config=code_execution_config)
-
-        if dict_out:
-            builder_dict = builder.cached_configs
-        else:
-            builder_cfg = builder.save(builder_cfg)
+        builder_dict = copy.copy(builder.cached_configs)
     else:
-        # load previous agent configs
-        print("Using existing builder cfg: %s" % builder_cfg)
+        print("init_builder: using existing builder: %s/%s" % \
+            (builder_cfg, builder_dict))
+        if not use_builder_dict:
+            assert os.path.exists(builder_cfg)
+            # load previous agent configs
+            with open(builder_cfg, "r") as f:
+                builder_dict = json.load(f)
 
-    if not dict_out:
-        with open(builder_cfg, "r") as f:
-            builder_dict = json.load(f)
+        # overwrite model used by agents
+        for agent_config in builder_dict["agent_configs"]:
+            agent_config["model"] = [builder_llm_config['agent_model']]
+        # overwrite builder cfg with current work_dir
+        builder_dict["code_execution_config"]["work_dir"] = work_dir
+        agent_list, agent_configs = builder.load(
+            config_json=json.dumps(builder_dict, indent=4))
 
-    # overwrite model used by agents
-    for agent_config in builder_dict["agent_configs"]:
-        agent_config["model"] = [builder_llm_config['agent_model']]
-    # overwrite builder cfg with current work_dir
-    builder_dict["code_execution_config"]["work_dir"] = work_dir
-
-    if dict_out:
-        builder_cfg = json.dumps(builder_dict)
-        agent_list, agent_configs = builder.load(builder_cfg)
+    if use_builder_dict:
         return agent_list, agent_configs, builder, builder_dict
     else:
         with open(builder_cfg, "w") as f:
             json.dump(builder_dict, f, indent=4)
-
-        agent_list, agent_configs = builder.load(builder_cfg)
-
-        print("Save path: %s" % builder_cfg)
-        print("Agent list: %s" % agent_list)
-        print("Agent configs:")
-        pprint.pprint(agent_configs)
         return agent_list, agent_configs, builder, builder_cfg
 
+def _parse_builder_cfgs(builder_cfgs, eval_mode=False):
+
+    builder_strs = []
+    if eval_mode:
+        for builder_cfg in builder_cfgs:
+            assert type(builder_cfg) is dict
+            builder_strs.append(json.dumps(builder_strs))
+    else:
+        for builder_cfg in builder_cfgs:
+            assert type(builder_cfg) is str
+            if os.path.exists(builder_cfg):
+                with open(builder_cfg, "r") as f:
+                    builder_dict = json.load(f)
+                if 'building_task' in builder_dict: del builder_dict['building_task']
+                builder_str = json.dumps(builder_dict, indent=4)
+            else:
+                builder_str = builder_cfg
+            builder_strs.append(builder_str)
+    return builder_strs
 
 def autogen_mutate(
     builder_cfg="autogen_builder_cfg.json",
     output_cfg="autogen_mutate.json",
     work_dir='groupchat',
     builder_llm_config=BUILDER_LLM_CONFIG,
-    dict_out=False):
+    eval_mode=False):
 
-    assert type(builder_cfg) is str
-    if os.path.exists(builder_cfg):
-        with open(builder_cfg, "r") as f:
-            builder_dict = json.load(f)
-        if 'building_task' in builder_dict: del builder_dict['building_task']
-        builder_str = json.dumps(builder_dict, indent=4)
-    else:
-        builder_str = builder_cfg
-
+    builder_str = _parse_builder_cfgs([builder_cfg], eval_mode=eval_mode)[0]
     mutate_prompt = \
 """
 Here is a JSON string that describes an existing team that contains agents with different roles for generating code.
@@ -211,12 +218,19 @@ Build a new and improved version of the team that generates more efficient, accu
 """
 
     building_task = mutate_prompt % builder_str
-    print(building_task)
-    return init_builder(building_task=building_task,
-        builder_cfg=output_cfg,
-        builder_llm_config=builder_llm_config,
-        dict_out=dict_out,
-        work_dir=work_dir)
+    if eval_mode:
+        return init_builder(building_task=building_task,
+            builder_dict=None,
+            builder_llm_config=builder_llm_config,
+            work_dir=work_dir,
+            use_builder_dict=True,
+            clear_cache=True,
+            max_agents=random.randint(MIN_AGENTS, MAX_AGENTS))
+    else:
+        return init_builder(building_task=building_task,
+            builder_cfg=output_cfg,
+            builder_llm_config=builder_llm_config,
+            work_dir=work_dir)
 
 
 def autogen_crossover(
@@ -224,20 +238,9 @@ def autogen_crossover(
     output_cfg="autogen_crossover.json",
     work_dir='groupchat',
     builder_llm_config=BUILDER_LLM_CONFIG,
-    dict_out=False):
+    eval_mode=False):
 
-    builder_strs = []
-    for builder_cfg in builder_cfgs:
-        assert type(builder_cfg) is str
-        if os.path.exists(builder_cfg):
-            with open(builder_cfg, "r") as f:
-                builder_dict = json.load(f)
-            if 'building_task' in builder_dict: del builder_dict['building_task']
-            builder_str = json.dumps(builder_dict, indent=4)
-        else:
-            builder_str = builder_cfg
-        builder_strs.append(builder_str)
-
+    builder_strs = _parse_builder_cfgs(builder_cfgs, eval_mode=eval_mode)
     crossover_prompt = \
 """
 Here are multiple JSON strings where each JSON describes an existing team containing agents with different roles for generating code.
@@ -248,12 +251,19 @@ Combine and merge these teams to create a new and improved team for generating m
 """
 
     building_task = crossover_prompt % "\n\n".join(builder_strs)
-    print(building_task)
-    return init_builder(building_task=building_task,
-        builder_cfg=output_cfg,
-        builder_llm_config=builder_llm_config,
-        dict_out=dict_out,
-        work_dir=work_dir)
+    if eval_mode:
+        return init_builder(building_task=building_task,
+            builder_dict=None,
+            builder_llm_config=builder_llm_config,
+            work_dir=work_dir,
+            use_builder_dict=True,
+            clear_cache=True,
+            max_agents=random.randint(MIN_AGENTS, MAX_AGENTS))
+    else:
+        return init_builder(building_task=building_task,
+            builder_cfg=output_cfg,
+            builder_llm_config=builder_llm_config,
+            work_dir=work_dir)
 
 # ## Step 3: specify a building task
 # 
@@ -276,7 +286,7 @@ Combine and merge these teams to create a new and improved team for generating m
 # In[5]:
 
 
-def generate_code_prompt(example: dict) -> str:
+def _generate_code_prompt(example: dict) -> str:
     prompt_template = \
 """
 Write a python function that can %s.
@@ -285,25 +295,6 @@ Return ```python your_code_here ``` with NO other texts,
 your code:
 """
     return prompt_template % example['instruction']
-
-
-def extract_code_from_chat(chat_result):
-    def parse_code(rsp):
-        if rsp is None: return None
-        pattern = r"```python(.*)```"
-        match = re.search(pattern, rsp, re.DOTALL)
-        if match:
-            return match.group(1)
-        else:
-            return None
-
-    code = ""
-    result = parse_code(chat_result.summary)
-    if result is not None: code = result
-    # for msg_dict in chat_result.chat_history:
-    #     result = parse_code(msg_dict['content'])
-    #     if result is not None: code = result
-    return code
 
 
 def eval_humaneval(
@@ -322,6 +313,10 @@ def eval_humaneval(
             work_dir=work_dir,
             builder_cfg=builder_cfg,
             clear_cache=clear_cache)
+    print("Save path: %s" % builder_cfg)
+    print("Agent list: %s" % agent_list)
+    print("Agent configs:")
+    pprint.pprint(agent_configs)
     problems = get_human_eval_plus()
     eval_name = "humaneval"
 
@@ -335,7 +330,7 @@ def eval_humaneval(
         sample = {"instruction": problem['prompt'],
             "input": problem['base_input']}
             # "result_file": "0.py"}
-        prompt = generate_code_prompt(sample)
+        prompt = _generate_code_prompt(sample)
         print("\n\n#### Task ID: %s, Prompt:\n%s" % (task_id, prompt))
 
         code = ""; n_tries = 3

@@ -6,6 +6,7 @@ import os
 import math
 import pickle
 import psutil
+import re
 import sys
 import time
 import traceback
@@ -26,11 +27,31 @@ OBJECTIVES = {'base_score': lambda x: x,
     'memory_usage_mb': lambda x: -x}
 
 
+def extract_code_from_chat(chat_result):
+    code = ""
+    result = parse_code2(chat_result.summary)
+    if result is not None: code = result
+    # for msg_dict in chat_result.chat_history:
+    #     result = parse_code(msg_dict['content'])
+    #     if result is not None: code = result
+    return code
+
+
 def parse_code(rsp):
     pattern = r"```python(.*)```"
     match = re.search(pattern, rsp, re.DOTALL)
     code_text = match.group(1) if match else rsp
     return code_text
+
+
+def parse_code2(rsp):
+    if rsp is None: return None
+    pattern = r"```python(.*)```"
+    match = re.search(pattern, rsp, re.DOTALL)
+    if match:
+        return match.group(1)
+    else:
+        return None
 
 
 def parse_prompt_template(rsp):
@@ -44,7 +65,7 @@ def parse_prompt_template(rsp):
 def killtree(pid, including_parent=True):
     parent = psutil.Process(pid)
     for child in parent.children(recursive=True):
-        print "child", child
+        print("Killing child: %s" % child)
         child.kill()
 
     if including_parent:

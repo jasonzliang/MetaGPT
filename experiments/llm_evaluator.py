@@ -7,6 +7,7 @@ import os
 import platform
 import re
 import sys
+import pprint
 import random
 import traceback
 import time
@@ -25,8 +26,12 @@ from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
+from autogen_builder import init_builder, start_task
+from autogen_builder import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
+from llm_operators import create_new_team
 from llm_operators import DEFAULT_ROLE
-from util import extract_evalplus, OBJECTIVES
+from util import extract_evalplus, extract_code_from_chat
+from util import OBJECTIVES
 
 class LLMEvaluator(object):
     def __init__(self, config, evaluator_dir):
@@ -45,8 +50,10 @@ class LLMEvaluator(object):
         self.sanitize = self.config.get("sanitize", True)
         self.restart_interval = self.config.get("restart_interval", 999)
         assert self.restart_interval > 0
-        self.eval_mode = self.config.get("eval_mode", "single")
-        assert self.eval_mode in ['single', 'team', 'both']
+        self.max_round = self.config.get("max_round", 20)
+        assert self.max_round > 0
+        # self.eval_mode = self.config.get("eval_mode", "single")
+        # assert self.eval_mode in ['single', 'team', 'both']
 
         self.logger = logging.getLogger('evolve_role')
         self.reset()
@@ -70,10 +77,10 @@ class LLMEvaluator(object):
                     result_dict = {}
                     result_dict['fitness'] = fitness
                     result_dict['true_fitness'] = fitness
-                elif self.eval_mode == "single":
+                elif indv.evolve_mode == "single":
                     result_dict = self._eval_indv_main_role(indv)
 
-                else: # self.eval_mode in ["team", "both"]
+                else: # indv.evolve_mode in ["team", "both"]
                     result_dict = self._eval_indv_team_role(indv)
 
                 result_dicts.append(result_dict)
@@ -81,15 +88,16 @@ class LLMEvaluator(object):
             result_dicts = self.pool.map(self._eval_indv, population)
         return result_dicts
 
-    def _setup_result_dir(self, eval_id):
+    def _setup_result_dir(self, indv):
+        main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
         result_dir = os.path.join(self.evaluator_dir,
             "%s_%s_T-%d" % (self.dataset, eval_id, time.time()))
         os.makedirs(result_dir, exist_ok=True)
         with open(os.path.join(result_dir, "main_role.txt"), "w") as f:
             f.write(main_role)
-        if os.path.exists(team_role):
-            os.system("cp %s %s" % (team_role,
-                os.path.join(result_dir, "team_role.json")))
+        if team_role is not None:
+            with open(os.path.join(result_dir, "team_role.json"), "w") as f:
+                json.dump(team_role, f, indent=4)
         return result_dir
 
     def _run_evalplus(self, result_dir, eval_func):
@@ -99,14 +107,17 @@ class LLMEvaluator(object):
             problems = get_mbpp_plus()
 
         for i, (task_id, problem) in enumerate(problems.items()):
-            if i >= self.max_problems: break
-            mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % (task_id, prompt))
-            try:
-                output = eval_func(problem)
-            except:
-                mlogger.info(traceback.format_exc())
+            if i < self.max_problems:
+                mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % \
+                    (task_id, problem['prompt']))
+                try:
+                    output = eval_func(problem)
+                except:
+                    mlogger.info(traceback.format_exc())
+                    output = ""
+                mlogger.info("#### Evalplus Problem Output:\n%s" % output)
+            else:
                 output = ""
-            mlogger.info("#### Evalplus Problem Output:\n%s" % output)
 
             task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
             os.makedirs(task_id_dir, exist_ok=True)
@@ -142,7 +153,7 @@ class LLMEvaluator(object):
 
     def _eval_indv_team_role(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
-        if self.eval_mode != "both": main_role = DEFAULT_ROLE
+        if indv.evolve_mode != "both": main_role = DEFAULT_ROLE
         assert team_role is not None
 
         builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
@@ -155,29 +166,40 @@ class LLMEvaluator(object):
             agent_list, agent_configs, builder, builder_dict = \
                 init_builder(building_task=None,
                     work_dir='/tmp',
-                    builder_cfg=json.dumps(team_role),
+                    builder_dict=team_role,
                     builder_llm_config=builder_llm_config,
-                    dict_out=True)
+                    use_builder_dict=True,
+                    clear_cache=True)
+
+            prompt = main_role
+            try:
+                prompt = prompt.format(instruction=problem['prompt'])
+            except:
+                # If {instruction} not found, search for first pair of braces
+                special_word = prompt[prompt.find("{"):prompt.find("}")+1]
+                prompt = prompt.replace(special_word, problem['prompt'])
 
             chat_result = start_task(
-                execution_task=main_role % problem['prompt'],
+                execution_task=prompt,
                 agent_list=agent_list,
                 coding=agent_configs["coding"],
-                chat_llm_config=chat_llm_config)
+                chat_llm_config=chat_llm_config,
+                max_round=self.max_round)
+
             builder.clear_all_agents(recycle_endpoint=True)
             output = extract_code_from_chat(chat_result)
             assert len(output) > 0
             return output
 
-        result_dir = self._setup_result_dir(eval_id)
+        result_dir = self._setup_result_dir(indv)
         self._run_evalplus(result_dir, eval_func)
-        self.sanitize(result_dir)
+        self._sanitize(result_dir)
         return self._get_evalplus_results(result_dir)
 
     def _eval_indv_main_role(self, indv):
-        main_role, eval_id = indv.main_role, indv.id
+        main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
 
-        @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
+        # @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
         def _eval_prompt(prompt_template, prompt):
             team, coder = create_new_team(indv.llm_config)
             coder.set_prompt_template(prompt_template)
@@ -190,18 +212,20 @@ class LLMEvaluator(object):
         def eval_func(problem):
             return _eval_prompt(main_role, problem['prompt'])
 
-        result_dir = self._setup_result_dir(eval_id)
+        result_dir = self._setup_result_dir(indv)
         self._run_evalplus(result_dir, eval_func)
-        self.sanitize(result_dir)
+        self._sanitize(result_dir)
         return self._get_evalplus_results(result_dir)
 
 
 #### Unit tests ####
 def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
-    max_problems=1):
+    max_problems=999):
     from role_ga import Individual
-    eval_mode = "single"
     indv = Individual({}, gen_created=0)
+    assert indv.team_role is None
+    indv.evolve_mode = "single"
+
     if main_role_fp is not None:
         assert os.path.exists(main_role_fp)
         with open(main_role_fp, "r") as f:
@@ -210,20 +234,24 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
         indv.main_role = DEFAULT_ROLE
     if team_role_fp is not None:
         assert os.path.exists(team_role_fp)
-        indv.team_role = team_role_fp
-        eval_mode = "both"
-    else:
-        indv.team_role = None
+        with open(team_role_fp, "r") as f:
+            indv.team_role = json.load(f)
+        indv.evolve_mode = "both"
 
-    print(indv.main_role); print(indv.team_role); population = [indv]
     llm_model = 'N/A' if test_err else 'gpt-3.5-turbo'
-    indv.llm_config = {'model': llm_model}
+    builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
+    builder_llm_config['model'] = llm_model
+    indv.llm_config = {'model': llm_model,
+        'builder_llm_config': builder_llm_config,
+        'chat_llm_config': CHAT_LLM_CONFIG}
+    print(indv.main_role); print(indv.team_role)
+    pprint.pprint(indv.llm_config)
+
     eval_config = {'n_workers': 1,
         'dummy_mode': False,
-        'eval_mode': eval_mode,
         'max_problems': max_problems}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
-    result_dicts = evaluator.evaluate(population)
+    result_dicts = evaluator.evaluate([indv])
     print("Evaluation results:")
     print(result_dicts)
 

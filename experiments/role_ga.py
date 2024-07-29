@@ -13,7 +13,7 @@ from ruamel.yaml import YAML
 
 from alg_util import randomword
 from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
-from llm_operators import llm_mutate, llm_crossover, parse_prompt_template,
+from llm_operators import llm_mutate, llm_crossover, parse_prompt_template, \
     llm_mutate_team, llm_crossover_team
 from llm_operators import DEFAULT_ROLE
 from util import get_time, sanitize_result_dict
