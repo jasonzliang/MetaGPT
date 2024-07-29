@@ -142,7 +142,7 @@ def init_builder(building_task=None,
     if (use_builder_dict and builder_dict is None) or \
         (not use_builder_dict and not os.path.exists(builder_cfg)):
 
-        print("init_builder: creating new builder: %s" % builder_cfg)
+        print("init_builder: creating new builder")
         assert building_task is not None
         code_execution_config = {
             "last_n_messages": 1,
@@ -157,8 +157,7 @@ def init_builder(building_task=None,
             code_execution_config=code_execution_config)
         builder_dict = copy.copy(builder.cached_configs)
     else:
-        print("init_builder: using existing builder: %s/%s" % \
-            (builder_cfg, builder_dict))
+        print("init_builder: using existing builder")
         if not use_builder_dict:
             assert os.path.exists(builder_cfg)
             # load previous agent configs
@@ -172,6 +171,9 @@ def init_builder(building_task=None,
         builder_dict["code_execution_config"]["work_dir"] = work_dir
         agent_list, agent_configs = builder.load(
             config_json=json.dumps(builder_dict, indent=4))
+
+    print("init_builder: builder dict")
+    pprint.pprint(builder_dict)
 
     if use_builder_dict:
         return agent_list, agent_configs, builder, builder_dict
