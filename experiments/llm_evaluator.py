@@ -89,7 +89,8 @@ class LLMEvaluator(object):
                 os.path.join(result_dir, "team_role.json")))
         return result_dir
 
-    def _run_evalplus()
+    def _run_evalplus(self):
+        pass
 
     def _eval_indv_team_role(indv):
         result_dir = self._setup_result_dir()
