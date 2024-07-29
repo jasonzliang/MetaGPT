@@ -308,7 +308,9 @@ def llm_mutate_team(team_role, llm_config):
         builder_cfg=builder_cfg,
         output_cfg=None,
         builder_llm_config=builder_llm_config,
-        dict_out=True)
+        dict_out=True,
+        work_dir="/tmp")
+    if 'building_task' in builder_dict: del builder_dict['building_task']
     return builder_dict
 
 
@@ -324,7 +326,9 @@ def llm_crosover_team(team_role, other_team_role, llm_config):
         builder_cfgs=builder_cfgs,
         output_cfg=None,
         builder_llm_config=builder_llm_config,
-        dict_out=True)
+        dict_out=True,
+        work_dir="/tmp")
+    if 'building_task' in builder_dict: del builder_dict['building_task']
     return builder_dict
 
 

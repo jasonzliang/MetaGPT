@@ -166,7 +166,7 @@ class Individual(object):
     #             self.llm_config)
     #         if self.evolve_team_role:
     #             self.team_role = llm_crossover_team(self.team_role,
-    #                 other.team_role, self.llm_config)
+    #                 other_roles, self.llm_config)
 
     def serialize(self):
         return {'id': self.id,

@@ -50,7 +50,8 @@ from util import get_time, killtree
 
 CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
 CHAT_LLM_CONFIG = {"temperature": 0, "model": "gpt-4o"}
-BUILDER_LLM_CONFIG = {'temperature': 1.0, 'builder_model': 'gpt-4o', 'agent_model': 'gpt-4o'}
+BUILDER_LLM_CONFIG = {'temperature': 1.0,
+    'builder_model': 'gpt-4o', 'agent_model': 'gpt-4o'}
 MIN_CHAT_HIST_LEN = 3500
 MAX_CHAT_HIST_LEN = 125000
 MAX_MSG_LEN = 4500
@@ -186,6 +187,7 @@ def init_builder(building_task,
 def autogen_mutate(
     builder_cfg="autogen_builder_cfg.json",
     output_cfg="autogen_mutate.json",
+    work_dir='groupchat',
     builder_llm_config=BUILDER_LLM_CONFIG,
     dict_out=False):
 
@@ -212,12 +214,14 @@ Build a new and improved version of the team that generates more efficient, accu
     return init_builder(building_task=building_task,
         builder_cfg=output_cfg,
         builder_llm_config=builder_llm_config,
-        dict_out=dict_out)
+        dict_out=dict_out,
+        work_dir=work_dir)
 
 
 def autogen_crossover(
     builder_cfgs=["autogen_builder_cfg.json", "autogen_mutate.json"],
     output_cfg="autogen_crossover.json",
+    work_dir='groupchat',
     builder_llm_config=BUILDER_LLM_CONFIG,
     dict_out=False):
 
@@ -247,7 +251,8 @@ Combine and merge these teams to create a new and improved team for generating m
     return init_builder(building_task=building_task,
         builder_cfg=output_cfg,
         builder_llm_config=builder_llm_config,
-        dict_out=dict_out)
+        dict_out=dict_out,
+        work_dir=work_dir)
 
 # ## Step 3: specify a building task
 # 
