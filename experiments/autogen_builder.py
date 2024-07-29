@@ -49,9 +49,9 @@ from timeout_decorator import TimeoutError
 from util import get_time, killtree
 
 CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
-CHAT_LLM_CONFIG = {"temperature": 0, "model": "gpt-4o"}
+CHAT_LLM_CONFIG = {"temperature": 0, "model": "gpt-4o", "cache_seed": None}
 BUILDER_LLM_CONFIG = {'temperature': 1.0,
-    'builder_model': 'gpt-4o', 'agent_model': 'gpt-4o'}
+    'builder_model': 'gpt-4o', 'agent_model': 'gpt-4o', "cache_seed": None}
 MIN_CHAT_HIST_LEN = 3500
 MAX_CHAT_HIST_LEN = 125000
 MAX_MSG_LEN = 4500
@@ -94,7 +94,7 @@ def start_task(execution_task: str, agent_list: list, coding=True,
     society_of_mind_agent = SocietyOfMindAgent(
         "society_of_mind",
         chat_manager=manager,
-        llm_config={"config_list": config_list, **chat_llm_config},
+        llm_config={"config_list": config_list, **chat_llm_config}
     )
     society_user_proxy = autogen.UserProxyAgent(
         "user_proxy",
@@ -120,7 +120,7 @@ def init_builder(building_task=None,
     builder_cfg=None,
     builder_llm_config=llm_config,
     max_agents=5,
-    clear_cache=True,
+    clear_cache=False,
     dict_out=False):
 
     os.makedirs(work_dir, exist_ok=True)
@@ -311,7 +311,7 @@ def eval_humaneval(
     # result_dir="results/humaneval_results_2024-06-29_21-35-10",
     builder_cfg="autogen_builder_cfg.json",
     work_dir="groupchat",
-    clear_cache=True,
+    clear_cache=False,
 ):
     print(locals()); time.sleep(3)
     if work_dir is None: work_dir = result_dir

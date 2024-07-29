@@ -148,14 +148,13 @@ class LLMEvaluator(object):
         chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
         chat_llm_config.update(indv.llm_config.get("chat_llm_config", {}))
 
-        @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
+        # @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
         def eval_func(problem):
             agent_list, agent_configs, builder, builder_dict = \
                 init_builder(building_task=None,
                     work_dir='/tmp',
                     builder_cfg=json.dumps(team_role),
                     builder_llm_config=builder_llm_config,
-                    clear_cache=True,
                     dict_out=True)
 
             chat_result = start_task(
