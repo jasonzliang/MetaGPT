@@ -87,8 +87,9 @@ class LLMEvaluator(object):
         if os.path.exists(team_role):
             os.system("cp %s %s" % (team_role,
                 os.path.join(result_dir, "team_role.json")))
-
         return result_dir
+
+    def _run_evalplus()
 
     def _eval_indv_team_role(indv):
         result_dir = self._setup_result_dir()
@@ -144,7 +145,7 @@ class LLMEvaluator(object):
             (result_dir, result_dir))
         os.system("rm -rf %s-sanitized" % result_dir)
 
-    def _run_evalplus(self, result_dir):
+    def _get_evalplus_results(self, result_dir):
         flag = "-v" if platform.system() == 'Linux' else '-l' # Flag for MacOS
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         os.system("/usr/bin/time %s evalplus.evaluate " \
