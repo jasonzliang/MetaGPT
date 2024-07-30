@@ -3,7 +3,7 @@ verbosity: info
 role_ga_config:
     indv_config:
         dummy_mode: False
-        mutate_rate: 0.75
+        mutate_rate: 1.0
         initial_main_role: |
             Write a python function that can {instruction}.
             Return ```python your_code_here ``` with NO other texts,
@@ -27,7 +27,7 @@ role_ga_config:
 
 llm_evaluator_config:
     dummy_mode: False
-    n_workers: 2
+    n_workers: 1
     max_problems: 1
 
     llm_config:

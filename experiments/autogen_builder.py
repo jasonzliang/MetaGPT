@@ -139,16 +139,16 @@ def init_builder(building_task=None,
             with open(builder_cfg, "r") as f:
                 builder_dict = json.load(f)
 
-        # overwrite model used by agents
-        for agent_config in builder_dict["agent_configs"]:
-            agent_config["model"] = [builder_llm_config['agent_model']]
-        # overwrite builder cfg with current work_dir
-        builder_dict["code_execution_config"]["work_dir"] = work_dir
-        agent_list, agent_configs = builder.load(
-            config_json=json.dumps(builder_dict, indent=4))
+    # overwrite model used by agents
+    for agent_config in builder_dict["agent_configs"]:
+        agent_config["model"] = [builder_llm_config['agent_model']]
+    # overwrite builder cfg with current work_dir
+    builder_dict["code_execution_config"]["work_dir"] = work_dir
+    agent_list, agent_configs = builder.load(
+        config_json=json.dumps(builder_dict, indent=4))
 
-    print("init_builder: builder dict")
-    pprint.pprint(builder_dict)
+    # print("init_builder: builder dict")
+    # pprint.pprint(builder_dict)
 
     if use_builder_dict:
         return agent_list, agent_configs, builder, builder_dict
@@ -158,19 +158,21 @@ def init_builder(building_task=None,
         return agent_list, agent_configs, builder, builder_cfg
 
 def _parse_builder_cfgs(builder_cfgs, eval_mode=False):
-
     builder_strs = []
     if eval_mode:
-        for builder_cfg in builder_cfgs:
-            assert type(builder_cfg) is dict
-            builder_strs.append(json.dumps(builder_strs))
+        for builder_dict in builder_cfgs:
+            assert type(builder_dict) is dict
+            if 'building_task' in builder_dict:
+                del builder_dict['building_task']
+            builder_strs.append(json.dumps(builder_dict))
     else:
         for builder_cfg in builder_cfgs:
             assert type(builder_cfg) is str
             if os.path.exists(builder_cfg):
                 with open(builder_cfg, "r") as f:
                     builder_dict = json.load(f)
-                if 'building_task' in builder_dict: del builder_dict['building_task']
+                if 'building_task' in builder_dict:
+                    del builder_dict['building_task']
                 builder_str = json.dumps(builder_dict, indent=4)
             else:
                 builder_str = builder_cfg
@@ -295,10 +297,10 @@ def eval_humaneval(
                     agent_list=agent_list,
                     coding=agent_configs["coding"])
                 code = extract_code_from_chat(chat_result)
-                builder.clear_all_agents(recycle_endpoint=True)
+                builder.clear_all_agents(recycle_endpoint=False)
                 break
             except:
-                builder.clear_all_agents(recycle_endpoint=True)
+                builder.clear_all_agents(recycle_endpoint=False)
                 n_tries -= 1
 
         with open(result_file, "w") as f: f.write(code)

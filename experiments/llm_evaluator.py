@@ -28,6 +28,8 @@ from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 
+from alg_util import randomword
+from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from autogen_builder import init_builder, start_task
 from autogen_builder import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
 from llm_operators import create_new_team
@@ -184,7 +186,7 @@ class LLMEvaluator(object):
         def eval_func(problem):
             agent_list, agent_configs, builder, builder_dict = \
                 init_builder(building_task=None,
-                    work_dir='/tmp',
+                    work_dir='/tmp/%' % randomword(ID_LENGTH),
                     builder_dict=team_role,
                     builder_llm_config=builder_llm_config,
                     use_builder_dict=True,

@@ -128,6 +128,7 @@ class Individual(object):
         if self.dummy_mode:
             self.main_role += randomword(ID_LENGTH)
         elif random.random() < mutate_rate:
+            # print("%s: %s" % (os.getpid(), self.evolve_mode))
             if self.evolve_mode in ["single", "both"]:
                 self.main_role = llm_mutate(self.main_role, self.llm_config)
             if self.evolve_mode in ["team", "both"]:
@@ -228,10 +229,10 @@ class RoleEvolutionGA(object):
         assert self.n_workers > 0
         self.indv_config = self.config.get("indv_config", {})
 
-        self.mutate2_n = self.config.get("mutate2_n", 3)
-        assert self.mutate2_n >= 0
-        self.crossover2_n = self.config.get("crossover2_n", 3)
-        assert self.crossover2_n >= 1
+        # self.mutate2_n = self.config.get("mutate2_n", 3)
+        # assert self.mutate2_n >= 0
+        # self.crossover2_n = self.config.get("crossover2_n", 3)
+        # assert self.crossover2_n >= 1
 
         self._reset()
         if self.checkpoint:
@@ -244,6 +245,11 @@ class RoleEvolutionGA(object):
     def get_sorted_individuals(self, individuals):
         return sorted(individuals, reverse=True)
 
+    def _reset_pool(self):
+        if hasattr(self, "pool"):
+            self.pool.close(); self.pool.join(); self.pool.clear(); del self.pool
+        self.pool = ProcessPool(self.n_workers)
+
     def _reset(self):
         self.gen = 0
         self.individuals = []
@@ -253,10 +259,7 @@ class RoleEvolutionGA(object):
         assert self.pop_size == len(self.individuals)
         if self.init_mutate:
             [indv.mutate(mutate_rate=1.0) for indv in self.individuals[1:]]
-
-        if hasattr(self, "pool"):
-            self.pool.close(); self.pool.join(); self.pool.clear(); del self.pool
-        self.pool = ProcessPool(self.n_workers)
+        self._reset_pool()
 
     def _find_latest_checkpoint(self):
         checkpoints = glob.glob(os.path.join(self.checkpoint_dir,
@@ -359,17 +362,17 @@ class RoleEvolutionGA(object):
         # assert not child.role.startswith("PROMPT_TEMPLATE: str =")
         return child
 
-    def _generate_individual2(self):
-        parents = sorted([self._tournament_selection() for i in \
-            range(self.crossover2_n + 1)], reverse=True)
-        child = parents[0].create_child(self.gen); others = parents[1:]
+    # def _generate_individual2(self):
+    #     parents = sorted([self._tournament_selection() for i in \
+    #         range(self.crossover2_n + 1)], reverse=True)
+    #     child = parents[0].create_child(self.gen); others = parents[1:]
 
-        if random.random() < 0.5:
-            child.crossover2(others)
-        else:
-            child.mutate2(self.mutate2_n)
+    #     if random.random() < 0.5:
+    #         child.crossover2(others)
+    #     else:
+    #         child.mutate2(self.mutate2_n)
 
-        return child
+    #     return child
 
     def ask(self):
         if self.gen == 0:
