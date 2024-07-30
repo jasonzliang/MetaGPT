@@ -32,7 +32,7 @@ MAX_CHAT_HIST_LEN = 125000
 MAX_MSG_LEN = 4500
 MIN_AGENTS = 3
 MAX_AGENTS = 5
-CHAT_TIMEOUT = 100
+CHAT_TIMEOUT = 90
 
 # @timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError,
 #     dec_allow_eval=True, dec_hard_timeout=True, dec_mp_reset_signals=True)
