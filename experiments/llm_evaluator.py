@@ -172,7 +172,7 @@ class LLMEvaluator(object):
 
     def _eval_indv_team_role(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
-        if indv.evolve_mode != "both": main_role = DEFAULT_ROLE
+        if indv.evolve_mode != "both": main_role = DEFAULT_MAIN_ROLE
         assert team_role is not None
 
         builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)

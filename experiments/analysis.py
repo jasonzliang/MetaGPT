@@ -23,7 +23,7 @@ from scipy.stats import ttest_ind
 from analysis_util import \
     get_fitness_file, load_checkpoint, get_checkpoints
 from analysis_util import COLORS, FIG_SIZE, PLOT_FMT, PROP_CYCLER
-from role_ga import Individual, DEFAULT_ROLE
+from role_ga import Individual, DEFAULT_MAIN_ROLE
 
 # Directory to get results from
 EXPERIMENT_DIRS = []
@@ -305,7 +305,7 @@ def compare_experiments_main():
         compare_experiments()
 
 
-def multirun_evalplus(prompt=DEFAULT_ROLE,
+def multirun_evalplus(prompt=DEFAULT_MAIN_ROLE,
     indv=None,
     use_prompt=True,
     n_trials=50,

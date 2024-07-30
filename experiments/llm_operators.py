@@ -322,7 +322,7 @@ def llm_crossover_team(team_role, other_team_role, llm_config):
 
 
 #### Unit tests ####
-PROMPT_TEMPLATE_1 = DEFAULT_ROLE
+PROMPT_TEMPLATE_1 = DEFAULT_MAIN_ROLE
 PROMPT_TEMPLATE_2 = """### Task Description
 Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
 
