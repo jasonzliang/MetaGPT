@@ -21,6 +21,7 @@ from metagpt.team import Team
 
 from pathos.pools import ProcessPool
 from retry import retry
+# from wrapt_timeout_decorator import *
 
 from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
@@ -30,8 +31,9 @@ from autogen_builder import init_builder, start_task
 from autogen_builder import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
 from llm_operators import create_new_team
 from llm_operators import DEFAULT_ROLE
-from util import extract_evalplus, extract_code_from_chat
+from util import extract_evalplus, extract_code_from_chat, killtree
 from util import OBJECTIVES
+
 
 class LLMEvaluator(object):
     def __init__(self, config, evaluator_dir):
@@ -69,6 +71,12 @@ class LLMEvaluator(object):
         if self.gen % self.restart_interval == 0:
             self.reset()
 
+        evolve_mode = population[0].evolve_mode
+        if evolve_mode == "single":
+            eval_func = self._eval_indv_main_role
+        else:
+            eval_func = self._eval_indv_team_role
+
         if self.n_workers == 1 or self.dummy_mode:
             result_dicts = []
             for indv in population:
@@ -77,15 +85,11 @@ class LLMEvaluator(object):
                     result_dict = {}
                     result_dict['fitness'] = fitness
                     result_dict['true_fitness'] = fitness
-                elif indv.evolve_mode == "single":
-                    result_dict = self._eval_indv_main_role(indv)
-
-                else: # indv.evolve_mode in ["team", "both"]
-                    result_dict = self._eval_indv_team_role(indv)
-
+                else:
+                    result_dict = eval_func(indv)
                 result_dicts.append(result_dict)
         else:
-            result_dicts = self.pool.map(self._eval_indv, population)
+            result_dicts = self.pool.map(eval_func, population)
         return result_dicts
 
     def _setup_result_dir(self, indv):
@@ -113,6 +117,7 @@ class LLMEvaluator(object):
                 try:
                     output = eval_func(problem)
                 except:
+                    exit()
                     mlogger.info(traceback.format_exc())
                     output = ""
                 mlogger.info("#### Evalplus Problem Output:\n%s" % output)
@@ -162,6 +167,7 @@ class LLMEvaluator(object):
         chat_llm_config.update(indv.llm_config.get("chat_llm_config", {}))
 
         # @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
+        # @timeout(5, timeout_exception=TimeoutError, use_signals=True)
         def eval_func(problem):
             agent_list, agent_configs, builder, builder_dict = \
                 init_builder(building_task=None,
@@ -190,12 +196,12 @@ class LLMEvaluator(object):
             output = extract_code_from_chat(chat_result)
             assert len(output) > 0
             return output
-
         result_dir = self._setup_result_dir(indv)
+
         self._run_evalplus(result_dir, eval_func)
+        # killtree(os.getpid(), including_parent=False) # Prevent zombie process
         self._sanitize(result_dir)
         result_dict = self._get_evalplus_results(result_dir)
-        killtree(os.getpid(), including_parent=False) # Prevent zombie process
         return result_dict
 
     def _eval_indv_main_role(self, indv):
@@ -222,8 +228,10 @@ class LLMEvaluator(object):
 
 #### Unit tests ####
 def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
-    max_problems=999, max_round=12):
+    max_problems=999, max_round=16):
     from role_ga import Individual
+
+
     indv = Individual({}, gen_created=0)
     assert indv.team_role is None
     indv.evolve_mode = "single"
@@ -243,20 +251,23 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
     llm_model = 'N/A' if test_err else 'gpt-3.5-turbo'
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config['model'] = llm_model
+    chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
+    chat_llm_config['model'] = llm_model
     indv.llm_config = {'model': llm_model,
         'builder_llm_config': builder_llm_config,
-        'chat_llm_config': CHAT_LLM_CONFIG}
+        'chat_llm_config': chat_llm_config}
     print(indv.main_role); print(indv.team_role)
     pprint.pprint(indv.llm_config)
 
-    eval_config = {'n_workers': 1,
+    eval_config = {'n_workers': 2,
         'dummy_mode': False,
         'max_problems': max_problems,
         'max_round': max_round}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
-    result_dicts = evaluator.evaluate([indv])
+    result_dicts = evaluator.evaluate([indv, indv.create_child()])
     print("Evaluation results:")
     print(result_dicts)
+    evaluator.reset()
 
 
 def _test_evalplus_extractor(

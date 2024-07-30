@@ -44,8 +44,9 @@ from autogen.code_utils import extract_code
 from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
-import timeout_decorator
-from timeout_decorator import TimeoutError
+# from wrapt_timeout_decorator import *
+# import timeout_decorator
+# from timeout_decorator import TimeoutError
 
 from util import get_time, killtree, extract_code_from_chat
 
@@ -60,7 +61,8 @@ MIN_AGENTS = 3
 MAX_AGENTS = 5
 CHAT_TIMEOUT = 60
 
-@timeout_decorator.timeout(CHAT_TIMEOUT)
+# @timeout(1, timeout_exception=TimeoutError)
+# @timeout_decorator.timeout(1)
 def start_task(execution_task: str, agent_list: list, coding=True,
     chat_llm_config=CHAT_LLM_CONFIG, max_round=20):
     # last agent is user proxy, remove it and replace with new one
