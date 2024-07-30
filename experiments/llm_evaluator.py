@@ -55,7 +55,7 @@ class LLMEvaluator(object):
         self.sanitize = self.config.get("sanitize", True)
         self.restart_interval = self.config.get("restart_interval", 999)
         assert self.restart_interval > 0
-        self.max_round = self.config.get("max_round", 16)
+        self.max_round = self.config.get("max_round", 15)
         assert self.max_round > 0
         # self.eval_mode = self.config.get("eval_mode", "single")
         # assert self.eval_mode in ['single', 'team', 'both']
@@ -241,7 +241,7 @@ class LLMEvaluator(object):
 
 #### Unit tests ####
 def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
-    max_problems=999, max_round=12, num_gen=2):
+    max_problems=999, max_round=15, num_gen=2):
     from role_ga import Individual
     indv = Individual({}, gen_created=0)
     assert indv.team_role is None
