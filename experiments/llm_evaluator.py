@@ -56,6 +56,7 @@ class LLMEvaluator(object):
         assert self.max_round > 0
         # self.eval_mode = self.config.get("eval_mode", "single")
         # assert self.eval_mode in ['single', 'team', 'both']
+        self.debug_no_timestamp = self.config.get("debug_no_timestamp", False)
 
         self.logger = logging.getLogger('evolve_role')
         self.reset()
@@ -90,12 +91,19 @@ class LLMEvaluator(object):
                 result_dicts.append(result_dict)
         else:
             result_dicts = self.pool.map(eval_func, population)
+
+        # killtree(os.getpid(), including_parent=False) # Prevent zombie process
         return result_dicts
 
     def _setup_result_dir(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
-        result_dir = os.path.join(self.evaluator_dir,
-            "%s_%s_T-%d" % (self.dataset, eval_id, time.time()))
+        if self.debug_no_timestamp: # For debugging purposes
+            result_dir = os.path.join(self.evaluator_dir,
+                "%s_%s" % (self.dataset, eval_id))
+        else:
+            result_dir = os.path.join(self.evaluator_dir,
+                "%s_%s_T-%d" % (self.dataset, eval_id, time.time()))
+
         os.makedirs(result_dir, exist_ok=True)
         with open(os.path.join(result_dir, "main_role.txt"), "w") as f:
             f.write(main_role)
@@ -111,6 +119,12 @@ class LLMEvaluator(object):
             problems = get_mbpp_plus()
 
         for i, (task_id, problem) in enumerate(problems.items()):
+            task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
+            os.makedirs(task_id_dir, exist_ok=True)
+            result_file = os.path.join(task_id_dir, "0.py")
+            if os.path.exists(result_file) and os.path.getsize(result_file) > 0:
+                continue
+
             if i < self.max_problems:
                 mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % \
                     (task_id, problem['prompt']))
@@ -124,9 +138,6 @@ class LLMEvaluator(object):
             else:
                 output = ""
 
-            task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
-            os.makedirs(task_id_dir, exist_ok=True)
-            result_file = os.path.join(task_id_dir, "0.py")
             with open(result_file, 'w') as f:
                 f.write(output)
 
@@ -199,7 +210,6 @@ class LLMEvaluator(object):
         result_dir = self._setup_result_dir(indv)
 
         self._run_evalplus(result_dir, eval_func)
-        # killtree(os.getpid(), including_parent=False) # Prevent zombie process
         self._sanitize(result_dir)
         result_dict = self._get_evalplus_results(result_dir)
         return result_dict
@@ -228,7 +238,7 @@ class LLMEvaluator(object):
 
 #### Unit tests ####
 def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
-    max_problems=999, max_round=16):
+    max_problems=1, max_round=16, num_gen=2):
     from role_ga import Individual
 
 
@@ -259,15 +269,21 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
     print(indv.main_role); print(indv.team_role)
     pprint.pprint(indv.llm_config)
 
+    child = indv.create_child(0)
     eval_config = {'n_workers': 2,
         'dummy_mode': False,
         'max_problems': max_problems,
-        'max_round': max_round}
+        'max_round': max_round,
+        'debug_no_timestamp': True}
+
+    # indv.id = "G-0_ID-0zMCUwhzWrjr"; child.id = "G-0_ID-nVE4HJ3gWiUL"
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
-    result_dicts = evaluator.evaluate([indv, indv.create_child()])
-    print("Evaluation results:")
-    print(result_dicts)
-    evaluator.reset()
+    for i in range(num_gen):
+        result_dicts = evaluator.evaluate([indv, child])
+        evaluator.reset()
+
+        print("Evaluation results:")
+        print(result_dicts)
 
 
 def _test_evalplus_extractor(

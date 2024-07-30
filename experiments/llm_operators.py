@@ -22,10 +22,6 @@ from metagpt.team import Team
 from pathos.pools import ProcessPool
 from retry import retry
 
-from evalplus.data.humaneval import get_human_eval_plus
-from evalplus.data.mbpp import get_mbpp_plus
-from evalplus.data import write_jsonl
-
 from alg_util import randomword
 from autogen_builder import autogen_mutate, autogen_crossover
 from autogen_builder import BUILDER_LLM_CONFIG
