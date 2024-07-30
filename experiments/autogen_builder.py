@@ -56,11 +56,11 @@ BUILDER_LLM_CONFIG = {'temperature': 1.0,
 MIN_CHAT_HIST_LEN = 3500
 MAX_CHAT_HIST_LEN = 125000
 MAX_MSG_LEN = 4500
-MIN_AGENTS=3
-MAX_AGENTS=5
+MIN_AGENTS = 3
+MAX_AGENTS = 5
+CHAT_TIMEOUT = 60
 
-
-@timeout_decorator.timeout(120)
+@timeout_decorator.timeout(CHAT_TIMEOUT)
 def start_task(execution_task: str, agent_list: list, coding=True,
     chat_llm_config=CHAT_LLM_CONFIG, max_round=20):
     # last agent is user proxy, remove it and replace with new one

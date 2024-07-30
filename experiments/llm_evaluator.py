@@ -222,7 +222,7 @@ class LLMEvaluator(object):
 
 #### Unit tests ####
 def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
-    max_problems=999):
+    max_problems=999, max_round=12):
     from role_ga import Individual
     indv = Individual({}, gen_created=0)
     assert indv.team_role is None
@@ -235,10 +235,10 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
     else:
         indv.main_role = DEFAULT_ROLE
     if team_role_fp is not None:
+        indv.evolve_mode = "both"
         assert os.path.exists(team_role_fp)
         with open(team_role_fp, "r") as f:
             indv.team_role = json.load(f)
-        indv.evolve_mode = "both"
 
     llm_model = 'N/A' if test_err else 'gpt-3.5-turbo'
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
@@ -251,7 +251,8 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
 
     eval_config = {'n_workers': 1,
         'dummy_mode': False,
-        'max_problems': max_problems}
+        'max_problems': max_problems,
+        'max_round': max_round}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate([indv])
     print("Evaluation results:")
