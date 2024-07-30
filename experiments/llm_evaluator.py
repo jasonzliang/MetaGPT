@@ -194,12 +194,14 @@ class LLMEvaluator(object):
         result_dir = self._setup_result_dir(indv)
         self._run_evalplus(result_dir, eval_func)
         self._sanitize(result_dir)
-        return self._get_evalplus_results(result_dir)
+        result_dict = self._get_evalplus_results(result_dir)
+        killtree(os.getpid(), including_parent=False) # Prevent zombie process
+        return result_dict
 
     def _eval_indv_main_role(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
 
-        # @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
+        @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
         def _eval_prompt(prompt_template, prompt):
             team, coder = create_new_team(indv.llm_config)
             coder.set_prompt_template(prompt_template)

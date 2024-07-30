@@ -71,8 +71,6 @@ def start_task(execution_task: str, agent_list: list, coding=True,
     #     else:
     #         user_proxy = agent
 
-    config_list = autogen.config_list_from_json(CONFIG_FILE_OR_ENV,
-        filter_dict={"model": [chat_llm_config['model']]})
     # limit out of control output
     context_handling = transform_messages.TransformMessages(
             transforms=[transforms.MessageTokenLimiter(
@@ -82,6 +80,8 @@ def start_task(execution_task: str, agent_list: list, coding=True,
     # context_handling.add_to_agent(user_proxy)
     for agent in agent_list: context_handling.add_to_agent(agent)
 
+    config_list = autogen.config_list_from_json(CONFIG_FILE_OR_ENV,
+        filter_dict={"model": [chat_llm_config['model']]})
     group_chat = autogen.GroupChat(
         agents=agent_list,
         messages=[],
