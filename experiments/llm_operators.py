@@ -28,8 +28,7 @@ from autogen_builder import BUILDER_LLM_CONFIG
 from util import extract_evalplus, parse_code, parse_prompt_template
 
 DEFAULT_ROLE = \
-"""
-Write a python function that can {instruction}.
+"""Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
 your code:
 """
@@ -37,8 +36,7 @@ your code:
 
 class MutateAction(Action):
     PROMPT_TEMPLATE: str = \
-"""
-You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The prompt template that you use for writing the code can be illustrated by the following example:
+"""You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. The prompt template that you use for writing the code can be illustrated by the following example:
 
 {prompt}
 
@@ -49,8 +47,7 @@ your_output_here
 '''
 """
     PROMPT_TEMPLATE_2: str = \
-"""
-You are a professional engineer; the prompt template that you use for writing the code can be illustrated by the following example:
+"""You are a professional engineer; the prompt template that you use for writing the code can be illustrated by the following example:
 
 {prompt}
 
@@ -88,8 +85,7 @@ your_output_here
 
 class CrossoverAction(Action):
     PROMPT_TEMPLATE: str = \
-"""
-You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. Here are two example prompt templates that you use for writing code:
+"""You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code. Here are two example prompt templates that you use for writing code:
 
 ### PROMPT TEMPLATE 1
 {prompt_1}
@@ -104,8 +100,7 @@ your_output_here
 '''
 """
     PROMPT_TEMPLATE_2: str = \
-"""
-You are a professional engineer; here is the main prompt template that you use for writing code:
+"""You are a professional engineer; here is the main prompt template that you use for writing code:
 
 {prompt}
 
@@ -323,8 +318,7 @@ def llm_crossover_team(team_role, other_team_role, llm_config):
 
 #### Unit tests ####
 PROMPT_TEMPLATE_1 = DEFAULT_ROLE
-PROMPT_TEMPLATE_2 = '''
-### Task Description
+PROMPT_TEMPLATE_2 = """### Task Description
 Write a Python function that {instruction}. Ensure your code adheres to the following guidelines for quality and maintainability:
 
 - **Modularity**: Break down the solution into smaller, reusable components where applicable.
@@ -334,7 +328,7 @@ Write a Python function that {instruction}. Ensure your code adheres to the foll
 Return your solution in the following format:
 ```python your_code_here ```
 with no additional text outside the code block.
-'''
+"""
 
 
 def _test_mutation_crossover(test_err=False):

@@ -50,6 +50,8 @@ class Individual(object):
         self.initial_team_role = self.config.get("initial_team_role", None)
         if self.evolve_mode in ["team", "both"]:
             assert os.path.exists(self.initial_team_role)
+            with open(self.initial_team_role, 'r') as f:
+                self.initial_team_role = json.load(f)
             self.logger.info("Initial Team Role:\n%s" % \
                 self.initial_team_role)
 

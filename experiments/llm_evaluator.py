@@ -20,6 +20,7 @@ from metagpt.schema import Message
 from metagpt.team import Team
 
 from pathos.pools import ProcessPool
+# from pathos.pp import ParallelPool
 from retry import retry
 # from wrapt_timeout_decorator import *
 
@@ -44,7 +45,7 @@ class LLMEvaluator(object):
         assert self.max_problems > 0
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
-        # self.llm_config = self.config.get("llm_config", {})
+        self.llm_config = self.config.get("llm_config", {})
         self.dataset = self.config.get("dataset", "humaneval")
         assert self.dataset in ['humaneval', 'mbpp']
         self.objective = self.config.get("objective", "base_score")
@@ -66,6 +67,7 @@ class LLMEvaluator(object):
         if hasattr(self, "pool"):
             self.pool.close(); self.pool.join(); self.pool.clear()
         self.pool = ProcessPool(self.n_workers)
+        # self.pool = ParallelPool(self.n_workers)
 
     def evaluate(self, population):
         self.gen += 1
@@ -219,7 +221,7 @@ class LLMEvaluator(object):
 
         @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
         def _eval_prompt(prompt_template, prompt):
-            team, coder = create_new_team(indv.llm_config)
+            team, coder = create_new_team(self.llm_config)
             coder.set_prompt_template(prompt_template)
             team.run_project(prompt)
             asyncio.run(team.run(n_round=1))
@@ -269,7 +271,6 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
     print(indv.main_role); print(indv.team_role)
     pprint.pprint(indv.llm_config)
 
-    child = indv.create_child(0)
     eval_config = {'n_workers': 2,
         'dummy_mode': False,
         'max_problems': max_problems,
@@ -279,8 +280,9 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
     # indv.id = "G-0_ID-0zMCUwhzWrjr"; child.id = "G-0_ID-nVE4HJ3gWiUL"
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     for i in range(num_gen):
-        result_dicts = evaluator.evaluate([indv, child])
-        evaluator.reset()
+        result_dicts = evaluator.evaluate(
+            [indv.create_child(0), indv.create_child(0)])
+        # evaluator.reset()
 
         print("Evaluation results:")
         print(result_dicts)
