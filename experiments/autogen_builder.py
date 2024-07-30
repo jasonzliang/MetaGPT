@@ -83,7 +83,7 @@ def start_task(execution_task: str, agent_list: list, coding=True,
         "last_n_messages": 1,
         "timeout": 10,
         "use_docker": False,
-        "work_dir": "/tmp/%s" % randomword(ID_LENGTH)
+        "work_dir": "/tmp/som_%s" % randomword(ID_LENGTH)
     }
     society_user_proxy = autogen.UserProxyAgent(
         "user_proxy",
@@ -93,7 +93,7 @@ def start_task(execution_task: str, agent_list: list, coding=True,
         is_termination_msg=lambda x: True,
     )
     with Cache.disk(cache_seed=None,
-        cache_path_root='/tmp/.cache_%s' % randomword(ID_LENGTH)) as cache:
+        cache_path_root='/tmp/cache_%s' % randomword(ID_LENGTH)) as cache:
         chat_result = society_user_proxy.initiate_chat(
             society_of_mind_agent,
             message=execution_task,

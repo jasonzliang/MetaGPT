@@ -296,7 +296,7 @@ def llm_mutate_team(team_role, llm_config):
         output_cfg=None,
         builder_llm_config=builder_llm_config,
         eval_mode=True,
-        work_dir="/tmp/%s" % randomword(ID_LENGTH))
+        work_dir="/tmp/mut_%s" % randomword(ID_LENGTH))
     builder.clear_all_agents(recycle_endpoint=False)
     if 'building_task' in builder_dict: del builder_dict['building_task']
     return builder_dict
@@ -315,7 +315,7 @@ def llm_crossover_team(team_role, other_team_role, llm_config):
         output_cfg=None,
         builder_llm_config=builder_llm_config,
         eval_mode=True,
-        work_dir="/tmp/%s" % randomword(ID_LENGTH))
+        work_dir="/tmp/xover_%s" % randomword(ID_LENGTH))
     builder.clear_all_agents(recycle_endpoint=False)
     if 'building_task' in builder_dict: del builder_dict['building_task']
     return builder_dict

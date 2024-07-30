@@ -182,7 +182,7 @@ class LLMEvaluator(object):
 
         agent_list, agent_configs, builder, builder_dict = \
             init_builder(building_task=None,
-                work_dir='/tmp/%s' % randomword(ID_LENGTH),
+                work_dir='/tmp/build_%s' % randomword(ID_LENGTH),
                 builder_dict=team_role,
                 builder_llm_config=builder_llm_config,
                 use_builder_dict=True,
