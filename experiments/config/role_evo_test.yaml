@@ -16,7 +16,7 @@ role_ga_config:
             # temperature: 1.0
             # top_p: 0.4
 
-    num_gen: 2
+    num_gen: 4
     pop_size: 2
     num_elites: 1
     tournament_size: 2
