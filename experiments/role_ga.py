@@ -15,7 +15,7 @@ from alg_util import randomword
 from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from llm_operators import llm_mutate, llm_crossover, parse_prompt_template, \
     llm_mutate_team, llm_crossover_team
-from llm_operators import DEFAULT_ROLE
+from llm_operators import DEFAULT_MAIN_ROLE
 from util import get_time, sanitize_result_dict
 
 
@@ -38,7 +38,7 @@ class Individual(object):
 
     def _load_initial_role(self):
         self.initial_main_role = self.config.get("initial_main_role",
-            DEFAULT_ROLE)
+            DEFAULT_MAIN_ROLE)
         if self.evolve_mode in ["single", "both"]:
             _initial_main_role = os.path.join(os.path.abspath(
                 os.path.dirname(__file__)), "config/%s" % self.initial_main_role)

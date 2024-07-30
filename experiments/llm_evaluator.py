@@ -33,7 +33,7 @@ from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from autogen_builder import init_builder, start_task
 from autogen_builder import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
 from llm_operators import create_new_team
-from llm_operators import DEFAULT_ROLE
+from llm_operators import DEFAULT_MAIN_ROLE
 from util import extract_evalplus, extract_code_from_chat, killtree
 from util import OBJECTIVES
 
@@ -252,7 +252,7 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
         with open(main_role_fp, "r") as f:
             indv.main_role = f.read()
     else:
-        indv.main_role = DEFAULT_ROLE
+        indv.main_role = DEFAULT_MAIN_ROLE
     if team_role_fp is not None:
         indv.evolve_mode = "both"
         assert os.path.exists(team_role_fp)
@@ -297,7 +297,7 @@ def _test_parallel_eval(n=10):
     from role_ga import Individual
     population = [Individual({}, gen_created=0) for i in range(n)]
     for indv in population:
-        indv.main_role = DEFAULT_ROLE
+        indv.main_role = DEFAULT_MAIN_ROLE
     print(indv.main_role)
 
     eval_config = {'n_workers': n, 'dummy_mode': False}

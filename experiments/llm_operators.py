@@ -28,7 +28,7 @@ from autogen_builder import autogen_mutate, autogen_crossover
 from autogen_builder import BUILDER_LLM_CONFIG
 from util import extract_evalplus, parse_code, parse_prompt_template
 
-DEFAULT_ROLE = \
+DEFAULT_MAIN_ROLE = \
 """Write a python function that can {instruction}.
 Return ```python your_code_here ``` with NO other texts,
 your code:
