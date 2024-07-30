@@ -11,6 +11,7 @@ import sys
 import time
 
 import autogen
+from autogen import Cache
 from autogen.agentchat.contrib.agent_builder import AgentBuilder
 from autogen.agentchat.contrib.capabilities import transform_messages, transforms
 from autogen.agentchat.contrib.society_of_mind_agent import SocietyOfMindAgent
@@ -18,9 +19,11 @@ from autogen.agentchat.contrib.society_of_mind_agent import SocietyOfMindAgent
 
 from evalplus.data.humaneval import get_human_eval_plus
 # from evalplus.data.mbpp import get_mbpp_plus
-# from wrapt_timeout_decorator import *
-import timeout_decorator
+from wrapt_timeout_decorator import *
+# import timeout_decorator
 
+from alg_util import ID_LENGTH
+from alg_util import randomword
 from util import get_time, killtree, extract_code_from_chat
 
 CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
@@ -32,11 +35,12 @@ MAX_CHAT_HIST_LEN = 125000
 MAX_MSG_LEN = 4500
 MIN_AGENTS = 3
 MAX_AGENTS = 5
-CHAT_TIMEOUT = 90
+CHAT_TIMEOUT = 100
+# TODO: FIX CACHING/CACHE SEED
 
-# @timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError,
-#     dec_allow_eval=True, dec_hard_timeout=True, dec_mp_reset_signals=True)
-@timeout_decorator.timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError)
+# @timeout_decorator.timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError)
+@timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError,
+    dec_allow_eval=False, dec_hard_timeout=False, dec_mp_reset_signals=True)
 def start_task(execution_task: str, agent_list: list, coding=True,
     chat_llm_config=CHAT_LLM_CONFIG, max_round=20):
     # last agent is user proxy, remove it and replace with new one
@@ -79,7 +83,7 @@ def start_task(execution_task: str, agent_list: list, coding=True,
         "last_n_messages": 1,
         "timeout": 10,
         "use_docker": False,
-        "work_dir": "/tmp"
+        "work_dir": "/tmp/%s" % randomword(ID_LENGTH)
     }
     society_user_proxy = autogen.UserProxyAgent(
         "user_proxy",
@@ -88,8 +92,13 @@ def start_task(execution_task: str, agent_list: list, coding=True,
         default_auto_reply="",
         is_termination_msg=lambda x: True,
     )
-    return society_user_proxy.initiate_chat(society_of_mind_agent,
-        message=execution_task)
+    with Cache.disk(cache_seed=None,
+        cache_path_root='/tmp/.cache_%s' % randomword(ID_LENGTH)) as cache:
+        chat_result = society_user_proxy.initiate_chat(
+            society_of_mind_agent,
+            message=execution_task,
+            cache=cache)
+    return chat_result
     # return agent_list[0].initiate_chat(manager, message=execution_task)
 
 

@@ -180,17 +180,17 @@ class LLMEvaluator(object):
         chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
         chat_llm_config.update(indv.llm_config.get("chat_llm_config", {}))
 
+        agent_list, agent_configs, builder, builder_dict = \
+            init_builder(building_task=None,
+                work_dir='/tmp/%s' % randomword(ID_LENGTH),
+                builder_dict=team_role,
+                builder_llm_config=builder_llm_config,
+                use_builder_dict=True,
+                clear_cache=True)
+
         # @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
         # @timeout(5, timeout_exception=TimeoutError, use_signals=True)
         def eval_func(problem):
-            agent_list, agent_configs, builder, builder_dict = \
-                init_builder(building_task=None,
-                    work_dir='/tmp/%s' % randomword(ID_LENGTH),
-                    builder_dict=team_role,
-                    builder_llm_config=builder_llm_config,
-                    use_builder_dict=True,
-                    clear_cache=True)
-
             prompt = main_role
             try:
                 prompt = prompt.format(instruction=problem['prompt'])
@@ -276,11 +276,11 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
         'max_round': max_round,
         'debug_no_timestamp': True}
 
-    # indv.id = "G-0_ID-0zMCUwhzWrjr"; child.id = "G-0_ID-nVE4HJ3gWiUL"
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     for i in range(num_gen):
-        result_dicts = evaluator.evaluate(
-            [indv.create_child(0), indv.create_child(0)])
+        a = indv.create_child(0); b = indv.create_child(0)
+        a.id = "G-0_ID-DNrcOL1irjdO"; b.id = "G-0_ID-i6usMJsHu9xr"
+        result_dicts = evaluator.evaluate([a, b])
         # evaluator.reset()
 
         print("Evaluation results:")
