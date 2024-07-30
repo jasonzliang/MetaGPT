@@ -261,7 +261,7 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
 
     llm_model = 'N/A' if test_err else 'gpt-3.5-turbo'
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
-    builder_llm_config['model'] = llm_model
+    builder_llm_config['agent_model'] = llm_model
     chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
     chat_llm_config['model'] = llm_model
     indv.llm_config = {'model': llm_model,
