@@ -135,7 +135,6 @@ class LLMEvaluator(object):
                 try:
                     output = eval_func(problem)
                 except:
-                    exit()
                     mlogger.info(traceback.format_exc())
                     output = ""
                 mlogger.info("#### Evalplus Problem Output:\n%s" % output)
@@ -186,7 +185,7 @@ class LLMEvaluator(object):
         def eval_func(problem):
             agent_list, agent_configs, builder, builder_dict = \
                 init_builder(building_task=None,
-                    work_dir='/tmp/%' % randomword(ID_LENGTH),
+                    work_dir='/tmp/%s' % randomword(ID_LENGTH),
                     builder_dict=team_role,
                     builder_llm_config=builder_llm_config,
                     use_builder_dict=True,
@@ -207,7 +206,7 @@ class LLMEvaluator(object):
                 chat_llm_config=chat_llm_config,
                 max_round=self.max_round)
 
-            builder.clear_all_agents(recycle_endpoint=True)
+            builder.clear_all_agents(recycle_endpoint=False)
             output = extract_code_from_chat(chat_result)
             assert len(output) > 0
             return output

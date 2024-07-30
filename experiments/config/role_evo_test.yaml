@@ -13,8 +13,8 @@ role_ga_config:
 
         llm_config:
             model: gpt-4o
-            temperature: 1.0
-            top_p: 0.4
+            # temperature: 1.0
+            # top_p: 0.4
 
     num_gen: 2
     pop_size: 2
@@ -27,10 +27,10 @@ role_ga_config:
 
 llm_evaluator_config:
     dummy_mode: False
-    n_workers: 1
+    n_workers: 2
     max_problems: 1
 
     llm_config:
         model: gpt-4o
-        temperature: 0.3
-        top_p: 0.3
+        # temperature: 0.3
+        # top_p: 0.3

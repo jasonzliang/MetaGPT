@@ -151,7 +151,7 @@ class Individual(object):
             self.main_role, other.role = other.role, self.main_role
         else:
             if self.evolve_mode in ["single", "both"]:
-                self.main_role = llm_crossover(self.main_role, other.role,
+                self.main_role = llm_crossover(self.main_role, other.main_role,
                     self.llm_config)
             if self.evolve_mode in ["team", "both"]:
                 self.team_role = llm_crossover_team(self.team_role,
@@ -161,7 +161,7 @@ class Individual(object):
     #     if self.dummy_mode:
     #         self.crossover(others[0])
     #     else:
-    #         other_roles = [indv.role for indv in others]
+    #         other_roles = [indv.main_role for indv in others]
     #         self.main_role = llm_crossover2(self.main_role, other_roles,
     #             self.llm_config)
     #         if self.evolve_team_role:
