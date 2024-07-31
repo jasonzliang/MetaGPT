@@ -140,8 +140,8 @@ def init_builder(building_task=None,
             "work_dir": work_dir
         }
         # hack to prevent 'builder_model' error msg when running start_task
-        default_llm_config = {'temperature': builder_llm_config['temperature']}
-            # 'cache_seed': builder_llm_config['cache_seed']}
+        default_llm_config = {'temperature': builder_llm_config['temperature'],
+            'cache_seed': builder_llm_config['cache_seed']}
         agent_list, agent_configs = builder.build(
             building_task=building_task,
             default_llm_config=default_llm_config,
@@ -219,7 +219,7 @@ Build a new and improved version of the team that generates more efficient, accu
             builder_llm_config=builder_llm_config,
             work_dir=work_dir,
             use_builder_dict=True,
-            clear_cache=True,
+            clear_cache=False,
             max_agents=random.randint(MIN_AGENTS, MAX_AGENTS))
     else:
         return init_builder(building_task=building_task,
@@ -251,7 +251,7 @@ Combine and merge these teams to create a new and improved team for generating m
             builder_llm_config=builder_llm_config,
             work_dir=work_dir,
             use_builder_dict=True,
-            clear_cache=True,
+            clear_cache=False,
             max_agents=random.randint(MIN_AGENTS, MAX_AGENTS))
     else:
         return init_builder(building_task=building_task,
