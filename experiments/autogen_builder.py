@@ -176,7 +176,7 @@ def _parse_builder_cfgs(builder_cfgs, eval_mode=False):
         for builder_dict in builder_cfgs:
             assert type(builder_dict) is dict
             if 'building_task' in builder_dict:
-                del builder_dict['building_task']
+                builder_dict['building_task'] = ''
             builder_strs.append(json.dumps(builder_dict))
     else:
         for builder_cfg in builder_cfgs:
@@ -185,7 +185,7 @@ def _parse_builder_cfgs(builder_cfgs, eval_mode=False):
                 with open(builder_cfg, "r") as f:
                     builder_dict = json.load(f)
                 if 'building_task' in builder_dict:
-                    del builder_dict['building_task']
+                    builder_dict['building_task'] = ''
                 builder_str = json.dumps(builder_dict, indent=4)
             else:
                 builder_str = builder_cfg

@@ -290,7 +290,7 @@ def llm_mutate_team(team_role, llm_config):
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config.update(llm_config.get("builder_llm_config", {}))
 
-    if 'building_task' in team_role: del team_role['building_task']
+    if 'building_task' in team_role: team_role['building_task'] = ''
     agent_list, agent_configs, builder, builder_dict = autogen_mutate(
         builder_cfg=team_role,
         output_cfg=None,
@@ -298,7 +298,7 @@ def llm_mutate_team(team_role, llm_config):
         eval_mode=True,
         work_dir="/tmp/mut_%s" % randomword(ID_LENGTH))
     builder.clear_all_agents(recycle_endpoint=False)
-    if 'building_task' in builder_dict: del builder_dict['building_task']
+    if 'building_task' in builder_dict: builder_dict['building_task'] = ''
     return builder_dict
 
 
@@ -309,7 +309,7 @@ def llm_crossover_team(team_role, other_team_role, llm_config):
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config.update(llm_config.get("builder_llm_config", {}))
 
-    if 'building_task' in team_role: del team_role['building_task']
+    if 'building_task' in team_role: team_role['building_task'] = ''
     agent_list, agent_configs, builder, builder_dict = autogen_crossover(
         builder_cfgs=[team_role, other_team_role],
         output_cfg=None,
@@ -317,7 +317,7 @@ def llm_crossover_team(team_role, other_team_role, llm_config):
         eval_mode=True,
         work_dir="/tmp/xover_%s" % randomword(ID_LENGTH))
     builder.clear_all_agents(recycle_endpoint=False)
-    if 'building_task' in builder_dict: del builder_dict['building_task']
+    if 'building_task' in builder_dict: builder_dict['building_task'] = ''
     return builder_dict
 
 

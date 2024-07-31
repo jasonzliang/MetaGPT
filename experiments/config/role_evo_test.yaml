@@ -8,7 +8,7 @@ role_ga_config:
             Write a python function that can {instruction}.
             Return ```python your_code_here ``` with NO other texts,
             your code:
-        initial_team_role: autogen_builder_cfg.json
+        initial_team_role: config/autogen_builder_cfg.json
         evolve_mode: both
 
         llm_config:
