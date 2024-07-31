@@ -297,7 +297,7 @@ class RoleEvolutionGA(object):
 
         self.logger.info("Loading population from %s" % file_path)
         with open(file_path, "r") as f:
-            pop_dict = YAML().load(f)
+            pop_dict = dict(YAML().load(f))
 
         assert hasattr(self, "individuals")
         self.gen = pop_dict.get('generation', 0) + 1
