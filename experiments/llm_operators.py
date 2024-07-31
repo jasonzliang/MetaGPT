@@ -384,17 +384,20 @@ def _test_mutation_crossover2(test_err=False):
 
 
 def _test_autogen_mutation_crossover(
-    team_role="autogen_builder_cfg.json",
-    other_team_role='autogen_mutate.json'):
-    # llm_model = 'N/A' if test_err else 'gpt-4o'
-    # llm_config = {'model': llm_model, 'temperature': 1.2, 'top_p': 1.0}
-    llm_config = {'temperature': 1.0,
-        'builder_model': 'gpt-4o', 'agent_model': 'gpt-4o', "cache_seed": None}
+    team_role='config/autogen_builder_init.json',
+    other_team_role='config/autogen_builder_cfg.json',
+    test_err=False):
+
+    llm_model = 'N/A' if test_err else 'gpt-4o-mini'
+    builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
+    builder_llm_config['builder_model'] = llm_model
+    builder_llm_config['agent_model'] = llm_model
+
     with open(team_role, 'r') as f: team_role = json.load(f)
     with open(other_team_role, 'r') as f: other_team_role = json.load(f)
 
     try:
-        output = llm_mutate_team(team_role, llm_config=llm_config)
+        output = llm_mutate_team(team_role, llm_config=builder_llm_config)
         print("### LLM_MUTATE RETURN VALUE ###")
         pprint.pprint(output)
         print("###############################")
@@ -403,7 +406,7 @@ def _test_autogen_mutation_crossover(
 
     try:
         output = llm_crossover_team(team_role, other_team_role,
-            llm_config=llm_config)
+            llm_config=builder_llm_config)
         print("### LLM_CROSSOVER RETURN VALUE ###")
         pprint.pprint(output)
         print("##################################")

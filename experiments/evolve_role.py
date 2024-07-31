@@ -114,7 +114,7 @@ class RoleEvolutionServer(object):
 
         if self.ga.stop():
             os.system("touch %s" % experiment_done)
-            os.system("rm -rf /tmp/*")
+            os.system("rm -rf /tmp/* >/dev/null")
 
 if __name__ == "__main__":
     if len(sys.argv) not in [2, 3]:
