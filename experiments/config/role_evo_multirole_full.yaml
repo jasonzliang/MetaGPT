@@ -1,0 +1,37 @@
+verbosity: info
+
+role_ga_config:
+    indv_config:
+        dummy_mode: False
+        mutate_rate: 0.8
+        initial_main_role: |
+            Write a python function that can {instruction}.
+            Return ```python your_code_here ``` with NO other texts,
+            your code:
+        initial_team_role: config/autogen_builder_cfg.json
+        evolve_mode: both
+
+        llm_config:
+            model: gpt-4o
+            # temperature: 1.0
+            # top_p: 0.4
+
+    num_gen: 50
+    pop_size: 20
+    num_elites: 10
+    tournament_size: 2
+    checkpoint: True
+    reevaluate_elites: False
+    init_mutate: True
+    n_workers: 10
+
+llm_evaluator_config:
+    dummy_mode: False
+    n_workers: 10
+    max_problems: 999
+    max_round: 15
+
+    llm_config:
+        model: gpt-4o
+        # temperature: 0.3
+        # top_p: 0.3

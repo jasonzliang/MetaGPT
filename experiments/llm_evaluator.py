@@ -206,9 +206,10 @@ class LLMEvaluator(object):
                 chat_llm_config=chat_llm_config,
                 max_round=self.max_round)
 
-            builder.clear_all_agents(recycle_endpoint=False)
             output = extract_code_from_chat(chat_result)
             assert len(output) > 0
+            builder.clear_all_agents(recycle_endpoint=False)
+
             return output
         result_dir = self._setup_result_dir(indv)
 
