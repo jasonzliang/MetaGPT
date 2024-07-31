@@ -56,6 +56,7 @@ def start_task(execution_task: str, agent_list: list, coding=True,
     #         user_proxy = agent
 
     # limit out of control output
+    pprint.pprint(agent_list)
     context_handling = transform_messages.TransformMessages(
             transforms=[transforms.MessageTokenLimiter(
                 min_tokens=MIN_CHAT_HIST_LEN,
@@ -138,9 +139,12 @@ def init_builder(building_task=None,
             "use_docker": False,
             "work_dir": work_dir
         }
+        # hack to prevent 'builder_model' error msg when running start_task
+        default_llm_config = {'temperature': builder_llm_config['temperature'],
+            'cache_seed': builder_llm_config['cache_seed']}
         agent_list, agent_configs = builder.build(
-            building_task,
-            builder_llm_config,
+            building_task=building_task,
+            default_llm_config=default_llm_config,
             coding=True,
             code_execution_config=code_execution_config)
         builder_dict = copy.copy(builder.cached_configs)

@@ -40,7 +40,10 @@
     ],
     "coding": true,
     "default_llm_config": {
-        "temperature": 0
+        "temperature": 0,
+        "builder_model": "gpt-4o",
+        "agent_model": "gpt-4o-mini",
+        "cache_seed": null
     },
     "code_execution_config": {
         "last_n_messages": "auto",
