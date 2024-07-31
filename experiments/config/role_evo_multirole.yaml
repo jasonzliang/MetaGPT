@@ -2,7 +2,7 @@ verbosity: info
 
 role_ga_config:
     indv_config:
-        dummy_mode: False
+        debug_mode: False
         mutate_rate: 0.8
         initial_main_role: |
             Write a python function that can {instruction}.
@@ -26,10 +26,10 @@ role_ga_config:
     n_workers: 20
 
 llm_evaluator_config:
-    dummy_mode: False
+    debug_mode: False
     n_workers: 20
-    max_problems: 999
     max_round: 20
+    max_problems: 999
 
     llm_config:
         model: gpt-4o-mini

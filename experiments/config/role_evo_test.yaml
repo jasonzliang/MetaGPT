@@ -2,7 +2,7 @@ verbosity: info
 
 role_ga_config:
     indv_config:
-        dummy_mode: False
+        debug_mode: False
         mutate_rate: 1.0
         initial_main_role: |
             Write a python function that can {instruction}.
@@ -26,7 +26,7 @@ role_ga_config:
     n_workers: 2
 
 llm_evaluator_config:
-    dummy_mode: False
+    debug_mode: False
     n_workers: 2
     max_problems: 1
 

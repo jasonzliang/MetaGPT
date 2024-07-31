@@ -56,10 +56,10 @@ class LLMEvaluator(object):
         assert self.restart_interval > 0
         self.max_round = self.config.get("max_round", 15)
         assert self.max_round > 0
-
-        self.dummy_mode = self.config.get("dummy_mode", False)
         self.max_problems = self.config.get("max_problems", sys.maxsize)
         assert self.max_problems > 0
+
+        self.debug_mode = self.config.get("debug_mode", False)
         self.debug_no_timestamp = self.config.get("debug_no_timestamp", False)
 
         self.reset()
@@ -83,10 +83,10 @@ class LLMEvaluator(object):
         else:
             eval_func = self._eval_indv_team_role
 
-        if self.n_workers == 1 or self.dummy_mode:
+        if self.n_workers == 1 or self.debug_mode:
             result_dicts = []
             for indv in population:
-                if self.dummy_mode:
+                if self.debug_mode:
                     fitness = random.random()
                     result_dict = {}
                     result_dict['fitness'] = fitness
@@ -274,7 +274,7 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
     pprint.pprint(indv.llm_config)
 
     eval_config = {'n_workers': 2,
-        'dummy_mode': False,
+        'debug_mode': False,
         'max_problems': max_problems,
         'max_round': max_round,
         'debug_no_timestamp': True}
@@ -303,7 +303,7 @@ def _test_parallel_eval(n=10):
         indv.main_role = DEFAULT_MAIN_ROLE
     print(indv.main_role)
 
-    eval_config = {'n_workers': n, 'dummy_mode': False}
+    eval_config = {'n_workers': n, 'debug_mode': False}
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     result_dicts = evaluator.evaluate(population)
     print("Evaluation results:")

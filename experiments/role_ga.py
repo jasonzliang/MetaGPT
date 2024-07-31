@@ -23,16 +23,16 @@ from util import get_time, sanitize_result_dict
 class Individual(object):
     def __init__(self, config, gen_created=None):
         self.config = config
+        self.id = self._set_id(gen_created) # Ids are unique, names are not
         self.logger = logging.getLogger('role_ga')
 
         self.evolve_mode = self.config.get("evolve_mode", "single")
         assert self.evolve_mode in ["single", "team", "both"]
-        self.dummy_mode = self.config.get("dummy_mode", False)
         self.mutate_rate = self.config.get("mutate_rate", 0.5)
         assert 0 <= self.mutate_rate <= 1.0
         self.llm_config = self.config.get("llm_config", {})
+        self.debug_mode = self.config.get("debug_mode", False)
 
-        self.id = self._set_id(gen_created) # Ids are unique, names are not
         self._load_initial_role()
         self.reset()
 
@@ -125,7 +125,7 @@ class Individual(object):
         if mutate_rate is None: mutate_rate = self.mutate_rate
         assert 0 <= mutate_rate <= 1.0
 
-        if self.dummy_mode:
+        if self.debug_mode:
             self.main_role += randomword(ID_LENGTH)
         elif random.random() < mutate_rate:
             # print("%s: %s" % (os.getpid(), self.evolve_mode))
@@ -136,7 +136,7 @@ class Individual(object):
                     self.llm_config)
 
     # def mutate2(self, n):
-    #     if self.dummy_mode:
+    #     if self.debug_mode:
     #         self.mutate()
     #     elif random.random() < mutate_rate:
     #         assert n >= 0 and self.result_dir is not None
@@ -147,7 +147,7 @@ class Individual(object):
     #                 self.llm_config)
 
     def crossover(self, other):
-        if self.dummy_mode:
+        if self.debug_mode:
             self.main_role, other.role = other.role, self.main_role
         else:
             if self.evolve_mode in ["single", "both"]:
@@ -158,7 +158,7 @@ class Individual(object):
                     other.team_role, self.llm_config)
 
     # def crossover2(self, others):
-    #     if self.dummy_mode:
+    #     if self.debug_mode:
     #         self.crossover(others[0])
     #     else:
     #         other_roles = [indv.main_role for indv in others]
