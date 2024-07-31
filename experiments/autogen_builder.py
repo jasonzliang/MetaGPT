@@ -56,7 +56,7 @@ def start_task(execution_task: str, agent_list: list, coding=True,
     #         user_proxy = agent
 
     # limit out of control output
-    pprint.pprint(agent_list)
+    # pprint.pprint(agent_list)
     context_handling = transform_messages.TransformMessages(
             transforms=[transforms.MessageTokenLimiter(
                 min_tokens=MIN_CHAT_HIST_LEN,
