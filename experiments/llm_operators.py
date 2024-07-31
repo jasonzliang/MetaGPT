@@ -286,7 +286,7 @@ def llm_crossover2(prompt, additional_prompts, llm_config):
 # @retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
 #     logger=logging.getLogger('evolve_role'))
 def llm_mutate_team(team_role, llm_config):
-    assert type(team_role) is dict
+    assert isinstance(team_role, dict)
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config.update(llm_config.get("builder_llm_config", {}))
 
@@ -306,7 +306,7 @@ def llm_mutate_team(team_role, llm_config):
 #     logger=logging.getLogger('evolve_role'))
 def llm_crossover_team(team_role, other_team_role, llm_config):
     # pprint.pprint(team_role); print(type(team_role))
-    assert type(team_role) is dict; assert type(other_team_role) is dict
+    assert isinstance(team_role, dict) and isinstance(other_team_role, dict)
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config.update(llm_config.get("builder_llm_config", {}))
 

@@ -47,7 +47,7 @@ class Individual(object):
                     self.initial_main_role = f.read()
             self.logger.info("Initial Main Role:\n%s" % self.initial_main_role)
 
-        self.initial_team_role = self.config.get("initial_team_role", {})
+        self.initial_team_role = self.config.get("initial_team_role", None)
         if self.evolve_mode in ["team", "both"]:
             assert os.path.exists(self.initial_team_role)
             with open(self.initial_team_role, 'r') as f:
@@ -183,7 +183,8 @@ class Individual(object):
         self.fitness = indv_dict.get("fitness", None)
         self.true_fitness = indv_dict.get("true_fitness", None)
         self.main_role = parse_prompt_template(indv_dict.get("main_role", ""))
-        self.team_role = dict(indv_dict.get("team_role", {}))
+        self.team_role = indv_dict.get("team_role", None)
+        if self.team_role is not None: self.team_role = dict(self.team_role)
         self.result_dir = indv_dict.get("result_dir", None)
 
 
