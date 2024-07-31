@@ -52,13 +52,13 @@ class LLMEvaluator(object):
         self.objective = self.config.get("objective", "base_score")
         assert self.objective in OBJECTIVES
         self.sanitize = self.config.get("sanitize", True)
-        self.restart_interval = self.config.get("restart_interval", 999)
+        self.restart_interval = self.config.get("restart_interval", sys.maxsize)
         assert self.restart_interval > 0
         self.max_round = self.config.get("max_round", 15)
         assert self.max_round > 0
 
         self.dummy_mode = self.config.get("dummy_mode", False)
-        self.max_problems = self.config.get("max_problems", 9999)
+        self.max_problems = self.config.get("max_problems", sys.maxsize)
         assert self.max_problems > 0
         self.debug_no_timestamp = self.config.get("debug_no_timestamp", False)
 

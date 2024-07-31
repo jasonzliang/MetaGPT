@@ -29,7 +29,7 @@ llm_evaluator_config:
     dummy_mode: False
     n_workers: 20
     max_problems: 999
-    max_round: 15
+    max_round: 20
 
     llm_config:
         model: gpt-4o-mini
