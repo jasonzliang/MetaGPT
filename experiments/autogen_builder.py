@@ -27,9 +27,13 @@ from alg_util import randomword
 from util import get_time, killtree, extract_code_from_chat
 
 CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
-CHAT_LLM_CONFIG = {"temperature": 0.0, "model": "gpt-4o", "cache_seed": None}
-BUILDER_LLM_CONFIG = {'temperature': 1.0,
-    'builder_model': 'gpt-4o', 'agent_model': 'gpt-4o', "cache_seed": None}
+CHAT_LLM_CONFIG = {"temperature": 0.0,
+    "model": "gpt-4o-mini",
+    "cache_seed": None}
+BUILDER_LLM_CONFIG = {"temperature": 1.0,
+    "builder_model": "gpt-4o-mini",
+    "agent_model": "gpt-4o-mini",
+    "cache_seed": None}
 MIN_CHAT_HIST_LEN = 3500
 MAX_CHAT_HIST_LEN = 125000
 MAX_MSG_LEN = 4500

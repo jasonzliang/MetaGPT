@@ -42,9 +42,8 @@ class LLMEvaluator(object):
     def __init__(self, config, evaluator_dir):
         self.config = config
         self.evaluator_dir = evaluator_dir
-        self.dummy_mode = self.config.get("dummy_mode", False)
-        self.max_problems = self.config.get("max_problems", 9999)
-        assert self.max_problems > 0
+        self.logger = logging.getLogger('evolve_role')
+
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
         self.llm_config = self.config.get("llm_config", {})
@@ -57,11 +56,12 @@ class LLMEvaluator(object):
         assert self.restart_interval > 0
         self.max_round = self.config.get("max_round", 15)
         assert self.max_round > 0
-        # self.eval_mode = self.config.get("eval_mode", "single")
-        # assert self.eval_mode in ['single', 'team', 'both']
+
+        self.dummy_mode = self.config.get("dummy_mode", False)
+        self.max_problems = self.config.get("max_problems", 9999)
+        assert self.max_problems > 0
         self.debug_no_timestamp = self.config.get("debug_no_timestamp", False)
 
-        self.logger = logging.getLogger('evolve_role')
         self.reset()
 
     def reset(self):
@@ -76,7 +76,8 @@ class LLMEvaluator(object):
         if self.gen % self.restart_interval == 0:
             self.reset()
 
-        evolve_mode = population[0].evolve_mode
+        evolve_mode = [indv.evolve_mode for indv in population]
+        assert len(set(evolve_mode)) == 1; evolve_mode = evolve_mode[0]
         if evolve_mode == "single":
             eval_func = self._eval_indv_main_role
         else:
