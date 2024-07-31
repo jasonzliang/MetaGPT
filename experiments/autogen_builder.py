@@ -139,7 +139,7 @@ def init_builder(building_task=None,
             "use_docker": False,
             "work_dir": work_dir
         }
-        # hack to prevent 'builder_model' error msg when running start_task
+        # hack to prevent "builder_model" error msg when running start_task
         default_llm_config = {'temperature': builder_llm_config['temperature'],
             'cache_seed': builder_llm_config['cache_seed']}
         agent_list, agent_configs = builder.build(
