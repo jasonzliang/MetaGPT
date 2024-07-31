@@ -250,6 +250,10 @@ class RoleEvolutionGA(object):
             self.pool.close(); self.pool.join(); self.pool.clear(); del self.pool
         self.pool = ProcessPool(self.n_workers)
 
+    def _init_mutate(self, indv):
+        indv.mutate(mutate_rate=1.0)
+        return indv
+
     def _reset(self):
         self.gen = 0
         self.individuals = []
@@ -257,9 +261,12 @@ class RoleEvolutionGA(object):
             individual = Individual(self.indv_config, self.gen)
             self.individuals.append(individual)
         assert self.pop_size == len(self.individuals)
-        if self.init_mutate:
-            [indv.mutate(mutate_rate=1.0) for indv in self.individuals[1:]]
         self._reset_pool()
+
+        if self.init_mutate:
+            self.individuals[1:] = \
+                self.pool.map(self._init_mutate, self.individuals[1:])
+            # [indv.mutate(mutate_rate=1.0) for indv in self.individuals[1:]]
 
     def _find_latest_checkpoint(self):
         checkpoints = glob.glob(os.path.join(self.checkpoint_dir,
