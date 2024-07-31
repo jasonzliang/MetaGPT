@@ -1,0 +1,42 @@
+{
+    "building_task": "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities.",
+    "agent_configs": [
+        {
+            "name": "Python_Expert",
+            "model": [
+                "gpt-4o-mini"
+            ],
+            "tags": [],
+            "system_message": "## Your role\nPython_Expert is a highly skilled programmer and developer specializing in Python.",
+            "description": "Python_Expert is a highly skilled Python developer responsible for providing advanced coding solutions."
+        },
+        {
+            "name": "Algorithm_Expert",
+            "model": [
+                "gpt-4o-mini"
+            ],
+            "tags": [],
+            "system_message": "## Your role\nAlgorithm_Expert is an experienced software engineer specializing in the design and analysis of algorithms.",
+            "description": "Algorithm_Expert is a skilled software engineer specializing in algorithm design."
+        },
+        {
+            "name": "Debugging_Expert",
+            "model": [
+                "gpt-4o-mini"
+            ],
+            "tags": [],
+            "system_message": "## Your role\nDebugging_Expert is specialized in identifying and resolving issues in code.",
+            "description": "Debugging_Expert specializes in meticulously analyzing and resolving code issues."
+        }
+    ],
+    "coding": true,
+    "default_llm_config": {
+        "temperature": 0
+    },
+    "code_execution_config": {
+        "last_n_messages": "auto",
+        "work_dir": "groupchat",
+        "use_docker": false,
+        "timeout": 10
+    }
+}

@@ -91,8 +91,7 @@ class RoleEvolutionServer(object):
         self.logger.info("*" * LINE_WIDTH)
 
         experiment_done = os.path.join(self.experiment_dir, "done")
-        if os.path.exists(experiment_done):
-            os.remove(experiment_done)
+        if os.path.exists(experiment_done): os.remove(experiment_done)
 
         while not self.ga.stop():
             ga_gen = self.ga.get_gen()
@@ -114,9 +113,8 @@ class RoleEvolutionServer(object):
         self.logger.info("*" * LINE_WIDTH)
 
         if self.ga.stop():
-            with open(experiment_done, "w") as f:
-                f.write("")
-
+            os.system("touch %s" % experiment_done)
+            os.system("rm -rf /tmp/*")
 
 if __name__ == "__main__":
     if len(sys.argv) not in [2, 3]:
