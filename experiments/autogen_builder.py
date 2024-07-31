@@ -178,13 +178,13 @@ def _parse_builder_cfgs(builder_cfgs, eval_mode=False):
     builder_strs = []
     if eval_mode:
         for builder_dict in builder_cfgs:
-            assert type(builder_dict) is dict
+            assert isinstance(builder_dict, dict)
             if 'building_task' in builder_dict:
                 builder_dict['building_task'] = ''
             builder_strs.append(json.dumps(builder_dict))
     else:
         for builder_cfg in builder_cfgs:
-            assert type(builder_cfg) is str
+            assert isinstance(builder_cfg, str)
             if os.path.exists(builder_cfg):
                 with open(builder_cfg, "r") as f:
                     builder_dict = json.load(f)

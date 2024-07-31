@@ -184,7 +184,7 @@ class Individual(object):
         self.true_fitness = indv_dict.get("true_fitness", None)
         self.main_role = parse_prompt_template(indv_dict.get("main_role", ""))
         self.team_role = indv_dict.get("team_role", None)
-        if self.team_role is not None: self.team_role = dict(self.team_role)
+        if self.team_role is not None: assert isinstance(self.team_role, dict)
         self.result_dir = indv_dict.get("result_dir", None)
 
 
