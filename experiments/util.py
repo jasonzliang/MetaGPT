@@ -27,6 +27,18 @@ OBJECTIVES = {'base_score': lambda x: x,
     'memory_usage_mb': lambda x: -x}
 
 
+def format_prompt(prompt, instruction):
+    try:
+        prompt = prompt.format(instruction=instruction)
+    except:
+        try: # If {instruction} not found, search for first braces
+            special_word = prompt[prompt.find("{"):prompt.find("}")+1]
+            prompt = prompt.replace(special_word, instruction)
+        except: # Last resort, just use problem directly
+            prompt = instruction
+    return prompt
+
+
 def extract_code_from_chat(chat_result):
     code = ""
     result = parse_code2(chat_result.summary)

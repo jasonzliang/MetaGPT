@@ -35,6 +35,7 @@ from autogen_builder import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
 from llm_operators import create_new_team
 from llm_operators import DEFAULT_MAIN_ROLE
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
+from util import format_prompt
 from util import OBJECTIVES
 
 
@@ -205,16 +206,8 @@ class LLMEvaluator(object):
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
         def eval_func(problem):
-            prompt = main_role
-            try:
-                prompt = prompt.format(instruction=problem['prompt'])
-            except:
-                try: # If {instruction} not found, search for first braces
-                    special_word = prompt[prompt.find("{"):prompt.find("}")+1]
-                    prompt = prompt.replace(special_word, problem['prompt'])
-                except: # Last resort, just use problem directly
-                    prompt = problem['prompt']
-
+            prompt = format_prompt(prompt=main_role,
+                instruction=problem['prompt'])
             chat_result = start_task(
                 execution_task=prompt,
                 agent_list=agent_list,
