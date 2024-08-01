@@ -137,8 +137,8 @@ class LLMEvaluator(object):
                     output = eval_func(problem)
                 except:
                     stack_trace = traceback.format_exc()
-                    with open('P-%s_T-%s.err' % \
-                        (os.getpid(), get_time(space=False)), 'w') as f:
+                    with open(os.path.join(result_dir, 'P-%s_T-%s.err' % \
+                        (os.getpid(), get_time(space=False))), 'w') as f:
                         f.write(stack_trace)
                     mlogger.info(stack_trace); output = ""
 
