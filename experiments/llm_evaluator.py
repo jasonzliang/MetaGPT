@@ -218,7 +218,7 @@ class LLMEvaluator(object):
                 max_round=self.max_round)
 
             output = extract_code_from_chat(chat_result)
-            # assert len(output) > 0
+            assert len(output) > 0
             builder.clear_all_agents(recycle_endpoint=False)
 
             return output
