@@ -34,7 +34,7 @@ from autogen_builder import init_builder, start_task
 from autogen_builder import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
 from llm_operators import create_new_team
 from llm_operators import DEFAULT_MAIN_ROLE
-from util import extract_evalplus, extract_code_from_chat, killtree
+from util import extract_evalplus, extract_code_from_chat, killtree, get_time
 from util import OBJECTIVES
 
 
@@ -107,7 +107,7 @@ class LLMEvaluator(object):
                 "%s_%s_T-%s" % (self.dataset, eval_id, int(self.gen)))
         else:
             result_dir = os.path.join(self.evaluator_dir,
-                "%s_%s_T-%s" % (self.dataset, eval_id, int(time.time())))
+                "%s_%s_T-%s" % (self.dataset, eval_id, get_time(space=False)))
 
         os.makedirs(result_dir, exist_ok=True)
         with open(os.path.join(result_dir, "main_role.txt"), "w") as f:
@@ -137,10 +137,11 @@ class LLMEvaluator(object):
                     output = eval_func(problem)
                 except:
                     stack_trace = traceback.format_exc()
-                    mlogger.info(stack_trace)
-                    with open('%s.err' % os.getpid(), 'w') as f:
+                    with open('P-%s_T-%s.err' % \
+                        (os.getpid(), get_time(space=False)), 'w') as f:
                         f.write(stack_trace)
-                    output = ""
+                    mlogger.info(stack_trace); output = ""
+
                 mlogger.info("#### Evalplus Problem Output:\n%s" % output)
             else:
                 output = ""
