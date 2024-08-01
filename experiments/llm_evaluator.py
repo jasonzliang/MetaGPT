@@ -137,6 +137,7 @@ class LLMEvaluator(object):
                 while n_tries > 0:
                     try:
                         output = eval_func(problem)
+                        break
                     except:
                         output = ""; n_tries -= 1
                         if n_tries == 0:
@@ -289,7 +290,7 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     for i in range(num_gen):
         a = indv.create_child(0); b = indv.create_child(0)
-        a.id = "G-0_ID-DNrcOL1irjdO"; b.id = "G-0_ID-i6usMJsHu9xr"
+        # a.id = "G-0_ID-DNrcOL1irjdO"; b.id = "G-0_ID-i6usMJsHu9xr"
         result_dicts = evaluator.evaluate([a, b])
         # evaluator.reset()
 
