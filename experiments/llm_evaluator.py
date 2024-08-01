@@ -143,9 +143,9 @@ class LLMEvaluator(object):
                         if n_tries == 0:
                             stack_trace = traceback.format_exc()
                             mlogger.info(stack_trace)
-                            with open(os.path.join(result_dir, 'P-%s_T-%s.err' % \
-                                (os.getpid(), get_time(space=False))), 'w') as f:
-                                f.write(stack_trace)
+                            err_fp = os.path.join(result_dir, '%s_%s.err' % \
+                                (os.getpid(), get_time(space=False)))
+                            with open(err_fp, 'w') as f: f.write(stack_trace)
 
                 mlogger.info("#### Evalplus Problem Output:\n%s" % output)
             else:
