@@ -283,8 +283,8 @@ def llm_crossover2(prompt, additional_prompts, llm_config):
 
 
 ### AUTOGEN TEAM MUTATION/CROSSOVER ###
-# @retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
-#     logger=logging.getLogger('evolve_role'))
+@retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
+    logger=logging.getLogger('evolve_role'))
 def llm_mutate_team(team_role, llm_config):
     assert isinstance(team_role, dict)
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
@@ -302,8 +302,8 @@ def llm_mutate_team(team_role, llm_config):
     return builder_dict
 
 
-# @retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
-#     logger=logging.getLogger('evolve_role'))
+@retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
+    logger=logging.getLogger('evolve_role'))
 def llm_crossover_team(team_role, other_team_role, llm_config):
     # pprint.pprint(team_role); print(type(team_role))
     assert isinstance(team_role, dict) and isinstance(other_team_role, dict)
