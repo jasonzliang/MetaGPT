@@ -3,7 +3,7 @@ verbosity: info
 role_ga_config:
     indv_config:
         debug_mode: False
-        mutate_rate: 0.8
+        mutate_rate: 0.5
         initial_main_role: |
             Write a python function that can {instruction}.
             Return ```python your_code_here ``` with NO other texts,
@@ -24,6 +24,7 @@ role_ga_config:
     reevaluate_elites: True
     init_mutate: True
     n_workers: 20
+    eval_cache: True
 
 llm_evaluator_config:
     debug_mode: False

@@ -24,6 +24,7 @@ role_ga_config:
     reevaluate_elites: True
     init_mutate: True
     n_workers: 2
+    eval_cache: True
 
 llm_evaluator_config:
     debug_mode: False

@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import random
+import pickle
 import time
 
 import numpy as np
@@ -217,8 +218,8 @@ class RoleEvolutionGA(object):
 
         self.checkpoint = self.config.get("checkpoint", False)
         self.eval_cache = self.config.get("eval_cache", False)
-        if self.eval_cache:
-            self.eval_cache_fp = os.path.join(self.checkpoint_dir, "eval.cache")
+        if self.eval_cache: self.eval_cache_fp = \
+            os.path.join(self.checkpoint_dir, "eval_cache.pkl")
 
         self.num_gen = self.config.get("num_gen", 5)
         assert self.num_gen > 0
@@ -239,13 +240,19 @@ class RoleEvolutionGA(object):
         # self.crossover2_n = self.config.get("crossover2_n", 3)
         # assert self.crossover2_n >= 1
 
-        self._reset()
+        self._reset(); _loaded_checkpoint = False
+
         if self.checkpoint:
             self.fitness_logs = \
                 {'fitness': FitnessLog('fitness', self.checkpoint_dir),
                 'true_fitness': FitnessLog('true_fitness', self.checkpoint_dir)}
-            chkpt_file = self._find_latest_checkpoint()
-            self._deserialize(file_path=chkpt_file)
+            self._deserialize(file_path=self._find_latest_checkpoint())
+            _loaded_checkpoint = True
+
+        if self.init_mutate and not _loaded_checkpoint:
+            self.individuals[1:] = \
+                self.pool.map(self._init_mutate, self.individuals[1:])
+            # [indv.mutate(mutate_rate=1.0) for indv in self.individuals[1:]]
 
     def get_sorted_individuals(self, individuals):
         return sorted(individuals, reverse=True)
@@ -267,11 +274,6 @@ class RoleEvolutionGA(object):
             self.individuals.append(individual)
         assert self.pop_size == len(self.individuals)
         self._reset_pool()
-
-        if self.init_mutate:
-            self.individuals[1:] = \
-                self.pool.map(self._init_mutate, self.individuals[1:])
-            # [indv.mutate(mutate_rate=1.0) for indv in self.individuals[1:]]
 
     def _find_latest_checkpoint(self):
         checkpoints = glob.glob(os.path.join(self.checkpoint_dir,
@@ -386,11 +388,7 @@ class RoleEvolutionGA(object):
 
     #     return child
 
-    def ask(self):
-        if self.eval_cache and os.path.exists(self.eval_cache_fp):
-            with open(self.eval_cache_fp, "r") as f:
-                return YAML().load(f)
-
+    def _ask(self):
         if self.gen == 0:
             return self.individuals
 
@@ -409,35 +407,37 @@ class RoleEvolutionGA(object):
         assert self.pop_size == len(self.individuals)
 
         if self.reevaluate_elites:
-            eval_indvs = self.individuals
+            return self.individuals
         else:
-            eval_indvs = self.individuals[self.num_elites:]
+            return self.individuals[self.num_elites:]
 
+    # Wraper function to enable caching for ask()
+    def ask(self):
+        if self.eval_cache and os.path.exists(self.eval_cache_fp):
+            with open(self.eval_cache_fp, "rb") as f:
+                cache_indvs = pickle.load(f)
+            assert len(cache_indvs) == len(self.individuals) == self.pop_size
+            self.individuals = cache_indvs
+            if self.reevaluate_elites: return self.individuals
+            else: return self.individuals[self.num_elites:]
+
+        eval_indvs = self._ask()
         if self.eval_cache:
-            with open(self.eval_cache_fp, "w") as f:
-                YAML().dump(eval_indvs, f)
+            with open(self.eval_cache_fp, "wb") as f:
+                pickle.dump(self.individuals, f)
+        return eval_indvs
 
-        return eval_indv
-
-    # If using eval cache, make sure eval indv exist in pop and merge them
-    def _merge_indv(self, eval_indvs):
-        eval_dict = {}; merged_indv = []; num_replaced = 0
-        for eval_indv in eval_indvs: eval_dict[eval_indv.id] = eval_indv
-        for indv in self.individuals:
-            if indv.id in eval_dict:
-                merged_indv.append(eval_dict[indv.id]); num_replaced += 1
-            else:
-                merged_indv.append(indv)
-
-        if self.reevaluate_elites:
-            assert num_replaced == self.pop_size
-        else:
-            assert num_replaced == self.pop_size - self.num_elites
-        self.individuals = merged_indv
+    def _check_eval_indv(self, eval_indvs):
+        indv_ids = set([indv.id for indv in self.individuals])
+        assert len(indv_ids) == len(self.individuals)
+        for eval_indv in eval_indvs:
+            assert eval_indv.id in indv_ids
+            assert eval_indv in self.individuals
 
     def tell(self, eval_indvs, result_dicts):
         assert self.pop_size == len(self.individuals)
         assert len(eval_indvs) == len(result_dicts)
+        self._check_eval_indv(eval_indvs)
 
         if self.reevaluate_elites:
             assert len(eval_indvs) == len(self.individuals)
@@ -452,6 +452,5 @@ class RoleEvolutionGA(object):
             eval_indv.result_dir = result_dict.get('result_dir', None)
 
         if self.eval_cache:
-            assert os.path.exists(self.eval_cache_fp):
+            assert os.path.exists(self.eval_cache_fp)
             os.system("rm %s" % self.eval_cache_fp)
-            self._merge_indv(eval_indvs)
