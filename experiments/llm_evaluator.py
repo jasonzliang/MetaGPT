@@ -104,7 +104,7 @@ class LLMEvaluator(object):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
         if self.debug_no_timestamp: # For debugging purposes
             result_dir = os.path.join(self.evaluator_dir,
-                "%s_%s_T-%s" % (self.dataset, eval_id, int(self.gen)))
+                "evalG-%s_%s_%s" % (int(self.gen), self.dataset, eval_id))
         else:
             result_dir = os.path.join(self.evaluator_dir,
                 "%s_%s_T-%s" % (self.dataset, eval_id, get_time(space=False)))
