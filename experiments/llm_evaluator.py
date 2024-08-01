@@ -133,19 +133,19 @@ class LLMEvaluator(object):
             if i < self.max_problems:
                 mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % \
                     (task_id, problem['prompt']))
-                n_tries = 3
+                n_tries = 5
                 while n_tries > 0:
                     try:
                         output = eval_func(problem)
                         break
                     except:
-                        output = ""; n_tries -= 1
-                        if n_tries == 0:
-                            stack_trace = traceback.format_exc()
-                            mlogger.info(stack_trace)
-                            err_fp = os.path.join(result_dir, '%s_%s.err' % \
-                                (os.getpid(), get_time(space=False)))
-                            with open(err_fp, 'w') as f: f.write(stack_trace)
+                        stack_trace = traceback.format_exc()
+                        mlogger.info(stack_trace)
+                        err_fp = os.path.join(result_dir, '%s_%s.err' % \
+                            (os.getpid(), get_time(space=False)))
+                        with open(err_fp, 'w') as f: f.write(stack_trace)
+
+                        output = ""; n_tries -= 1; time.sleep(5)
 
                 mlogger.info("#### Evalplus Problem Output:\n%s" % output)
             else:
@@ -216,7 +216,7 @@ class LLMEvaluator(object):
                 max_round=self.max_round)
 
             output = extract_code_from_chat(chat_result)
-            assert len(output) > 0
+            # assert len(output) > 0
             builder.clear_all_agents(recycle_endpoint=False)
 
             return output
