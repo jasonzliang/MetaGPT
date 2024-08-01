@@ -65,15 +65,15 @@ class LLMEvaluator(object):
         self.reset()
 
     def reset(self):
-        self.gen = 0
+        self.gen = None
         if hasattr(self, "pool"):
             self.pool.close(); self.pool.join(); self.pool.clear()
         self.pool = ProcessPool(self.n_workers)
         # self.pool = ParallelPool(self.n_workers)
 
-    def evaluate(self, population):
-        self.gen += 1
-        if self.gen % self.restart_interval == 0:
+    def evaluate(self, population, gen=0):
+        self.gen = gen
+        if (self.gen + 1) % self.restart_interval == 0:
             self.reset()
 
         evolve_mode = [indv.evolve_mode for indv in population]
@@ -104,10 +104,10 @@ class LLMEvaluator(object):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
         if self.debug_no_timestamp: # For debugging purposes
             result_dir = os.path.join(self.evaluator_dir,
-                "%s_%s" % (self.dataset, eval_id))
+                "%s_%s_T-%s" % (self.dataset, eval_id, int(self.gen)))
         else:
             result_dir = os.path.join(self.evaluator_dir,
-                "%s_%s_T-%d" % (self.dataset, eval_id, time.time()))
+                "%s_%s_T-%s" % (self.dataset, eval_id, int(time.time())))
 
         os.makedirs(result_dir, exist_ok=True)
         with open(os.path.join(result_dir, "main_role.txt"), "w") as f:
@@ -136,7 +136,10 @@ class LLMEvaluator(object):
                 try:
                     output = eval_func(problem)
                 except:
-                    mlogger.info(traceback.format_exc())
+                    stack_trace = traceback.format_exc()
+                    mlogger.info(stack_trace)
+                    with open('%s.err' % os.getpid(), 'w') as f:
+                        f.write(stack_trace)
                     output = ""
                 mlogger.info("#### Evalplus Problem Output:\n%s" % output)
             else:
@@ -189,8 +192,7 @@ class LLMEvaluator(object):
                 use_builder_dict=True,
                 clear_cache=True)
 
-        # @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
-        # @timeout(5, timeout_exception=TimeoutError, use_signals=True)
+        @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
         def eval_func(problem):
             prompt = main_role
             try:
