@@ -27,6 +27,7 @@ from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from autogen_builder import autogen_mutate, autogen_crossover
 from autogen_builder import BUILDER_LLM_CONFIG
 from util import extract_evalplus, parse_code, parse_prompt_template
+from util import format_prompt
 
 DEFAULT_MAIN_ROLE = \
 """Write a python function that can {instruction}.
@@ -144,14 +145,8 @@ class SimpleWriteCode(Action):
     code_text: str = ""
 
     async def run(self, instruction: str):
-        prompt = self.PROMPT_TEMPLATE
-        try:
-            prompt = prompt.format(instruction=instruction)
-        except:
-            # If {instruction} not found, search for first pair of braces
-            special_word = prompt[prompt.find("{"):prompt.find("}")+1]
-            prompt = prompt.replace(special_word, instruction)
-        # finally:
+        prompt = format_prompt(prompt=self.PROMPT_TEMPLATE,
+            instruction=instruction)
         rsp = await self._aask(prompt)
         self.code_text = parse_code(rsp)
         return self.code_text
