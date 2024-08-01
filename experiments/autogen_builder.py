@@ -279,7 +279,7 @@ def eval_humaneval(
 ):
     print(locals()); time.sleep(3)
     if work_dir is None: work_dir = result_dir
-    building_task = "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities."
+    building_task = "Generate a team of agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities."
 
     agent_list, agent_configs, builder, builder_cfg = \
         init_builder(building_task,
