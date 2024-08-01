@@ -136,7 +136,7 @@ class LLMEvaluator(object):
             if i < self.max_problems and n_failures < self.max_failures:
                 mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % \
                     (task_id, problem['prompt']))
-                n_tries = 3; err_str = ""
+                n_tries = 2; err_str = ""
                 while n_tries > 0:
                     try:
                         output = eval_func(problem)
@@ -144,7 +144,7 @@ class LLMEvaluator(object):
                     except:
                         stack_trace = traceback.format_exc()
                         mlogger.info(stack_trace); err_str += stack_trace + "\n"
-                        output = ""; n_tries -= 1; time.sleep(5)
+                        output = ""; n_tries -= 1; time.sleep(3)
 
                         if n_tries == 0:
                             err_fp = os.path.join(result_dir, '%s_%s.err' % \
