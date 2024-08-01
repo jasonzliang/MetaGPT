@@ -216,6 +216,10 @@ class RoleEvolutionGA(object):
         self.logger = logging.getLogger('evolve_role')
 
         self.checkpoint = self.config.get("checkpoint", False)
+        self.eval_cache = self.config.get("eval_cache", False)
+        if self.eval_cache:
+            self.eval_cache_fp = os.path.join(self.checkpoint_dir, "eval.cache")
+
         self.num_gen = self.config.get("num_gen", 5)
         assert self.num_gen > 0
         self.pop_size = self.config.get("pop_size", MIN_POP_SIZE)
@@ -383,6 +387,10 @@ class RoleEvolutionGA(object):
     #     return child
 
     def ask(self):
+        if self.eval_cache and os.path.exists(self.eval_cache_fp):
+            with open(self.eval_cache_fp, "r") as f:
+                return YAML().load(f)
+
         if self.gen == 0:
             return self.individuals
 
@@ -401,9 +409,31 @@ class RoleEvolutionGA(object):
         assert self.pop_size == len(self.individuals)
 
         if self.reevaluate_elites:
-            return self.individuals
+            eval_indvs = self.individuals
         else:
-            return self.individuals[self.num_elites:]
+            eval_indvs = self.individuals[self.num_elites:]
+
+        if self.eval_cache:
+            with open(self.eval_cache_fp, "w") as f:
+                YAML().dump(eval_indvs, f)
+
+        return eval_indv
+
+    # If using eval cache, make sure eval indv exist in pop and merge them
+    def _merge_indv(self, eval_indvs):
+        eval_dict = {}; merged_indv = []; num_replaced = 0
+        for eval_indv in eval_indvs: eval_dict[eval_indv.id] = eval_indv
+        for indv in self.individuals:
+            if indv.id in eval_dict:
+                merged_indv.append(eval_dict[indv.id]); num_replaced += 1
+            else:
+                merged_indv.append(indv)
+
+        if self.reevaluate_elites:
+            assert num_replaced == self.pop_size
+        else:
+            assert num_replaced == self.pop_size - self.num_elites
+        self.individuals = merged_indv
 
     def tell(self, eval_indvs, result_dicts):
         assert self.pop_size == len(self.individuals)
@@ -411,6 +441,8 @@ class RoleEvolutionGA(object):
 
         if self.reevaluate_elites:
             assert len(eval_indvs) == len(self.individuals)
+        else:
+            assert len(eval_indvs) == self.pop_size - self.num_elites
 
         for eval_indv, result_dict in \
             zip(eval_indvs, result_dicts):
@@ -418,3 +450,8 @@ class RoleEvolutionGA(object):
             eval_indv.set_fitness(result_dict.get('fitness', None))
             eval_indv.set_true_fitness(result_dict.get('true_fitness', None))
             eval_indv.result_dir = result_dict.get('result_dir', None)
+
+        if self.eval_cache:
+            assert os.path.exists(self.eval_cache_fp):
+            os.system("rm %s" % self.eval_cache_fp)
+            self._merge_indv(eval_indvs)
