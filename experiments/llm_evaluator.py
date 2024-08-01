@@ -58,10 +58,11 @@ class LLMEvaluator(object):
         assert self.max_round > 0
         self.max_problems = self.config.get("max_problems", sys.maxsize)
         assert self.max_problems > 0
+        self.use_timestamp = self.config.get("use_timestamp", False)
+        self.max_failures = self.config.get("max_failures", 12)
+        assert self.max_failures > 0
 
         self.debug_mode = self.config.get("debug_mode", False)
-        self.debug_no_timestamp = self.config.get("debug_no_timestamp", False)
-
         self.reset()
 
     def reset(self):
@@ -102,12 +103,12 @@ class LLMEvaluator(object):
 
     def _setup_result_dir(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
-        if self.debug_no_timestamp: # For debugging purposes
-            result_dir = os.path.join(self.evaluator_dir,
-                "evalG-%s_%s_%s" % (int(self.gen), self.dataset, eval_id))
-        else:
+        if self.use_timestamp: # For debugging purposes
             result_dir = os.path.join(self.evaluator_dir,
                 "%s_%s_T-%s" % (self.dataset, eval_id, get_time(space=False)))
+        else:
+            result_dir = os.path.join(self.evaluator_dir,
+                "evalG-%s_%s_%s" % (int(self.gen), self.dataset, eval_id))
 
         os.makedirs(result_dir, exist_ok=True)
         with open(os.path.join(result_dir, "main_role.txt"), "w") as f:
@@ -123,6 +124,7 @@ class LLMEvaluator(object):
         else: # self.dataset == 'mbpp'
             problems = get_mbpp_plus()
 
+        n_failures = 0
         for i, (task_id, problem) in enumerate(problems.items()):
             task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
             os.makedirs(task_id_dir, exist_ok=True)
@@ -130,10 +132,10 @@ class LLMEvaluator(object):
             if os.path.exists(result_file) and os.path.getsize(result_file) > 0:
                 continue
 
-            if i < self.max_problems:
+            if i < self.max_problems and n_failures < self.max_failures:
                 mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % \
                     (task_id, problem['prompt']))
-                n_tries = 5; err_str = ""
+                n_tries = 3; err_str = ""
                 while n_tries > 0:
                     try:
                         output = eval_func(problem)
@@ -147,6 +149,7 @@ class LLMEvaluator(object):
                             err_fp = os.path.join(result_dir, '%s_%s.err' % \
                                 (os.getpid(), get_time(space=False)))
                             with open(err_fp, 'w') as f: f.write(err_str)
+                            n_failures += 1
 
 
                 mlogger.info("#### Evalplus Problem Output:\n%s" % output)

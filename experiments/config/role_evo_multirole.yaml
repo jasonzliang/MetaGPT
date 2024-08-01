@@ -27,7 +27,7 @@ role_ga_config:
 
 llm_evaluator_config:
     debug_mode: False
-    debug_no_timestamp: True
+    use_timestamp: False
     n_workers: 20
     max_round: 20
     max_problems: 999
