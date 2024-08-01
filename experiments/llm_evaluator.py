@@ -133,14 +133,17 @@ class LLMEvaluator(object):
             if i < self.max_problems:
                 mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % \
                     (task_id, problem['prompt']))
-                try:
-                    output = eval_func(problem)
-                except:
-                    stack_trace = traceback.format_exc()
-                    with open(os.path.join(result_dir, 'P-%s_T-%s.err' % \
-                        (os.getpid(), get_time(space=False))), 'w') as f:
-                        f.write(stack_trace)
-                    mlogger.info(stack_trace); output = ""
+                n_tries = 3
+                while n_tries > 0:
+                    try:
+                        output = eval_func(problem)
+                    except:
+                        stack_trace = traceback.format_exc()
+                        mlogger.info(stack_trace); output = ""; n_tries -= 1
+                        if n_tries == 0:
+                            with open(os.path.join(result_dir, 'P-%s_T-%s.err' % \
+                                (os.getpid(), get_time(space=False))), 'w') as f:
+                                f.write(stack_trace)
 
                 mlogger.info("#### Evalplus Problem Output:\n%s" % output)
             else:
@@ -193,7 +196,7 @@ class LLMEvaluator(object):
                 use_builder_dict=True,
                 clear_cache=True)
 
-        @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
+        # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
         def eval_func(problem):
             prompt = main_role
             try:
