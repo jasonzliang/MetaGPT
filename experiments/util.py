@@ -30,10 +30,13 @@ OBJECTIVES = {'base_score': lambda x: x,
 def extract_code_from_chat(chat_result):
     code = ""
     result = parse_code2(chat_result.summary)
-    if result is not None: code = result
-    # for msg_dict in chat_result.chat_history:
-    #     result = parse_code(msg_dict['content'])
-    #     if result is not None: code = result
+    if result is not None:
+        code = result
+    else:
+        for msg_dict in chat_result.chat_history[::-1]:
+            result = parse_code2(msg_dict['content'])
+            if result is not None:
+                code = result
     return code
 
 
