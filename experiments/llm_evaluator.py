@@ -209,11 +209,10 @@ class LLMEvaluator(object):
             try:
                 prompt = prompt.format(instruction=problem['prompt'])
             except:
-                # If {instruction} not found, search for first pair of braces
-                try:
+                try: # If {instruction} not found, search for first braces
                     special_word = prompt[prompt.find("{"):prompt.find("}")+1]
                     prompt = prompt.replace(special_word, problem['prompt'])
-                except:
+                except: # Last resort, just use problem directly
                     prompt = problem['prompt']
 
             chat_result = start_task(
