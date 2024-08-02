@@ -40,7 +40,7 @@ BUILDER_LLM_CONFIG = {"temperature": 1.0,
     "builder_model": "gpt-4o",
     "agent_model": "gpt-4o-mini",
     "cache_seed": None}
-MIN_CHAT_HIST_LEN = 16000
+MIN_CHAT_HIST_LEN = 32000
 MAX_CHAT_HIST_LEN = 128000
 MAX_MSG_LEN = 6000
 MIN_AGENTS = 3
