@@ -160,6 +160,9 @@ class LLMEvaluator(object):
             with open(result_file, 'w') as f:
                 f.write(output)
 
+        if n_failures >= self.max_failures:
+            os.system("touch %s" % os.path.join(result_dir, "max_failures"))
+
     def _sanitize(self, result_dir):
         if not self.sanitize: return
         os.system("evalplus.sanitize --samples %s >/dev/null" % result_dir)
