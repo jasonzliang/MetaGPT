@@ -40,13 +40,13 @@ class Individual(object):
     def _load_initial_role(self):
         self.initial_main_role = self.config.get("initial_main_role",
             DEFAULT_MAIN_ROLE)
-        if self.evolve_mode in ["single", "both"]:
-            _initial_main_role = os.path.join(os.path.abspath(
-                os.path.dirname(__file__)), "config/%s" % self.initial_main_role)
-            if os.path.exists(_initial_main_role):
-                with open(_initial_main_role, "r") as f:
-                    self.initial_main_role = f.read()
-            self.logger.info("Initial Main Role:\n%s" % self.initial_main_role)
+        # if self.evolve_mode in ["single", "both"]:
+        _initial_main_role = os.path.join(os.path.abspath(
+            os.path.dirname(__file__)), "config/%s" % self.initial_main_role)
+        if os.path.exists(_initial_main_role):
+            with open(_initial_main_role, "r") as f:
+                self.initial_main_role = f.read()
+        self.logger.info("Initial Main Role:\n%s" % self.initial_main_role)
 
         self.initial_team_role = self.config.get("initial_team_role", None)
         if self.evolve_mode in ["team", "both"]:

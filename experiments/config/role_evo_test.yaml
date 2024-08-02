@@ -4,10 +4,11 @@ role_ga_config:
     indv_config:
         debug_mode: False
         mutate_rate: 1.0
-        # initial_main_role: |
-        #     Write a python function that can {instruction}.
-        #     Return ```python your_code_here ``` with NO other texts,
-        #     your code:
+        initial_main_role: |
+            Write a Python function following the specification: {instruction}. Ensure
+            the function is clear, modular, and follows best practices in coding, such as
+            the Google Python style guide. Consider efficiency, accuracy, and maintainability
+            in your solution.\n\nReturn:\n```python\nyour_code_here\n```
         initial_team_role: config/autogen_builder_init.json
         evolve_mode: both
 
@@ -31,7 +32,6 @@ llm_evaluator_config:
     n_workers: 2
     use_timestamp: False
     max_problems: 1
-    max_failures: 8
 
     llm_config:
         model: gpt-4o

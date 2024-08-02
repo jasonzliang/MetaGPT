@@ -74,9 +74,8 @@ class LLMEvaluator(object):
         # self.pool = ParallelPool(self.n_workers)
 
     def evaluate(self, population, gen=0):
+        if gen % self.restart_interval == 0: self.reset()
         self.gen = gen
-        if self.gen % self.restart_interval == 0:
-            self.reset()
 
         evolve_mode = [indv.evolve_mode for indv in population]
         assert len(set(evolve_mode)) == 1; evolve_mode = evolve_mode[0]
@@ -189,7 +188,7 @@ class LLMEvaluator(object):
 
     def _eval_indv_team_role(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
-        if indv.evolve_mode != "both": main_role = DEFAULT_MAIN_ROLE
+        # if indv.evolve_mode != "both": main_role = DEFAULT_MAIN_ROLE
         assert team_role is not None
 
         builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
@@ -221,8 +220,8 @@ class LLMEvaluator(object):
             builder.clear_all_agents(recycle_endpoint=False)
 
             return output
-        result_dir = self._setup_result_dir(indv)
 
+        result_dir = self._setup_result_dir(indv)
         self._run_evalplus(result_dir, eval_func)
         self._sanitize(result_dir)
         result_dict = self._get_evalplus_results(result_dir)

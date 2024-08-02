@@ -97,7 +97,6 @@ class RoleEvolutionServer(object):
             ga_gen = self.ga.get_gen()
             self.logger.info("*** START OF GENERATION %s ***" % ga_gen)
             population = self.ga.ask()
-
             result_dicts = self.evaluator.evaluate(population, gen=ga_gen)
             result_dicts = sanitize_result_dict(result_dicts)
             assert len(result_dicts) == len(population)

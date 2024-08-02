@@ -31,7 +31,7 @@ from util import format_prompt
 
 DEFAULT_MAIN_ROLE = \
 """Write a python function that can {instruction}.
-Test the function and ensure that it performs correctly and efficiently.
+Ensure the function performs correctly and efficiently.
 Return ```python your_code_here ``` with NO other texts,
 your code:
 """
