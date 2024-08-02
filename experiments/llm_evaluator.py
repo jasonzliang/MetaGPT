@@ -171,8 +171,8 @@ class LLMEvaluator(object):
         os.system("rm -rf %s-sanitized" % result_dir)
 
     def _get_evalplus_results(self, result_dir):
-        flag = "-v" if platform.system() == 'Linux' else '-l' # Flag for MacOS
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
+        flag = "-v" if platform.system() == 'Linux' else '-l' # Flag for MacOS
         os.system("/usr/bin/time %s evalplus.evaluate " \
             "--dataset %s --samples %s 2>&1 | tee %s" \
             % (flag, self.dataset, result_dir, evalplus_fp))
@@ -254,7 +254,8 @@ class LLMEvaluator(object):
 
 #### Unit tests ####
 def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
-    max_problems=999, max_round=15, num_gen=2):
+    max_problems=999, max_round=20, num_gen=2, n_indv=5, llm_model='gpt-4o-mini'):
+
     from role_ga import Individual
     indv = Individual({}, gen_created=0)
     assert indv.team_role is None
@@ -272,7 +273,7 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
         with open(team_role_fp, "r") as f:
             indv.team_role = json.load(f)
 
-    llm_model = 'N/A' if test_err else 'gpt-4o-mini'
+    if test_err: llm_model = 'N/A'
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config['agent_model'] = llm_model
     builder_llm_config['builder_model'] = llm_model
@@ -284,21 +285,20 @@ def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
     print(indv.main_role); print(indv.team_role)
     pprint.pprint(indv.llm_config)
 
-    eval_config = {'n_workers': 2,
+    eval_config = {'n_workers': n_indv,
         'debug_mode': False,
         'max_problems': max_problems,
         'max_round': max_round,
-        'debug_no_timestamp': True}
+        'use_timestamp': False}
 
     evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
     for i in range(num_gen):
-        a = indv.create_child(0); b = indv.create_child(0)
+        # a = indv.create_child(0); b = indv.create_child(0)
         # a.id = "G-0_ID-DNrcOL1irjdO"; b.id = "G-0_ID-i6usMJsHu9xr"
-        result_dicts = evaluator.evaluate([a, b])
-        # evaluator.reset()
 
-        print("Evaluation results:")
-        print(result_dicts)
+        population = [indv.create_child(i) for j in range(n_indv)]
+        result_dicts = evaluator.evaluate(population); evaluator.reset()
+        print("Evaluation results:"); pprint.pprint(result_dicts)
 
 
 def _test_evalplus_extractor(
@@ -322,5 +322,4 @@ def _test_parallel_eval(n=10):
 
 
 if __name__ == "__main__":
-    _test_evaluator(team_role_fp='config/autogen_builder_init.json',
-        test_err=False)
+    _test_evaluator(team_role_fp='config/autogen_builder_init.json')

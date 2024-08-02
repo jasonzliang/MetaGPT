@@ -24,8 +24,14 @@ from wrapt_timeout_decorator import *
 
 from alg_util import ID_LENGTH
 from alg_util import randomword
-from util import get_time, killtree, extract_code_from_chat
+from util import get_time, killtree, extract_code_from_chat, format_prompt
 
+DEFAULT_MAIN_ROLE = \
+"""Write a python function that can {instruction}.
+Test the function and ensure that it performs correctly and efficiently.
+Return ```python your_code_here ``` with NO other texts,
+your code:
+"""
 CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
 CHAT_LLM_CONFIG = {"temperature": 0.0,
     "model": "gpt-4o-mini",
@@ -260,22 +266,11 @@ Combine and merge these teams to create a new and improved team for generating m
             work_dir=work_dir)
 
 
-def _generate_code_prompt(example: dict) -> str:
-    prompt_template = \
-"""Write a python function that can %s.
-Test the function and ensure that it performs correctly and efficiently.
-Return ```python your_code_here ``` with NO other texts,
-your code:
-"""
-    return prompt_template % example['instruction']
-
-
 def eval_humaneval(
     result_dir="results/humaneval_results_%s" % get_time(space=False),
-    # result_dir="results/humaneval_results_2024-06-29_21-35-10",
-    builder_cfg="autogen_builder_cfg.json",
-    work_dir="groupchat",
-    clear_cache=False,
+    builder_cfg="config/autogen_builder_init.json",
+    work_dir="/tmp/eval_%s" % randomword(12),
+    clear_cache=True,
 ):
     print(locals()); time.sleep(3)
     if work_dir is None: work_dir = result_dir
@@ -300,10 +295,8 @@ def eval_humaneval(
         if os.path.exists(result_file) and os.path.getsize(result_file) > 0:
             continue
 
-        sample = {"instruction": problem['prompt'],
-            "input": problem['base_input']}
-            # "result_file": "0.py"}
-        prompt = _generate_code_prompt(sample)
+        prompt = format_prompt(prompt=DEFAULT_MAIN_ROLE,
+            instruction=problem['prompt'])
         print("\n\n#### Task ID: %s, Prompt:\n%s" % (task_id, prompt))
 
         code = ""; n_tries = 3
