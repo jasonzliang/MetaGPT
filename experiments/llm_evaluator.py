@@ -157,8 +157,7 @@ class LLMEvaluator(object):
             else:
                 output = ""
 
-            with open(result_file, 'w') as f:
-                f.write(output)
+            with open(result_file, 'w') as f: f.write(output)
 
         if n_failures >= self.max_failures: os.system("touch %s" % fail_flag)
 
