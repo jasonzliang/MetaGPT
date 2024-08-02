@@ -34,7 +34,7 @@ llm_evaluator_config:
     max_round: 15
     max_problems: 999
     restart_interval: 1
-    max_failures: 8
+    max_failures: 5
 
     llm_config:
         model: gpt-4o-mini
