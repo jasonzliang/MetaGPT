@@ -125,7 +125,8 @@ class LLMEvaluator(object):
         else: # self.dataset == 'mbpp'
             problems = get_mbpp_plus()
 
-        n_failures = 0
+        fail_flag = os.path.join(result_dir, "max_failures")
+        n_failures = 0 if not os.path.exists(fail_flag) else self.max_failures
         for i, (task_id, problem) in enumerate(problems.items()):
             task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
             os.makedirs(task_id_dir, exist_ok=True)
@@ -139,8 +140,7 @@ class LLMEvaluator(object):
                 n_tries = 2; err_str = ""
                 while n_tries > 0:
                     try:
-                        output = eval_func(problem)
-                        break
+                        output = eval_func(problem); break
                     except:
                         stack_trace = traceback.format_exc()
                         mlogger.info(stack_trace); err_str += stack_trace + "\n"
@@ -160,8 +160,7 @@ class LLMEvaluator(object):
             with open(result_file, 'w') as f:
                 f.write(output)
 
-        if n_failures >= self.max_failures:
-            os.system("touch %s" % os.path.join(result_dir, "max_failures"))
+        if n_failures >= self.max_failures: os.system("touch %s" % fail_flag)
 
     def _sanitize(self, result_dir):
         if not self.sanitize: return
