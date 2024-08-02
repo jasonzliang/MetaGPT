@@ -169,8 +169,8 @@ class LLMEvaluator(object):
         os.system("rm -rf %s-sanitized" % result_dir)
 
     def _get_evalplus_results(self, result_dir):
-        evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         flag = "-v" if platform.system() == 'Linux' else '-l' # Flag for MacOS
+        evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         os.system("/usr/bin/time %s evalplus.evaluate " \
             "--dataset %s --samples %s 2>&1 | tee %s" \
             % (flag, self.dataset, result_dir, evalplus_fp))
