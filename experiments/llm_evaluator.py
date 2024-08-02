@@ -60,7 +60,7 @@ class LLMEvaluator(object):
         self.max_problems = self.config.get("max_problems", sys.maxsize)
         assert self.max_problems > 0
         self.use_timestamp = self.config.get("use_timestamp", False)
-        self.max_failures = self.config.get("max_failures", 12)
+        self.max_failures = self.config.get("max_failures", 10)
         assert self.max_failures > 0
 
         self.debug_mode = self.config.get("debug_mode", False)

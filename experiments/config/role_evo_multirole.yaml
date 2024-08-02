@@ -30,8 +30,9 @@ llm_evaluator_config:
     debug_mode: False
     use_timestamp: False
     n_workers: 20
-    max_round: 20
+    max_round: 15
     max_problems: 999
+    restart_interval: 1
 
     llm_config:
         model: gpt-4o-mini
