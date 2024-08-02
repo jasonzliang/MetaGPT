@@ -75,7 +75,7 @@ class LLMEvaluator(object):
 
     def evaluate(self, population, gen=0):
         self.gen = gen
-        if (self.gen + 1) % self.restart_interval == 0:
+        if self.gen % self.restart_interval == 0:
             self.reset()
 
         evolve_mode = [indv.evolve_mode for indv in population]
@@ -305,20 +305,6 @@ def _test_evalplus_extractor(
     result_dir="results/humaneval_results_1712181961/evalplus.txt"):
     result_dict = extract_evalplus(result_dir)
     print(result_dict)
-
-
-def _test_parallel_eval(n=10):
-    from role_ga import Individual
-    population = [Individual({}, gen_created=0) for i in range(n)]
-    for indv in population:
-        indv.main_role = DEFAULT_MAIN_ROLE
-    print(indv.main_role)
-
-    eval_config = {'n_workers': n, 'debug_mode': False}
-    evaluator = LLMEvaluator(eval_config, evaluator_dir='results/')
-    result_dicts = evaluator.evaluate(population)
-    print("Evaluation results:")
-    print(result_dicts)
 
 
 if __name__ == "__main__":
