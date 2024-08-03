@@ -16,7 +16,7 @@ from ruamel.yaml import YAML
 from logger import setup_experiment_logging, log_results
 from llm_evaluator import LLMEvaluator
 from role_ga import RoleEvolutionGA
-from util import get_time, sanitize_result_dict, clear_autogen_caches
+from util import get_time, sanitize_result_dict, clear_autogen_cache
 
 LINE_WIDTH = 80
 MAX_PATH_LENGTH = 256
@@ -105,7 +105,7 @@ class RoleEvolutionServer(object):
             self.logger.debug("Evaluated results: %s" % result_dicts)
 
             self.ga.end_gen()
-            clear_autogen_caches()
+            clear_autogen_cache()
             self.logger.info("***END OF GENERATION***\n\n")
 
         self.logger.info("*" * LINE_WIDTH)
@@ -114,7 +114,7 @@ class RoleEvolutionServer(object):
 
         if self.ga.stop():
             os.system("touch %s" % experiment_done)
-            clear_autogen_caches()
+            clear_autogen_cache()
 
 if __name__ == "__main__":
     if len(sys.argv) not in [2, 3]:

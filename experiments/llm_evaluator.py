@@ -35,7 +35,7 @@ from autogen_builder import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
 from llm_operators import create_new_team
 from llm_operators import DEFAULT_MAIN_ROLE
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
-from util import format_prompt
+from util import format_prompt, clear_autogen_cache
 from util import OBJECTIVES
 
 
@@ -255,6 +255,7 @@ class LLMEvaluator(object):
 def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
     max_problems=999, max_round=20, num_gen=2, n_indv=5, llm_model='gpt-4o-mini'):
 
+    clear_autogen_cache()
     from role_ga import Individual
     indv = Individual({}, gen_created=0)
     assert indv.team_role is None

@@ -27,7 +27,7 @@ from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from autogen_builder import autogen_mutate, autogen_crossover
 from autogen_builder import BUILDER_LLM_CONFIG
 from util import extract_evalplus, parse_code, parse_prompt_template
-from util import format_prompt
+from util import format_prompt, clear_autogen_cache
 
 DEFAULT_MAIN_ROLE = \
 """Write a python function that can {instruction}.
@@ -385,7 +385,7 @@ def _test_autogen_mutation_crossover(
     other_team_role='config/autogen_builder_cfg.json',
     test_err=False):
 
-    os.system("rm -rf /tmp/* >/dev/null 2>&1")
+    clear_autogen_cache()
     llm_model = 'N/A' if test_err else 'gpt-4o'
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config['builder_model'] = llm_model
