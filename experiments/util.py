@@ -1,4 +1,5 @@
 import asyncio
+import calendar
 import copy
 import datetime
 import functools
@@ -6,6 +7,7 @@ import os
 import math
 import pickle
 import psutil
+import pytz
 import re
 import sys
 import time
@@ -145,7 +147,7 @@ def unzip(x):
     return [list(x) for x in zip(*x)]
 
 
-def get_time(space=True, date=True):
+def get_time(date=True, space=True):
     '''Creates a nicely formated timestamp'''
     if date:
         date_str = "%Y-%m-%d %H:%M:%S"
@@ -156,6 +158,20 @@ def get_time(space=True, date=True):
         date_str = date_str.replace(":", "-").replace(" ", "_")
 
     return datetime.datetime.now(timezone('US/Pacific')).strftime(date_str)
+
+
+def datetime_to_epoch(datetime_str, space=True):
+    if space:
+        date, time = datetime_str.split()
+        h, _m, s = time.split(":")
+    else:
+        date, time = datetime_str.split("_")
+        h, _m, s = time.split("-")
+    y, m, d = date.split("-")
+    t = datetime.datetime(int(y), int(m), int(d), int(h), int(_m), int(s))
+    # tz = pytz.timezone('America/Los_Angeles')
+    # t = t.astimezone(tz)
+    return calendar.timegm(t.timetuple())
 
 
 def sanitize_result_dict(result_dict):

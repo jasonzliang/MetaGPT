@@ -196,13 +196,12 @@ class FitnessLog(object):
         self.fitness_log = os.path.join(self.checkpoint_dir,
             "%s.txt" % self.name)
         with open(self.fitness_log, "a+") as f:
-            f.write("# %s %s NEW RUN\n" % (int(time.time()),
-                get_time(date=False)))
+            f.write("# %s NEW RUN\n" % get_time(date=True, space=True))
 
     def update(self, gen, max_fitness, mean_fitness):
         with open(self.fitness_log, "a+") as f:
-            f.write("%s %s %s %s %s\n" % \
-                (int(time.time()), get_time(date=False), gen, max_fitness,
+            f.write("%s %s %s %s\n" % \
+                (get_time(date=True, space=True), gen, max_fitness,
                     mean_fitness))
             f.flush()
             os.fsync(f.fileno())
