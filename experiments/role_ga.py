@@ -245,10 +245,11 @@ class RoleEvolutionGA(object):
             self.fitness_logs = \
                 {'fitness': FitnessLog('fitness', self.checkpoint_dir),
                 'true_fitness': FitnessLog('true_fitness', self.checkpoint_dir)}
-            self._deserialize(file_path=self._find_latest_checkpoint())
-            _loaded_checkpoint = True
+            chkpt_file = self._find_latest_checkpoint()
+            loaded_chkpt = self._deserialize(file_path=chkpt_file)
+            assert (chkpt_file is None) == (loaded_chkpt is False)
 
-        if self.init_mutate and not _loaded_checkpoint:
+        if self.init_mutate and not loaded_chkpt:
             self.individuals[1:] = \
                 self.pool.map(self._init_mutate, self.individuals[1:])
             # [indv.mutate(mutate_rate=1.0) for indv in self.individuals[1:]]
@@ -298,8 +299,7 @@ class RoleEvolutionGA(object):
             YAML().dump(sanitize_result_dict(pop_dict), f)
 
     def _deserialize(self, file_path=None):
-        if file_path is None:
-            return
+        if file_path is None or not os.path.exists(file_path): return False
 
         self.logger.info("Loading population from %s" % file_path)
         with open(file_path, "r") as f:
@@ -310,9 +310,10 @@ class RoleEvolutionGA(object):
         chkpt_indv = pop_dict.get('individuals', [])
         for i, individual in enumerate(self.individuals):
             if i >= len(chkpt_indv):
-                return
+                return len(chkpt_indv) > 0
             else:
                 individual.deserialize(chkpt_indv[i])
+        return True
 
     def _log_population(self):
         def _log_helper(fitnesses, name):
