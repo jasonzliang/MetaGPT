@@ -34,7 +34,7 @@ your code:
 """
 CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
 CHAT_LLM_CONFIG = {"temperature": 0.0,
-    "model": "gpt-4o",
+    "model": "gpt-4o-mini",
     "cache_seed": None}
 BUILDER_LLM_CONFIG = {"temperature": 0.0,
     "builder_model": "gpt-4o",
