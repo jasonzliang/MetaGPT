@@ -10,7 +10,7 @@ role_ga_config:
             the Google Python style guide. Consider efficiency, accuracy, and maintainability
             in your solution.\n\nReturn:\n```python\nyour_code_here\n```
         initial_team_role: config/autogen_builder_init.json
-        evolve_mode: both
+        evolve_mode: team
 
         llm_config:
             model: gpt-4o
