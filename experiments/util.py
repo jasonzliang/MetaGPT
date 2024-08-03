@@ -29,6 +29,11 @@ OBJECTIVES = {'base_score': lambda x: x,
     'memory_usage_mb': lambda x: -x}
 
 
+def clear_autogen_caches():
+    os.system("rm -rf /tmp/* >/dev/null 2>&1")
+    os.system("rm -rf .cache >/dev/null 2>&1")
+
+
 def format_prompt(prompt, instruction):
     try:
         prompt = prompt.format(instruction=instruction)

@@ -385,10 +385,13 @@ def _test_autogen_mutation_crossover(
     other_team_role='config/autogen_builder_cfg.json',
     test_err=False):
 
-    llm_model = 'N/A' if test_err else 'gpt-4o-mini'
+    os.system("rm -rf /tmp/* >/dev/null 2>&1")
+    llm_model = 'N/A' if test_err else 'gpt-4o'
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config['builder_model'] = llm_model
     builder_llm_config['agent_model'] = llm_model
+    print("BUILDER LLM CONFIG:")
+    pprint.pprint(builder_llm_config)
 
     with open(team_role, 'r') as f: team_role = json.load(f)
     with open(other_team_role, 'r') as f: other_team_role = json.load(f)

@@ -164,8 +164,8 @@ class LLMEvaluator(object):
 
     def _sanitize(self, result_dir):
         if not self.sanitize: return
-        os.system("evalplus.sanitize --samples %s >/dev/null" % result_dir)
-        os.system("rsync -avz %s-sanitized/ %s >/dev/null" % \
+        os.system("evalplus.sanitize --samples %s >/dev/null 2>&1" % result_dir)
+        os.system("rsync -avz %s-sanitized/ %s >/dev/null 2>&1" % \
             (result_dir, result_dir))
         os.system("rm -rf %s-sanitized" % result_dir)
 
