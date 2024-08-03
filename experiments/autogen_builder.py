@@ -37,7 +37,7 @@ CHAT_LLM_CONFIG = {"temperature": 0.0,
     "model": "gpt-4o-mini",
     "cache_seed": None}
 BUILDER_LLM_CONFIG = {"temperature": 0.0,
-    "builder_model": "gpt-4o",
+    "builder_model": "gpt-4o-mini",
     "agent_model": "gpt-4o-mini",
     "cache_seed": None}
 MIN_CHAT_HIST_LEN = 32000
