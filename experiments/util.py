@@ -40,7 +40,7 @@ def delete_contents_in_directory(directory_path):
                     shutil.rmtree(entry.path)
     except:
         print("Error occurred while deleting files/directories in %s" \
-            directory_path)
+            % directory_path)
         traceback.print_exc()
 
 
