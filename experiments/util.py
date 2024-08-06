@@ -30,18 +30,15 @@ OBJECTIVES = {'base_score': lambda x: x,
     'memory_usage_mb': lambda x: -x}
 
 
-def delete_contents_in_directory(directory_path):
-    try:
-        with os.scandir(directory_path) as entries:
-            for entry in entries:
-                if entry.is_file():
-                    os.unlink(entry.path)
-                else:
-                    shutil.rmtree(entry.path)
-    except:
-        print("Error occurred while deleting files/directories in %s" \
-            % directory_path)
-        traceback.print_exc()
+def delete_contents_in_directory(directory_path, verbose=False):
+    with os.scandir(directory_path) as entries:
+        for entry in entries:
+            if verbose: print("Deleting %s" % entry.path)
+            try:
+                if entry.is_file(): os.unlink(entry.path)
+                else: shutil.rmtree(entry.path)
+            except:
+                if verbose: print("Deletion error\n%s" % traceback.format_exc())
 
 
 def clear_autogen_cache():
