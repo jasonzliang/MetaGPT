@@ -9,6 +9,7 @@ import pickle
 import psutil
 import pytz
 import re
+import shutil
 import sys
 import time
 import traceback
@@ -29,9 +30,24 @@ OBJECTIVES = {'base_score': lambda x: x,
     'memory_usage_mb': lambda x: -x}
 
 
+def delete_contents_in_directory(directory_path):
+    try:
+        with os.scandir(directory_path) as entries:
+            for entry in entries:
+                if entry.is_file():
+                    os.unlink(entry.path)
+                else:
+                    shutil.rmtree(entry.path)
+    except:
+        print("Error occurred while deleting files/directories in %s" \
+            directory_path)
+        traceback.print_exc()
+
+
 def clear_autogen_cache():
-    os.system("rm -rf /tmp/* >/dev/null 2>&1")
     os.system("rm -rf .cache >/dev/null 2>&1")
+    delete_contents_in_directory("/tmp/")
+    # os.system("rm -rf /tmp/* >/dev/null 2>&1")
 
 
 def format_prompt(prompt, instruction):
