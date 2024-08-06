@@ -211,11 +211,11 @@ def autogen_mutate(
 
     builder_str = _parse_builder_cfgs([builder_cfg], eval_mode=eval_mode)[0]
     mutate_prompt = \
-"""Here is a JSON string that describes an existing team that contains agents with different roles for generating code.
+"""Here is a JSON string that describes an existing team that contains experts with different roles for generating code.
 
 %s
 
-Build a new and improved version of the team that generates more efficient, accurate, and correct code. Make sure the new team contain interesting, original, and creative roles not seen in the existing team. The size of the new team can be larger or smaller than the existing team.
+Build a new and improved version of the team that generates more efficient, accurate, and correct code. Make sure the new team contain interesting, original, and creative experts not seen in the existing team. The size of the new team can be larger or smaller than the existing team. Make sure the description of the experts are clear, relevant, and concise.
 """
 
     building_task = mutate_prompt % builder_str
@@ -243,11 +243,11 @@ def autogen_crossover(
 
     builder_strs = _parse_builder_cfgs(builder_cfgs, eval_mode=eval_mode)
     crossover_prompt = \
-"""Here are multiple JSON strings where each JSON describes an existing team containing agents with different roles for generating code.
+"""Here are multiple JSON strings where each JSON describes an existing team containing experts with different roles for generating code.
 
 %s
 
-Combine and merge these teams to create a new and improved team for generating more efficient, accurate, and correct code. Make sure the new team contain interesting, original, and creative combination of roles. The size of the new team can be larger or smaller than the existing teams.
+Combine and merge these experts to create a new and improved team for generating more efficient, accurate, and correct code. Make sure the new team contain interesting, original, and creative combination of experts. The size of the new team can be larger or smaller than the existing teams. Make sure the description of the experts are clear, relevant, and concise.
 """
 
     building_task = crossover_prompt % "\n\n".join(builder_strs)
