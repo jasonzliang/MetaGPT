@@ -309,12 +309,12 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
     team_prompt='config/autogen_builder_init.json',
     indv=None,
     use_prompt=True,
-    n_trials=50,
+    n_trials=10,
     n_workers=10,
     dataset='humaneval',
     eval_config={},
-    result_dir=None,
-    baseline_result_dir='results/evalplus_multirun_N-50_T-1716219661/'):
+    result_dir='.',
+    baseline_result_dir=None):
 
     results_file = os.path.join(result_dir, 'evalplus_results.yaml')
     if os.path.exists(results_file):
@@ -338,10 +338,13 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
             for indv in population:
                 indv.main_role = main_prompt; indv.team_role = team_prompt
         else:
-            population = [indv.create_child(gen=0) for i in range(n_trials)]
+            population = [indv.create_child(indv.gen_created) \
+                for i in range(n_trials)]
 
         with open(os.path.join(result_dir, 'indv.yaml'), 'w') as f:
             YAML().dump(population[0].serialize(), f)
+        with open(os.path.join(result_dir, 'indv_config.yaml'), 'w') as f:
+            YAML().dump(population[0].config, f)
 
         eval_config['n_workers'] = n_workers
         eval_config['dataset'] = dataset
@@ -385,11 +388,19 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
 def multirun_evalplus_exp(experiment_dir,
     top_n=1,
     min_evals=1,
-    agg_func=np.mean, # np.mean, np.median, np.max, lambda x: x[-1]
-    gen_range=(0, 1),
-    eval_indv=False,
+    agg_func=np.max, # np.mean, np.median, np.max, lambda x: x[-1]
+    gen_range=(0, 999),
+    eval_indv=True,
     *args,
     **kwargs):
+
+    try:
+        with open(os.path.join(experiment_dir, "config.yaml"), "r") as f:
+            exp_cfg = YAML().load(f)
+        indv_config = exp_cfg['role_ga_config']['indv_config']
+        print("Indv config:"); pprint.pprint(indv_config)
+    except:
+        print("Cannot load indv config!"); time.sleep(3); indv_config = {}
 
     _fit_list_dict = defaultdict(list); _indv_dict = {}
     checkpoints = get_checkpoints(experiment_dir, min_gen=gen_range[0],
@@ -397,7 +408,7 @@ def multirun_evalplus_exp(experiment_dir,
     for checkpoint in checkpoints:
         pop_dict = load_checkpoint(checkpoint)
         for indv_dict in pop_dict:
-            indv = Individual({}); indv.deserialize(indv_dict)
+            indv = Individual(config=indv_config); indv.deserialize(indv_dict)
             _fit_list_dict[indv.id].append(indv.get_fitness(raw_fitness=True))
             _indv_dict[indv.id] = indv
 

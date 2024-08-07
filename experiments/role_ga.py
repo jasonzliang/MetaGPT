@@ -200,10 +200,9 @@ class FitnessLog(object):
 
     def update(self, gen, max_fit, mean_fit, std_fit):
         with open(self.fitness_log, "a+") as f:
-            f.write("%s %s %s %s %s\n" % (get_time(date=True, space=True),
+            f.write("%s %d %.4f %.4f %.4f\n" % (get_time(date=True, space=True),
                 gen, max_fit, mean_fit, std_fit))
-            f.flush()
-            os.fsync(f.fileno())
+            f.flush(); os.fsync(f.fileno())
 
 
 class RoleEvolutionGA(object):

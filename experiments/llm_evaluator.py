@@ -205,9 +205,7 @@ class LLMEvaluator(object):
                 builder_llm_config=builder_llm_config,
                 use_builder_dict=True,
                 clear_cache=True)
-        for agent in agent_list:
-            pprint.pprint(agent.__dict__)
-        exit()
+        # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
         def eval_func(problem):
