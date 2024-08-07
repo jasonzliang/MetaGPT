@@ -432,6 +432,6 @@ def multirun_evalplus_exp(experiment_dir,
 
 
 if __name__ == "__main__":
-    # multirun_evalplus_exp("results/8_6_multirole")
-    for result_dir in glob.glob("results/multirun_indv_*"):
-        multirun_evalplus(result_dir=result_dir)
+    multirun_evalplus_exp("results/8_6_multirole")
+    # for result_dir in glob.glob("results/multirun_indv_*"):
+    #     multirun_evalplus(result_dir=result_dir)
