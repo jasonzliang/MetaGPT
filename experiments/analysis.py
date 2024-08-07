@@ -314,13 +314,13 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
     dataset='humaneval',
     eval_config={},
     result_dir=None,
-    baseline_result_dir="results/multirole_baseline/evalplus_results.txt"):
+    baseline_result_dir="results/multirole_baseline"):
 
     if result_dir is None: result_dir = "."
     results_file = os.path.join(result_dir, "evalplus_results.yaml")
     if os.path.exists(results_file):
         with open(results_file, "r") as f:
-            evalplus_results = YAML().load(result_file)
+            evalplus_results = YAML().load(f)
     else:
         from llm_evaluator import LLMEvaluator; assert n_trials > 0
         if not use_prompt: assert indv is not None; _id = indv.id
@@ -358,7 +358,7 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
         base_results_file = os.path.join(baseline_result_dir,
             'evalplus_results.yaml'); assert os.path.exists(base_results_file)
         with open(base_results_file, "r") as f:
-            baseline_results = YAML().load(result_file)
+            baseline_results = YAML().load(f)
         assert len(baseline_results) > 0
 
     print("Computing statistics from evalplus results: %s" % result_dir)
@@ -432,6 +432,6 @@ def multirun_evalplus_exp(experiment_dir,
 
 
 if __name__ == "__main__":
-    multirun_evalplus_exp("results/8_6_multirole")
-    # for result_dir in glob.glob("results/evalplus_multirun*"):
-    #     multirun_evalplus(result_dir=result_dir)
+    # multirun_evalplus_exp("results/8_6_multirole")
+    for result_dir in glob.glob("results/eval_indv_*"):
+        multirun_evalplus(result_dir=result_dir)
