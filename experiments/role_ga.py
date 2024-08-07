@@ -198,11 +198,10 @@ class FitnessLog(object):
         with open(self.fitness_log, "a+") as f:
             f.write("# %s NEW RUN\n" % get_time(date=True, space=True))
 
-    def update(self, gen, max_fitness, mean_fitness):
+    def update(self, gen, max_fit, mean_fit, std_fit):
         with open(self.fitness_log, "a+") as f:
-            f.write("%s %s %s %s\n" % \
-                (get_time(date=True, space=True), gen, max_fitness,
-                    mean_fitness))
+            f.write("%s %s %s %s %s\n" % (get_time(date=True, space=True),
+                gen, max_fit, mean_fit, std_fit))
             f.flush()
             os.fsync(f.fileno())
 
@@ -319,16 +318,17 @@ class RoleEvolutionGA(object):
         def _log_helper(fitnesses, name):
             if len(fitnesses) == 0:
                 return
-            max_fitness = np.max(fitnesses)
-            mean_fitness = np.mean(fitnesses)
-            min_fitness = np.min(fitnesses)
-            self.logger.info("Max %s: %s" % (name, max_fitness))
-            self.logger.info("Mean %s: %s" % (name, mean_fitness))
-            self.logger.info("Min %s: %s" % (name, min_fitness))
+            max_fit = np.max(fitnesses)
+            mean_fit = np.mean(fitnesses)
+            std_fit = np.std(fitnesses)
+            min_fit = np.min(fitnesses)
+            self.logger.info("Max %s: %s" % (name, max_fit))
+            self.logger.info("Mean %s: %s (%s)" % (name, mean_fit, std_fit))
+            self.logger.info("Min %s: %s" % (name, min_fit))
 
             if self.checkpoint:
                 fitness_log = self.fitness_logs.get(name)
-                fitness_log.update(self.gen, max_fitness, mean_fitness)
+                fitness_log.update(self.gen, max_fit, mean_fit, std_fit)
 
         self.logger.info("***%s Generation %s Summary***" % \
             (self.__class__.__name__, self.gen))

@@ -383,18 +383,17 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
 
 
 def multirun_evalplus_exp(experiment_dir,
-    top_n=5,
+    top_n=1,
     min_evals=1,
     agg_func=np.mean, # np.mean, np.median, np.max, lambda x: x[-1]
-    min_gen=0,
-    max_gen=999,
+    gen_range=(0, 1),
     eval_indv=False,
     *args,
     **kwargs):
 
     _fit_list_dict = defaultdict(list); _indv_dict = {}
-    checkpoints = get_checkpoints(experiment_dir, min_gen=min_gen,
-        max_gen=max_gen)
+    checkpoints = get_checkpoints(experiment_dir, min_gen=gen_range[0],
+        max_gen=gen_range[1])
     for checkpoint in checkpoints:
         pop_dict = load_checkpoint(checkpoint)
         for indv_dict in pop_dict:
