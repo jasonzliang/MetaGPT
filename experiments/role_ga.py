@@ -195,8 +195,22 @@ class FitnessLog(object):
         self.checkpoint_dir = checkpoint_dir
         self.fitness_log = os.path.join(self.checkpoint_dir,
             "%s.txt" % self.name)
+        self._remove_extra_comments()
+
         with open(self.fitness_log, "a+") as f:
             f.write("# %s NEW RUN\n" % get_time(date=True, space=True))
+
+    def _remove_extra_comments(self):
+        new_lines = []
+        with open(self.fitness_log, "r") as f:
+            lines = f.readlines()
+        while len(lines) > 0:
+            if lines[-1].startswith("#"):
+                lines.pop()
+            else:
+                break
+        with open(self.fitness_log, "w") as f:
+            f.writelines(new_lines)
 
     def update(self, gen, max_fit, mean_fit, std_fit):
         with open(self.fitness_log, "a+") as f:
