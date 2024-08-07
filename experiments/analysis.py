@@ -332,7 +332,7 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
         if use_prompt:
             assert os.path.exists(main_prompt) and os.path.exists(team_prompt)
             with open(main_prompt, "r") as f: main_prompt = f.read()
-            with open(team_prompt, "r") asf f: team_prompt = json.load(f)
+            with open(team_prompt, "r") as f: team_prompt = json.load(f)
 
             population = [Individual({}) for i in range(n_trials)]
             for indv in population:
@@ -413,8 +413,9 @@ def multirun_evalplus_exp(experiment_dir,
     best_indv = sorted(_indv_dict.values(), reverse=True)[:top_n]
 
     for i, indv in enumerate(best_indv):
-        print("#### %s, rank %s ####" % (agg_func, i+1)); print(indv)
-        pprint.pprint(indv.serialize())
+        print("#### agg_func: %s, rank: %s, samples: %s ####" % \
+            (agg_func.__name__, i+1, len(_fit_list_dict[indv.id])))
+        print(indv); print("\n\n")
         if eval_indv:
             multirun_evalplus(indv=indv, use_prompt=False, *args, **kwargs)
 
