@@ -313,10 +313,11 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
     n_workers=10,
     dataset='humaneval',
     eval_config={},
-    result_dir='.',
-    baseline_result_dir=None):
+    result_dir=None,
+    baseline_result_dir="results/multirole_baseline/evalplus_results.txt"):
 
-    results_file = os.path.join(result_dir, 'evalplus_results.yaml')
+    if result_dir is None: result_dir = "."
+    results_file = os.path.join(result_dir, "evalplus_results.yaml")
     if os.path.exists(results_file):
         with open(results_file, "r") as f:
             evalplus_results = YAML().load(result_file)
@@ -387,10 +388,10 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
 
 def multirun_evalplus_exp(experiment_dir,
     top_n=1,
-    min_evals=1,
-    agg_func=np.max, # np.mean, np.median, np.max, lambda x: x[-1]
+    min_evals=3,
+    agg_func=np.median, # np.mean, np.median, np.max, lambda x: x[-1]
     gen_range=(0, 999),
-    eval_indv=True,
+    eval_indv=False,
     *args,
     **kwargs):
 
