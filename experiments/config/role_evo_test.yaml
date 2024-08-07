@@ -32,8 +32,3 @@ llm_evaluator_config:
     n_workers: 2
     use_timestamp: False
     max_problems: 1
-
-    llm_config:
-        model: gpt-4o
-        # temperature: 0.3
-        # top_p: 0.3

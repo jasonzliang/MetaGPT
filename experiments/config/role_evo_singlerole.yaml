@@ -8,6 +8,10 @@ role_ga_config:
             model: gpt-4-turbo
             temperature: 1.0
             top_p: 0.4
+            eval_llm_config:
+                model: gpt-3.5-turbo
+                temperature: 0.3
+                top_p: 0.3
         # initial_role: initial_role_james.txt
 
     num_gen: 50
@@ -24,9 +28,5 @@ role_ga_config:
 
 llm_evaluator_config:
     debug_mode: False
-    llm_config:
-        model: gpt-3.5-turbo
-        temperature: 0.3
-        top_p: 0.3
     n_workers: 20
     # objective: user_time_sec

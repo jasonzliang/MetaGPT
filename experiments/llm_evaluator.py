@@ -47,7 +47,7 @@ class LLMEvaluator(object):
 
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
-        self.llm_config = self.config.get("llm_config", {})
+        # self.llm_config = self.config.get("llm_config", {})
         self.dataset = self.config.get("dataset", "humaneval")
         assert self.dataset in ['humaneval', 'mbpp']
         self.objective = self.config.get("objective", "base_score")
@@ -205,6 +205,9 @@ class LLMEvaluator(object):
                 builder_llm_config=builder_llm_config,
                 use_builder_dict=True,
                 clear_cache=True)
+        for agent in agent_list:
+            pprint.pprint(agent.__dict__)
+        exit()
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
         def eval_func(problem):
@@ -234,7 +237,8 @@ class LLMEvaluator(object):
 
         @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
         def _eval_prompt(prompt_template, prompt):
-            team, coder = create_new_team(self.llm_config)
+            team, coder = create_new_team(
+                indv.llm_config.get('eval_llm_config', {}))
             coder.set_prompt_template(prompt_template)
             team.run_project(prompt)
             asyncio.run(team.run(n_round=1))
@@ -252,8 +256,14 @@ class LLMEvaluator(object):
 
 
 #### Unit tests ####
-def _test_evaluator(main_role_fp=None, team_role_fp=None, test_err=False,
-    max_problems=999, max_round=20, num_gen=2, n_indv=5, llm_model='gpt-4o-mini'):
+def _test_evaluator(main_role_fp=None,
+    team_role_fp=None,
+    test_err=False,
+    n_indv=1,
+    num_gen=2,
+    max_problems=999,
+    max_round=20,
+    llm_model='gpt-4o-mini'):
 
     clear_autogen_cache()
     from role_ga import Individual
