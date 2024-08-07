@@ -326,7 +326,7 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
         if not use_prompt: assert indv is not None; _id = indv.id
         else: _id = "NO_ID"
 
-        result_dir = "results/eval_indv_%s_N-%s_T-%s" % \
+        result_dir = "results/multirun_indv_%s_N-%s_T-%s" % \
             (_id, n_trials, int(time.time()))
         os.makedirs(result_dir, exist_ok=True)
 
@@ -433,5 +433,5 @@ def multirun_evalplus_exp(experiment_dir,
 
 if __name__ == "__main__":
     # multirun_evalplus_exp("results/8_6_multirole")
-    for result_dir in glob.glob("results/eval_indv_*"):
+    for result_dir in glob.glob("results/multirun_indv_*"):
         multirun_evalplus(result_dir=result_dir)
