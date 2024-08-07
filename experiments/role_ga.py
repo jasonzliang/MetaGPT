@@ -201,7 +201,6 @@ class FitnessLog(object):
             f.write("# %s NEW RUN\n" % get_time(date=True, space=True))
 
     def _remove_extra_comments(self):
-        new_lines = []
         with open(self.fitness_log, "r") as f:
             lines = f.readlines()
         while len(lines) > 0:
@@ -210,7 +209,7 @@ class FitnessLog(object):
             else:
                 break
         with open(self.fitness_log, "w") as f:
-            f.writelines(new_lines)
+            f.writelines(lines)
 
     def update(self, gen, max_fit, mean_fit, std_fit):
         with open(self.fitness_log, "a+") as f:
