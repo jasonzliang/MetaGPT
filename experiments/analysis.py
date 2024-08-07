@@ -24,6 +24,7 @@ from analysis_util import \
     get_fitness_file, load_checkpoint, get_checkpoints
 from analysis_util import COLORS, FIG_SIZE, PLOT_FMT, PROP_CYCLER
 from role_ga import Individual, DEFAULT_MAIN_ROLE
+from util import extract_evalplus
 
 # Directory to get results from
 EXPERIMENT_DIRS = []
@@ -314,13 +315,21 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
     dataset='humaneval',
     eval_config={},
     result_dir=None,
-    baseline_result_dir="results/multirole_baseline"):
+    baseline_result_dir="results/multirole_baseline",
+    seed=0):
 
+    random.seed(seed); np.random.seed(seed)
     if result_dir is None: result_dir = "."
+
     results_file = os.path.join(result_dir, "evalplus_results.yaml")
+    eval_results_list = glob.glob(os.path.join(result_dir, "*/evalplus.txt"))
     if os.path.exists(results_file):
         with open(results_file, "r") as f:
             evalplus_results = YAML().load(f)
+    elif len(eval_results_list) == n_trials:
+        evalplus_results = []
+        for evalplus_fp in eval_results_list:
+            evalplus_results.append(extract_evalplus(evalplus_fp))
     else:
         from llm_evaluator import LLMEvaluator; assert n_trials > 0
         if not use_prompt: assert indv is not None; _id = indv.id
@@ -432,6 +441,6 @@ def multirun_evalplus_exp(experiment_dir,
 
 
 if __name__ == "__main__":
-    multirun_evalplus_exp("results/8_6_multirole")
-    # for result_dir in glob.glob("results/multirun_indv_*"):
-        # multirun_evalplus(result_dir=result_dir)
+    # multirun_evalplus_exp("results/8_6_multirole")
+    for result_dir in glob.glob("results/multirun_indv_*"):
+        multirun_evalplus(result_dir=result_dir)
