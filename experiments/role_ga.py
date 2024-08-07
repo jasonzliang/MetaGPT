@@ -334,9 +334,10 @@ class RoleEvolutionGA(object):
             mean_fit = np.mean(fitnesses)
             std_fit = np.std(fitnesses)
             min_fit = np.min(fitnesses)
-            self.logger.info("Max %s: %s" % (name, max_fit))
-            self.logger.info("Mean %s: %s (%s)" % (name, mean_fit, std_fit))
-            self.logger.info("Min %s: %s" % (name, min_fit))
+            self.logger.info("Max %s: %.4f" % (name, max_fit))
+            self.logger.info("Mean %s: %.4f" % (name, mean_fit))
+            self.logger.info("Min %s: %.4f" % (name, min_fit))
+            self.logger.info("Std %s: %.4f" % (name, std_fit))
 
             if self.checkpoint:
                 fitness_log = self.fitness_logs.get(name)

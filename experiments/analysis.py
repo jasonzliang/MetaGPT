@@ -391,7 +391,7 @@ def multirun_evalplus_exp(experiment_dir,
     min_evals=3,
     agg_func=np.median, # np.mean, np.median, np.max, lambda x: x[-1]
     gen_range=(0, 999),
-    eval_indv=False,
+    eval_indv=True,
     *args,
     **kwargs):
 
@@ -434,4 +434,4 @@ def multirun_evalplus_exp(experiment_dir,
 if __name__ == "__main__":
     multirun_evalplus_exp("results/8_6_multirole")
     # for result_dir in glob.glob("results/multirun_indv_*"):
-    #     multirun_evalplus(result_dir=result_dir)
+        # multirun_evalplus(result_dir=result_dir)
