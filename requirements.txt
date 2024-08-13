@@ -46,13 +46,19 @@ playwright # Used at metagpt/tools/libs/web_scraping.py
 anytree
 ipywidgets
 Pillow
+
 imap_tools # Used by metagpt/tools/libs/email_login.py
 qianfan
 dashscope
-rank-bm25 # For tool recommendation
+rank-bm25 # for tool recommendation
+jieba # for tool recommendation
+volcengine-python-sdk[ark]
+# llama-index-vector-stores-elasticsearch # Used by `metagpt/memory/longterm_memory.py`
+# llama-index-vector-stores-chroma # Used by `metagpt/memory/longterm_memory.py`
 gymnasium
 boto3
 spark_ai_python
+agentops
 
 ### Packages added by Jason ###
 jsonpickle
