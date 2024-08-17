@@ -35,7 +35,8 @@ from autogen_builder import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
 from llm_operators import create_new_team
 from llm_operators import DEFAULT_MAIN_ROLE
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
-from util import format_prompt, clear_autogen_cache
+from util import format_prompt, clear_autogen_cache, collect_stats_from_chat
+from util import calc_weighted_evalplus_score
 from util import OBJECTIVES
 
 
@@ -52,6 +53,7 @@ class LLMEvaluator(object):
         assert self.dataset in ['humaneval', 'mbpp']
         self.objective = self.config.get("objective", "base_score")
         assert self.objective in OBJECTIVES
+        self.evalplus_weights = self.config.get("evalplus_weights", None)
         self.sanitize = self.config.get("sanitize", True)
         self.restart_interval = self.config.get("restart_interval", sys.maxsize)
         assert self.restart_interval > 0
@@ -126,7 +128,7 @@ class LLMEvaluator(object):
         else: # self.dataset == 'mbpp'
             problems = get_mbpp_plus()
 
-        fail_flag = os.path.join(result_dir, "max_failures")
+        result_dict = {}; fail_flag = os.path.join(result_dir, "max_failures")
         n_failures = 0 if not os.path.exists(fail_flag) else self.max_failures
         for i, (task_id, problem) in enumerate(problems.items()):
             task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
@@ -141,7 +143,7 @@ class LLMEvaluator(object):
                 n_tries = self.n_tries; err_str = ""
                 while n_tries > 0:
                     try:
-                        output = eval_func(problem); break
+                        output = eval_func(problem, result_dict); break
                     except:
                         stack_trace = traceback.format_exc()
                         mlogger.info(stack_trace); err_str += stack_trace + "\n"
@@ -161,6 +163,7 @@ class LLMEvaluator(object):
             with open(result_file, 'w') as f: f.write(output)
 
         if n_failures >= self.max_failures: os.system("touch %s" % fail_flag)
+        return result_dict
 
     def _sanitize(self, result_dir):
         if not self.sanitize: return
@@ -175,17 +178,21 @@ class LLMEvaluator(object):
         os.system("/usr/bin/time %s evalplus.evaluate " \
             "--dataset %s --samples %s 2>&1 | tee %s" \
             % (flag, self.dataset, result_dir, evalplus_fp))
-        evalplus_result = extract_evalplus(evalplus_fp, self.logger)
 
+        evalplus_result = extract_evalplus(evalplus_fp, self.logger)
+        if self.objective.startswith('weighted_'):
+            b, p = calc_weighted_evalplus_score(result_dir,
+                self.evalplus_weights)
+            evalplus_result['weighted_base_score'] = b
+            evalplus_result['weighted_plus_score'] = p
         assert self.objective in evalplus_result
         assert "base_score" in evalplus_result
-        scaling_fn = OBJECTIVES[self.objective]
 
-        result_dict = {}
+        result_dict = {}; scaling_fn = OBJECTIVES[self.objective]
         result_dict['fitness'] = scaling_fn(evalplus_result[self.objective])
-        result_dict['true_fitness'] = evalplus_result["base_score"]
+        result_dict['true_fitness'] = evalplus_result['base_score']
         result_dict['result_dir'] = result_dir
-        result_dict['evalplus_result'] = evalplus_result
+        # result_dict['evalplus_result'] = evalplus_result
         return result_dict
 
     def _eval_indv_team_role(self, indv):
@@ -208,26 +215,30 @@ class LLMEvaluator(object):
         # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
-        def eval_func(problem):
+        def eval_func(problem, result_dict):
             prompt = format_prompt(prompt=main_role,
                 instruction=problem['prompt'])
-            chat_result = start_task(
+
+            start_time = time.time()
+            chat_result, groupchat_messages = start_task(
                 execution_task=prompt,
                 agent_list=agent_list,
                 coding=agent_configs["coding"],
                 chat_llm_config=chat_llm_config,
                 max_round=self.max_round)
+            time_elapsed = time.time() - start_time
 
-            output = extract_code_from_chat(chat_result)
-            assert len(output) > 0
+            output = extract_code_from_chat(chat_result); assert len(output) > 0
+            result_dict['eval_stats'] = \
+                collect_stats_from_chat(groupchat_messages=groupchat_messages,
+                    time_elapsed=time_elapsed)
             builder.clear_all_agents(recycle_endpoint=False)
-
             return output
 
         result_dir = self._setup_result_dir(indv)
-        self._run_evalplus(result_dir, eval_func)
+        result_dict = self._run_evalplus(result_dir, eval_func)
         self._sanitize(result_dir)
-        result_dict = self._get_evalplus_results(result_dir)
+        result_dict.update(self._get_evalplus_results(result_dir))
         return result_dict
 
     def _eval_indv_main_role(self, indv):
@@ -244,7 +255,7 @@ class LLMEvaluator(object):
             assert len(output) > 0
             return output
 
-        def eval_func(problem):
+        def eval_func(problem, result_dict):
             return _eval_prompt(main_role, problem['prompt'])
 
         result_dir = self._setup_result_dir(indv)
@@ -258,8 +269,8 @@ def _test_evaluator(main_role_fp=None,
     team_role_fp=None,
     test_err=False,
     n_indv=1,
-    num_gen=2,
-    max_problems=999,
+    num_gen=1,
+    max_problems=1,
     max_round=20,
     llm_model='gpt-4o-mini'):
 

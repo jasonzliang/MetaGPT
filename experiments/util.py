@@ -1,11 +1,13 @@
 import asyncio
 import calendar
 import copy
+from collections import defaultdict
 import datetime
 import functools
 import os
 import math
 import pickle
+import pprint
 import psutil
 import pytz
 import re
@@ -27,7 +29,9 @@ OBJECTIVES = {'base_score': lambda x: x,
     'user_time_sec': lambda x: -x,
     'sys_time_sec': lambda x: -x,
     'num_instructions': lambda x: -x,
-    'memory_usage_mb': lambda x: -x}
+    'memory_usage_mb': lambda x: -x,
+    'weighted_base_score': lambda x: x,
+    'weighted_plus_score': lambda x: x}
 
 
 def delete_contents_in_directory(directory_path, verbose=False):
@@ -59,6 +63,58 @@ def format_prompt(prompt, instruction):
     return prompt
 
 
+def calc_weighted_evalplus_score(result_dir, evalplus_weights):
+    if isinstance(evalplus_weights, str):
+        assert os.path.exists(evalplus_weights)
+        with open(evalplus_weights, 'r') as f: json.load(f)
+    else: assert isinstance(evalplus_weights, dict)
+
+    eval_json = os.path.join(result_dir, 'eval_results.json')
+    assert os.path.exists(eval_json)
+    with open(eval_json, 'r') as f: eval_dict = json.load(f)
+
+    weighted_base_score = 0.0; weighted_plus_score = 0.0
+    for task_id, result in eval_dict['eval'].items():
+        base_weight = evalplus_weights[task_id]['base_weight']
+        plus_weight = evalplus_weights[task_id]['plus_weight']
+        if result[0]['base_status'] == "pass":
+            weighted_base_score += base_weight
+        if result[0]['plus_status'] == "pass":
+            weighted_plus_score += plus_weight
+
+    return weighted_base_score, weighted_plus_score
+
+
+def collect_stats_from_chat(*args, **kwargs):
+    # pprint.pprint(groupchat_messages, width=120); time.sleep(999999)
+    result_dict = {}
+    if 'state_chat_count' not in result_dict:
+        result_dict['agent_chat_count'] = {}
+    if 'agent_code_count' not in result_dict:
+        result_dict['agent_code_count'] = {}
+    if 'agent_chat_time' not in result_dict:
+        result_dict['agent_chat_time'] = 0.0
+
+    for message in kwargs.get('groupchat_messages', []):
+        agent_name = message['name']
+        if not agent_name.endswith("_Expert"):
+            continue
+
+        if agent_name not in result_dict['agent_chat_count']:
+            result_dict['agent_chat_count'][agent_name] = 0
+        if agent_name not in result_dict['agent_code_count']:
+            result_dict['agent_code_count'][agent_name] = 0
+
+        result_dict['agent_chat_count'][agent_name] += 1
+        code = parse_code2(message['content'])
+        if code is not None:
+            result_dict['agent_code_count'][agent_name] += len(code)
+
+    result_dict['agent_chat_time'] += kwargs.get('time_elapsed', 0.0)
+    return result_dict
+    # pprint.pprint(result_dict); time.sleep(999999)
+
+
 def extract_code_from_chat(chat_result):
     code = ""
     result = parse_code2(chat_result.summary)
@@ -80,6 +136,7 @@ def parse_code(rsp):
 
 
 def parse_code2(rsp):
+    # print(rsp); time.sleep(999999)
     if rsp is None: return None
     pattern = r"```python(.*)```"
     match = re.search(pattern, rsp, re.DOTALL)

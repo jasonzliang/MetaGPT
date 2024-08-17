@@ -92,6 +92,7 @@ class Individual(object):
         self.fitness = None
         self.true_fitness = None
         self.result_dir = None
+        self.eval_stats = None
 
     def create_child(self, gen_created=None):
         child = deepcopy(self)
@@ -176,7 +177,8 @@ class Individual(object):
             'true_fitness': self.true_fitness,
             'main_role': self.main_role,
             'team_role': self.team_role,
-            'result_dir': self.result_dir}
+            'result_dir': self.result_dir,
+            'eval_stats': self.eval_stats}
 
     def deserialize(self, indv_dict):
         self.id = indv_dict.get("id", self.id)
@@ -187,6 +189,7 @@ class Individual(object):
         self.team_role = indv_dict.get("team_role", None)
         if self.team_role is not None: assert isinstance(self.team_role, dict)
         self.result_dir = indv_dict.get("result_dir", None)
+        self.eval_stats = indv_dict.get("eval_stats", None)
 
 
 class FitnessLog(object):
@@ -463,6 +466,7 @@ class RoleEvolutionGA(object):
             eval_indv.set_fitness(result_dict.get('fitness', None))
             eval_indv.set_true_fitness(result_dict.get('true_fitness', None))
             eval_indv.result_dir = result_dict.get('result_dir', None)
+            eval_indv.eval_stats = result_dict.get('eval_stats', None)
 
         if self.eval_cache:
             assert os.path.exists(self.eval_cache_fp)

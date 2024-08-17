@@ -51,8 +51,8 @@ CHAT_TIMEOUT = 100
 # @timeout_decorator.timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError)
 @timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError,
     dec_allow_eval=False, dec_hard_timeout=False, dec_mp_reset_signals=True)
-def start_task(execution_task: str, agent_list: list, coding=True,
-    chat_llm_config=CHAT_LLM_CONFIG, max_round=20):
+def start_task(execution_task: str, agent_list: list,
+    coding=True, chat_llm_config=CHAT_LLM_CONFIG, max_round=20):
     # last agent is user proxy, remove it and replace with new one
     # _agent_list = []; user_proxy = None
     # for agent in agent_list:
@@ -109,7 +109,8 @@ def start_task(execution_task: str, agent_list: list, coding=True,
             society_of_mind_agent,
             message=execution_task,
             cache=cache)
-    return chat_result
+
+    return chat_result, manager._groupchat.messages
     # return agent_list[0].initiate_chat(manager, message=execution_task)
 
 
