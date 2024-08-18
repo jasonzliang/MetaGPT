@@ -175,10 +175,10 @@ class LLMEvaluator(object):
 
         evalplus_result = extract_evalplus(evalplus_fp, self.logger)
         if self.objective.startswith('weighted_'):
-            b, p = calc_weighted_evalplus_score(result_dir,
-                self.evalplus_weights)
-            evalplus_result['weighted_base_score'] = b
-            evalplus_result['weighted_plus_score'] = p
+            weighted_base_score, weighted_plus_score = \
+                calc_weighted_evalplus_score(result_dir, self.evalplus_weights)
+            evalplus_result['weighted_base_score'] = weighted_base_score
+            evalplus_result['weighted_plus_score'] = weighted_plus_score
         assert self.objective in evalplus_result
         assert "base_score" in evalplus_result
 

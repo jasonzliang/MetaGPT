@@ -12,13 +12,14 @@ import time
 
 import autogen
 from autogen import Cache
-from autogen.agentchat.contrib.agent_builder import AgentBuilder
+# from autogen.agentchat.contrib.agent_builder import AgentBuilder
+from agent_builder import AgentBuilder
 from autogen.agentchat.contrib.capabilities import transform_messages, transforms
 from autogen.agentchat.contrib.society_of_mind_agent import SocietyOfMindAgent
 # from autogen.code_utils import extract_code
 
 from evalplus.data.humaneval import get_human_eval_plus
-# from evalplus.data.mbpp import get_mbpp_plus
+from evalplus.data.mbpp import get_mbpp_plus
 from wrapt_timeout_decorator import *
 # import timeout_decorator
 
@@ -267,11 +268,12 @@ Combine and merge these experts to create a new and improved team for generating
             work_dir=work_dir)
 
 
-def eval_humaneval(
-    result_dir="results/humaneval_results_%s" % get_time(space=False),
+def run_evalplus(
+    result_dir="results/evalplus_results_%s" % get_time(space=False),
     builder_cfg="config/autogen_builder_init.json",
     work_dir="/tmp/eval_%s" % randomword(12),
     clear_cache=True,
+    humaneval=True,
 ):
     print(locals()); time.sleep(3)
     if work_dir is None: work_dir = result_dir
@@ -286,8 +288,10 @@ def eval_humaneval(
     print("Agent list: %s" % agent_list)
     print("Agent configs:")
     pprint.pprint(agent_configs)
-    problems = get_human_eval_plus()
-    eval_name = "humaneval"
+    if humaneval:
+        problems = get_human_eval_plus(); eval_name = "humaneval"
+    else:
+        problems = get_mbpp_plus(); eval_name = "mbpp"
 
     for i, (task_id, problem) in enumerate(problems.items()):
         task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
@@ -339,8 +343,8 @@ if __name__ == "__main__":
     print("./autogen_builder.py [builder_cfg] [result_dir]")
 
     if len(sys.argv) == 1:
-        eval_humaneval()
+        run_evalplus()
     if len(sys.argv) == 2:
-        eval_humaneval(builder_cfg=sys.argv[1])
+        run_evalplus(builder_cfg=sys.argv[1])
     elif len(sys.argv) == 3:
-        eval_humaneval(builder_cfg=sys.argv[1], result_dir=sys.argv[2])
+        run_evalplus(builder_cfg=sys.argv[1], result_dir=sys.argv[2])

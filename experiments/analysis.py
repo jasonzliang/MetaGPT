@@ -473,16 +473,18 @@ def generate_evalplus_weights_file(jsons_dir,
         plus_counter[k] = normalize(v/total_counter)
 
     b = list(base_counter.values()); p = list(plus_counter.values())
-    weights_dict = {'base_weights': base_counter, 'plus_weights': plus_counter}
-    weights_dict['base_weights_mean'] = np.mean(b)
-    weights_dict['base_weights_std'] = np.std(b)
-    weights_dict['plus_weights_mean'] = np.mean(p)
-    weights_dict['plus_weights_std'] = np.std(p)
+    weights_dict = {'base_weights': base_counter,
+        'plus_weights': plus_counter,
+        'base_weights_mean': np.mean(b),
+        'base_weights_std': np.std(b),
+        'plus_weights_mean': np.mean(p),
+        'plus_weights_std': np.mean(p)}
 
     outfile = os.path.join(result_dir,
         os.path.basename(jsons_dir) + "_evalplus_weights.json")
     with open(outfile, 'w') as f: json.dump(weights_dict, f)
     pprint.pprint(weights_dict)
+
 
 if __name__ == "__main__":
     # multirun_evalplus_exp("results/8_6_multirole")

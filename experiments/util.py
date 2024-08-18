@@ -64,7 +64,7 @@ def format_prompt(prompt, instruction):
     return prompt
 
 
-def calc_weighted_evalplus_score(result_dir, evalplus_weights):
+def calc_weighted_evalplus_score(result_dir, evalplus_weights, normalize=True):
     if isinstance(evalplus_weights, str):
         assert os.path.exists(evalplus_weights)
         with open(evalplus_weights, 'r') as f:
@@ -75,18 +75,19 @@ def calc_weighted_evalplus_score(result_dir, evalplus_weights):
     assert os.path.exists(eval_json)
     with open(eval_json, 'r') as f: eval_dict = json.load(f)
 
-    weighted_base_score = 0.0; weighted_plus_score = 0.0
+    base_score = 0.0; plus_score = 0.0
     max_base_score = 0.0; max_plus_score = 0.0
     for task_id, result in eval_dict['eval'].items():
         base_weight = evalplus_weights['base_weights'][task_id]
         plus_weight = evalplus_weights['plus_weights'][task_id]
         max_base_score += base_weight; max_plus_score += plus_weight
-        if result[0]['base_status'] == "pass":
-            weighted_base_score += base_weight
-        if result[0]['plus_status'] == "pass":
-            weighted_plus_score += plus_weight
-    return weighted_base_score/max_base_score, \
-        weighted_plus_score/max_plus_score
+        if result[0]['base_status'] == "pass": base_score += base_weight
+        if result[0]['plus_status'] == "pass": plus_score += plus_weight
+
+    if normalize:
+        base_score = base_score/max_base_score
+        plus_score = plus_score/max_plus_score
+    return base_score, plus_score
 
 
 def collect_stats_from_chat(*args, **kwargs):
