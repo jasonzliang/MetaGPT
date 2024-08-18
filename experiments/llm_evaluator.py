@@ -225,9 +225,9 @@ class LLMEvaluator(object):
             time_elapsed = time.time() - start_time
 
             output = extract_code_from_chat(chat_result); assert len(output) > 0
-            result_dict['eval_stats'] = \
-                collect_stats_from_chat(groupchat_messages=groupchat_messages,
-                    time_elapsed=time_elapsed)
+            collect_stats_from_chat(result_dict,
+                groupchat_messages=groupchat_messages,
+                time_elapsed=time_elapsed)
             builder.clear_all_agents(recycle_endpoint=False)
             return output
 

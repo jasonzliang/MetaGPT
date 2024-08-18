@@ -95,33 +95,34 @@ def calc_weighted_evalplus_score(result_dir,
     return base_score, plus_score
 
 
-def collect_stats_from_chat(*args, **kwargs):
+def collect_stats_from_chat(result_dict, *args, **kwargs):
     # pprint.pprint(groupchat_messages, width=120); time.sleep(999999)
-    result_dict = {}
-    if 'state_chat_count' not in result_dict:
-        result_dict['agent_chat_count'] = {}
-    if 'agent_code_count' not in result_dict:
-        result_dict['agent_code_count'] = {}
-    if 'agent_chat_time' not in result_dict:
-        result_dict['agent_chat_time'] = 0.0
+    if 'eval_stats' not in result_dict: result_dict['eval_stats'] = {}
+    stats_dict = result_dict['eval_stats']
+
+    if 'state_chat_count' not in stats_dict:
+        stats_dict['agent_chat_count'] = {}
+    if 'agent_code_count' not in stats_dict:
+        stats_dict['agent_code_count'] = {}
+    if 'agent_chat_time' not in stats_dict:
+        stats_dict['agent_chat_time'] = 0.0
 
     for message in kwargs.get('groupchat_messages', []):
         agent_name = message['name']
         if not agent_name.endswith("_Expert"):
             continue
 
-        if agent_name not in result_dict['agent_chat_count']:
-            result_dict['agent_chat_count'][agent_name] = 0
-        if agent_name not in result_dict['agent_code_count']:
-            result_dict['agent_code_count'][agent_name] = 0
+        if agent_name not in stats_dict['agent_chat_count']:
+            stats_dict['agent_chat_count'][agent_name] = 0
+        if agent_name not in stats_dict['agent_code_count']:
+            stats_dict['agent_code_count'][agent_name] = 0
 
-        result_dict['agent_chat_count'][agent_name] += 1
+        stats_dict['agent_chat_count'][agent_name] += 1
         code = parse_code2(message['content'])
         if code is not None:
-            result_dict['agent_code_count'][agent_name] += len(code)
+            stats_dict['agent_code_count'][agent_name] += len(code)
 
-    result_dict['agent_chat_time'] += kwargs.get('time_elapsed', 0.0)
-    return result_dict
+    stats_dict['agent_chat_time'] += kwargs.get('time_elapsed', 0.0)
     # pprint.pprint(result_dict); time.sleep(999999)
 
 
