@@ -49,7 +49,7 @@ class LLMEvaluator(object):
         assert self.objective in OBJECTIVES
         self.evalplus_weights = self.config.get("evalplus_weights", None)
         if self.evalplus_weights is not None:
-            assert os.path.exists(evalplus_weights)
+            assert os.path.exists(self.evalplus_weights)
         self.sanitize = self.config.get("sanitize", True)
         self.restart_interval = self.config.get("restart_interval", sys.maxsize)
         assert self.restart_interval > 0
