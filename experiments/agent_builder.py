@@ -87,6 +87,7 @@ When the task is complete and the result has been carefully verified, after obta
 ## How to use code?
 - Suggest python code (in a python coding block) or shell script (in a sh coding block) for the Computer_terminal to execute.
 - When using code, you must indicate the script type in the coding block.
+- If missing python packages, you can install the package by suggesting a `pip install` code in the ```sh ... ``` block.
 - Do not suggest a coding block which requires users to modify.
 - Do not suggest a coding block if it's not intended to be executed by the Computer_terminal.
 - The Computer_terminal cannot modify your code.
