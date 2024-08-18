@@ -13,7 +13,6 @@ import time
 import autogen
 from autogen import Cache
 # from autogen.agentchat.contrib.agent_builder import AgentBuilder
-from agent_builder import AgentBuilder
 from autogen.agentchat.contrib.capabilities import transform_messages, transforms
 from autogen.agentchat.contrib.society_of_mind_agent import SocietyOfMindAgent
 # from autogen.code_utils import extract_code
@@ -23,6 +22,7 @@ from evalplus.data.mbpp import get_mbpp_plus
 from wrapt_timeout_decorator import *
 # import timeout_decorator
 
+from agent_builder import AgentBuilder
 from alg_util import ID_LENGTH
 from alg_util import randomword
 from util import get_time, killtree, extract_code_from_chat, format_prompt

@@ -85,8 +85,7 @@ def calc_weighted_evalplus_score(result_dir, evalplus_weights, normalize=True):
         if result[0]['plus_status'] == "pass": plus_score += plus_weight
 
     if normalize:
-        base_score = base_score/max_base_score
-        plus_score = plus_score/max_plus_score
+        base_score /= max_base_score; plus_score /= max_plus_score
     return base_score, plus_score
 
 
