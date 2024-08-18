@@ -12,13 +12,7 @@ import random
 import traceback
 import time
 
-from metagpt.actions import Action, UserRequirement
-from metagpt.config2 import Config
 from metagpt.logs import logger as mlogger
-from metagpt.roles import Role
-from metagpt.schema import Message
-from metagpt.team import Team
-
 from pathos.pools import ProcessPool
 # from pathos.pp import ParallelPool
 from retry import retry
@@ -326,5 +320,18 @@ def _test_evalplus_extractor(
     print(result_dict)
 
 
+def _test_calc_weighted_evalplus_score(
+    result_dir="results/multirole_baseline/evalG-0_humaneval_G-0_ID-mtrPn1oyR2xM",
+    evalplus_weights="config/5_19_role_evo_evalplus_weights.json"):
+
+    evalplus_result = extract_evalplus(os.path.join(result_dir, "evalplus.txt"))
+    pprint.pprint(evalplus_result)
+    print(calc_weighted_evalplus_score(result_dir, evalplus_weights))
+    with open(evalplus_weights, 'r') as f:
+        weights_dict = json.load(f)
+    print(calc_weighted_evalplus_score(result_dir, weights_dict))
+
+
 if __name__ == "__main__":
-    _test_evaluator(team_role_fp='config/autogen_builder_init.json')
+    _test_calc_weighted_evalplus_score()
+    # _test_evaluator(team_role_fp='config/autogen_builder_init.json')

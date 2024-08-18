@@ -4,6 +4,7 @@ import copy
 from collections import defaultdict
 import datetime
 import functools
+import json
 import os
 import math
 import pickle
@@ -66,7 +67,8 @@ def format_prompt(prompt, instruction):
 def calc_weighted_evalplus_score(result_dir, evalplus_weights):
     if isinstance(evalplus_weights, str):
         assert os.path.exists(evalplus_weights)
-        with open(evalplus_weights, 'r') as f: json.load(f)
+        with open(evalplus_weights, 'r') as f:
+            evalplus_weights = json.load(f)
     else: assert isinstance(evalplus_weights, dict)
 
     eval_json = os.path.join(result_dir, 'eval_results.json')
@@ -74,15 +76,17 @@ def calc_weighted_evalplus_score(result_dir, evalplus_weights):
     with open(eval_json, 'r') as f: eval_dict = json.load(f)
 
     weighted_base_score = 0.0; weighted_plus_score = 0.0
+    max_base_score = 0.0; max_plus_score = 0.0
     for task_id, result in eval_dict['eval'].items():
-        base_weight = evalplus_weights[task_id]['base_weight']
-        plus_weight = evalplus_weights[task_id]['plus_weight']
+        base_weight = evalplus_weights['base_weights'][task_id]
+        plus_weight = evalplus_weights['plus_weights'][task_id]
+        max_base_score += base_weight; max_plus_score += plus_weight
         if result[0]['base_status'] == "pass":
             weighted_base_score += base_weight
         if result[0]['plus_status'] == "pass":
             weighted_plus_score += plus_weight
-
-    return weighted_base_score, weighted_plus_score
+    return weighted_base_score/max_base_score, \
+        weighted_plus_score/max_plus_score
 
 
 def collect_stats_from_chat(*args, **kwargs):

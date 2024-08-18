@@ -440,7 +440,53 @@ def multirun_evalplus_exp(experiment_dir,
             multirun_evalplus(indv=indv, use_prompt=False, *args, **kwargs)
 
 
+def generate_evalplus_weights_file(jsons_dir,
+    result_dir=".",
+    min_weight=0.0,
+    max_weight=1.0):
+
+    def normalize(v):
+        v * (max_weight - min_weight) + min_weight
+
+    base_counter = {}; plus_counter = {}; total_counter = 0
+    for eval_json in glob.glob(os.path.join(
+        jsons_dir, "**/eval_results.json"), recursive=True):
+        print("Processing %s" % eval_json)
+        total_counter += 1
+        with open(eval_json, 'r') as f:
+            eval_dict = json.load(f)
+        for task_id, result in eval_dict['eval'].items():
+            if task_id not in base_counter:
+                base_counter[task_id] = 0.0
+            if task_id not in plus_counter:
+                plus_counter[task_id] = 0.0
+
+            if result[0]['base_status'] != "pass":
+                base_counter[task_id] += 1.0
+            if result[0]['plus_status'] != "pass":
+                plus_counter[task_id] += 1.0
+    print("Processed %d results" % total_counter)
+
+    for k, v in base_counter.items():
+        base_counter[k] = normalize(v/total_counter)
+    for k, v in plus_counter.items():
+        plus_counter[k] = normalize(v/total_counter)
+
+    b = list(base_counter.values()); p = list(plus_counter.values())
+    weights_dict = {'base_weights': base_counter, 'plus_weights': plus_counter}
+    weights_dict['base_weights_mean'] = np.mean(b)
+    weights_dict['base_weights_std'] = np.std(b)
+    weights_dict['plus_weights_mean'] = np.mean(p)
+    weights_dict['plus_weights_std'] = np.std(p)
+
+    outfile = os.path.join(result_dir,
+        os.path.basename(jsons_dir) + "_evalplus_weights.json")
+    with open(outfile, 'w') as f: json.dump(weights_dict, f)
+    pprint.pprint(weights_dict)
+
 if __name__ == "__main__":
     # multirun_evalplus_exp("results/8_6_multirole")
-    for result_dir in glob.glob("results/multirun_indv_*"):
-        multirun_evalplus(result_dir=result_dir)
+    generate_evalplus_weights_file("results/old_results/5_19_role_evo")
+    generate_evalplus_weights_file("results/8_6_multirole")
+    # for result_dir in glob.glob("results/multirun_indv_*"):
+    #     multirun_evalplus(result_dir=result_dir)
