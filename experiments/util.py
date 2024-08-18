@@ -100,7 +100,7 @@ def collect_stats_from_chat(result_dict, *args, **kwargs):
     if 'eval_stats' not in result_dict: result_dict['eval_stats'] = {}
     stats_dict = result_dict['eval_stats']
 
-    if 'state_chat_count' not in stats_dict:
+    if 'agent_chat_count' not in stats_dict:
         stats_dict['agent_chat_count'] = {}
     if 'agent_code_count' not in stats_dict:
         stats_dict['agent_code_count'] = {}
