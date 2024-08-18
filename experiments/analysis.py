@@ -481,7 +481,7 @@ def generate_evalplus_weights_file(jsons_dir,
         'plus_weights_std': np.mean(p)}
 
     outfile = os.path.join(result_dir,
-        os.path.basename(jsons_dir) + "_evalplus_weights.json")
+        os.path.basename(jsons_dir) + "_weights.json")
     with open(outfile, 'w') as f: json.dump(weights_dict, f)
     pprint.pprint(weights_dict)
 

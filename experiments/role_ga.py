@@ -204,13 +204,12 @@ class FitnessLog(object):
             f.write("# %s NEW RUN\n" % get_time(date=True, space=True))
 
     def _remove_extra_comments(self):
+        if not os.path.exists(self.fitness_log): return
         with open(self.fitness_log, "r") as f:
             lines = f.readlines()
         while len(lines) > 0:
-            if lines[-1].startswith("#"):
-                lines.pop()
-            else:
-                break
+            if lines[-1].startswith("#"): lines.pop()
+            else: break
         with open(self.fitness_log, "w") as f:
             f.writelines(lines)
 
