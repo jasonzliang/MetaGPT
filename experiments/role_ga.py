@@ -76,8 +76,9 @@ class Individual(object):
         return self._get_sort_fitness() < other._get_sort_fitness()
 
     def __str__(self):
-        return "[Indv] Id: %s, Fitness: %s\n%s\n%s" % (self.id, self.fitness,
-            self.main_role, self.team_role)
+        return "[Indv] Id: %s, Fitness: %s, True Fitness: %s\n%s\n%s" % \
+            (self.id, self.fitness, self.true_fitness, self.main_role,
+                self.team_role)
 
     def _reset_roles(self):
         self.main_role = self.initial_main_role

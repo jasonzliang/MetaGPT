@@ -400,6 +400,7 @@ def multirun_evalplus_exp(experiment_dir,
     min_evals=3,
     agg_func=np.median, # np.mean, np.median, np.max, lambda x: x[-1]
     gen_range=(0, 999),
+    use_true_fitness=False,
     eval_indv=True,
     *args,
     **kwargs):
@@ -419,7 +420,11 @@ def multirun_evalplus_exp(experiment_dir,
         pop_dict = load_checkpoint(checkpoint)
         for indv_dict in pop_dict:
             indv = Individual(config=indv_config); indv.deserialize(indv_dict)
-            _fit_list_dict[indv.id].append(indv.get_fitness(raw_fitness=True))
+            if use_true_fitness:
+                fitness = indv.get_fitness(raw_fitness=True)
+            else:
+                fitness = indv.get_true_fitness()
+            _fit_list_dict[indv.id].append(fitness)
             _indv_dict[indv.id] = indv
 
     for indv_id, fit_list in _fit_list_dict.items():
@@ -428,7 +433,6 @@ def multirun_evalplus_exp(experiment_dir,
 
         agg_fit = agg_func(fit_list)
         _indv_dict[indv_id].set_fitness(agg_fit)
-        _indv_dict[indv_id].set_true_fitness(agg_fit)
 
     best_indv = sorted(_indv_dict.values(), reverse=True)[:top_n]
 
