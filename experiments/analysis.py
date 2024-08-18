@@ -485,7 +485,7 @@ def generate_evalplus_weights_file(jsons_dir,
 
     outfile = os.path.join(result_dir,
         os.path.basename(jsons_dir) + "_weights.json")
-    with open(outfile, 'w') as f: json.dump(weights_dict, f)
+    with open(outfile, 'w') as f: json.dump(weights_dict, f, indent=4)
     pprint.pprint(weights_dict)
 
 
