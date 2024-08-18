@@ -421,16 +421,15 @@ def multirun_evalplus_exp(experiment_dir,
         for indv_dict in pop_dict:
             indv = Individual(config=indv_config); indv.deserialize(indv_dict)
             if use_true_fitness:
-                fitness = indv.get_fitness(raw_fitness=True)
-            else:
                 fitness = indv.get_true_fitness()
+            else:
+                fitness = indv.get_fitness(raw_fitness=True)
             _fit_list_dict[indv.id].append(fitness)
             _indv_dict[indv.id] = indv
 
     for indv_id, fit_list in _fit_list_dict.items():
         if len(fit_list) < min_evals:
             del _indv_dict[indv_id]; continue
-
         agg_fit = agg_func(fit_list)
         _indv_dict[indv_id].set_fitness(agg_fit)
 
