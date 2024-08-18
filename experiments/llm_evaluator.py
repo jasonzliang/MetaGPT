@@ -324,16 +324,21 @@ def _test_evalplus_extractor(
 
 def _test_calc_weighted_evalplus_score(
     result_dir="results/multirole_baseline/evalG-0_humaneval_G-0_ID-mtrPn1oyR2xM",
-    evalplus_weights="config/5_19_role_evo_evalplus_weights.json"):
+    evalplus_weights="config/5_19_role_evo_weights.json"):
 
     evalplus_result = extract_evalplus(os.path.join(result_dir, "evalplus.txt"))
     pprint.pprint(evalplus_result)
     print(calc_weighted_evalplus_score(result_dir, evalplus_weights))
-    with open(evalplus_weights, 'r') as f:
-        weights_dict = json.load(f)
+    with open(evalplus_weights, 'r') as f: weights_dict = json.load(f)
     print(calc_weighted_evalplus_score(result_dir, weights_dict))
+
+    print(calc_weighted_evalplus_score(result_dir, weights_dict,
+        normalize=False, debug_weights=True))
+    print(calc_weighted_evalplus_score(result_dir, weights_dict,
+        normalize=True, debug_weights=True))
 
 
 if __name__ == "__main__":
-    _test_calc_weighted_evalplus_score()
+    _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
+    _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
     # _test_evaluator(team_role_fp='config/autogen_builder_init.json')

@@ -64,7 +64,10 @@ def format_prompt(prompt, instruction):
     return prompt
 
 
-def calc_weighted_evalplus_score(result_dir, evalplus_weights, normalize=True):
+def calc_weighted_evalplus_score(result_dir,
+    evalplus_weights,
+    normalize=True,
+    debug_weights=False):
     if isinstance(evalplus_weights, str):
         assert os.path.exists(evalplus_weights)
         with open(evalplus_weights, 'r') as f:
@@ -80,6 +83,9 @@ def calc_weighted_evalplus_score(result_dir, evalplus_weights, normalize=True):
     for task_id, result in eval_dict['eval'].items():
         base_weight = evalplus_weights['base_weights'][task_id]
         plus_weight = evalplus_weights['plus_weights'][task_id]
+        if debug_weights:
+            base_weight = 1.0; plus_weight = 1.0
+
         max_base_score += base_weight; max_plus_score += plus_weight
         if result[0]['base_status'] == "pass": base_score += base_weight
         if result[0]['plus_status'] == "pass": plus_score += plus_weight

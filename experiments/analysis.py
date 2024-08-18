@@ -451,11 +451,11 @@ def generate_evalplus_weights_file(jsons_dir,
     def normalize(v):
         v * (max_weight - min_weight) + min_weight
 
-    base_counter = {}; plus_counter = {}; total_counter = 0
+    base_counter = {}; plus_counter = {}; total_counter = 0.0
     for eval_json in glob.glob(os.path.join(
         jsons_dir, "**/eval_results.json"), recursive=True):
         print("Processing %s" % eval_json)
-        total_counter += 1
+        total_counter += 1.0
         with open(eval_json, 'r') as f:
             eval_dict = json.load(f)
         for task_id, result in eval_dict['eval'].items():
