@@ -444,12 +444,12 @@ def multirun_evalplus_exp(experiment_dir,
 
 
 def generate_evalplus_weights_file(jsons_dir,
-    result_dir=".",
+    result_dir="config",
     min_weight=0.0,
     max_weight=1.0):
 
     def normalize(v):
-        v * (max_weight - min_weight) + min_weight
+        return v * (max_weight - min_weight) + min_weight
 
     base_counter = {}; plus_counter = {}; total_counter = 0.0
     for eval_json in glob.glob(os.path.join(
@@ -464,9 +464,9 @@ def generate_evalplus_weights_file(jsons_dir,
             if task_id not in plus_counter:
                 plus_counter[task_id] = 0.0
 
-            if result[0]['base_status'] != "pass":
+            if result[0]['base_status'] == "fail":
                 base_counter[task_id] += 1.0
-            if result[0]['plus_status'] != "pass":
+            if result[0]['plus_status'] == "fail":
                 plus_counter[task_id] += 1.0
     print("Processed %d results" % total_counter)
 
@@ -481,7 +481,7 @@ def generate_evalplus_weights_file(jsons_dir,
         'base_weights_mean': np.mean(b),
         'base_weights_std': np.std(b),
         'plus_weights_mean': np.mean(p),
-        'plus_weights_std': np.mean(p)}
+        'plus_weights_std': np.std(p)}
 
     outfile = os.path.join(result_dir,
         os.path.basename(jsons_dir) + "_weights.json")
