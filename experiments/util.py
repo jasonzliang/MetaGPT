@@ -336,3 +336,15 @@ def save_global_config(filepath, global_dict):
         # f.write(s)
         YAML().dump(config_dict, f)
     print("Dumped global config to file: %s" % filepath)
+
+
+def get_indv_config(experiment_dir):
+    try:
+        with open(os.path.join(experiment_dir, "config.yaml"), "r") as f:
+            exp_cfg = YAML().load(f)
+        indv_config = exp_cfg['role_ga_config']['indv_config']
+        print("Indv config:"); pprint.pprint(indv_config)
+    except:
+        print("Cannot load indv config!"); time.sleep(3); indv_config = {}
+    return indv_config
+

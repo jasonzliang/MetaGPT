@@ -24,7 +24,7 @@ from analysis_util import \
     get_fitness_file, load_checkpoint, get_checkpoints
 from analysis_util import COLORS, FIG_SIZE, PLOT_FMT, PROP_CYCLER
 from role_ga import Individual, DEFAULT_MAIN_ROLE
-from util import extract_evalplus
+from util import extract_evalplus, get_indv_config
 
 # Directory to get results from
 EXPERIMENT_DIRS = []
@@ -396,42 +396,39 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
 
 
 def multirun_evalplus_exp(experiment_dir,
-    top_n=1,
-    min_evals=3,
-    agg_func=np.median, # np.mean, np.median, np.max, lambda x: x[-1]
+    top_n=3,
+    min_evals=1,
+    agg_func=np.max, # np.mean, np.median, np.max, lambda x: x[-1]
     gen_range=(0, 999),
     use_true_fitness=False,
-    eval_indv=True,
+    eval_indv=False,
     *args,
     **kwargs):
 
-    try:
-        with open(os.path.join(experiment_dir, "config.yaml"), "r") as f:
-            exp_cfg = YAML().load(f)
-        indv_config = exp_cfg['role_ga_config']['indv_config']
-        print("Indv config:"); pprint.pprint(indv_config)
-    except:
-        print("Cannot load indv config!"); time.sleep(3); indv_config = {}
-
-    _fit_list_dict = defaultdict(list); _indv_dict = {}
+    indv_config = get_indv_config(experiment_dir)
+    _fit_list_dict = defaultdict(list)
+    _true_fit_list_dict = defaultdict(list)
+    _indv_dict = {}
     checkpoints = get_checkpoints(experiment_dir, min_gen=gen_range[0],
         max_gen=gen_range[1])
     for checkpoint in checkpoints:
         pop_dict = load_checkpoint(checkpoint)
         for indv_dict in pop_dict:
             indv = Individual(config=indv_config); indv.deserialize(indv_dict)
-            if use_true_fitness:
-                fitness = indv.get_true_fitness()
-            else:
-                fitness = indv.get_fitness(raw_fitness=True)
+            if use_true_fitness: fitness = indv.get_true_fitness()
+            else: fitness = indv.get_fitness(raw_fitness=True)
+
             _fit_list_dict[indv.id].append(fitness)
+            _true_fit_list_dict[indv.id].append(indv.get_true_fitness())
             _indv_dict[indv.id] = indv
 
     for indv_id, fit_list in _fit_list_dict.items():
         if len(fit_list) < min_evals:
             del _indv_dict[indv_id]; continue
         agg_fit = agg_func(fit_list)
+        true_agg_fit = agg_func(_true_fit_list_dict[indv_id])
         _indv_dict[indv_id].set_fitness(agg_fit)
+        _indv_dict[indv_id].set_true_fitness(true_agg_fit)
 
     best_indv = sorted(_indv_dict.values(), reverse=True)[:top_n]
 
@@ -511,9 +508,62 @@ def generate_evalplus_weights_file(jsons_dir,
     pprint.pprint(weights_dict)
 
 
+def compare_agent_chat_stats(experiment_dir,
+    indv_quartile=[0.8, 1.0],
+    gen_range=(10, None),
+    top_n=5,
+    agg_func=np.mean):
+
+    print("Experiment dir: %s" % experiment_dir)
+    indv_list = []; indv_config = get_indv_config(experiment_dir)
+    checkpoints = get_checkpoints(experiment_dir, min_gen=gen_range[0],
+        max_gen=gen_range[1])
+    for checkpoint in checkpoints:
+        pop_dict = load_checkpoint(checkpoint)
+        for indv_dict in pop_dict:
+            indv = Individual(config=indv_config); indv.deserialize(indv_dict)
+            indv_list.append(indv)
+
+    indv_list = sorted(indv_list); n = len(indv_list)
+    a, b = indv_quartile; assert a >= 0 and b >= 0 and a <= 1.0 and b <= 1.0
+    indv_list = indv_list[int(a * n):int(b * n)]; assert len(indv_list) > 0
+    print("Getting chat stats for %s indv (avg fit: %.4f) in quartile %s from gen %s" % \
+        (len(indv_list), np.mean([x.get_fitness(True) for x in indv_list]),
+            indv_quartile, gen_range))
+
+    _chat_count_dict = defaultdict(list); _code_count_dict = defaultdict(list)
+    for indv in indv_list:
+        for agent, chat_count in indv.eval_stats['agent_chat_count'].items():
+            _chat_count_dict[agent].append(chat_count)
+        for agent, code_count in indv.eval_stats['agent_code_count'].items():
+            _code_count_dict[agent].append(code_count)
+
+    chat_count_dict = {}; code_count_dict = {}
+    for k, v in _chat_count_dict.items(): chat_count_dict[k] = agg_func(v)
+    for k, v in _code_count_dict.items(): code_count_dict[k] = agg_func(v)
+
+    best_chat_count = sorted(chat_count_dict.items(), key=lambda x: x[1],
+        reverse=True)[:top_n]
+    best_code_count = sorted(code_count_dict.items(), key=lambda x: x[1],
+        reverse=True)[:top_n]
+    worst_chat_count = sorted(chat_count_dict.items(), key=lambda x: x[1],
+        reverse=False)[:top_n]
+    worst_code_count = sorted(code_count_dict.items(), key=lambda x: x[1],
+        reverse=False)[:top_n]
+
+    print("Top chat count agents:\n%s" % best_chat_count)
+    print("Bottom chat count agents:\n%s" % worst_chat_count)
+    print("Top code count agents:\n%s" % best_code_count)
+    print("Bottom code count agents:\n%s" % worst_code_count)
+    print("\n")
+
 if __name__ == "__main__":
-    # multirun_evalplus_exp("results/8_6_multirole")
-    generate_evalplus_weights_file("results/old_results/5_19_role_evo")
-    generate_evalplus_weights_file("results/8_6_multirole")
-    # for result_dir in glob.glob("results/multirun_indv_*"):
-    #     multirun_evalplus(result_dir=result_dir)
+    # generate_evalplus_weights_file("results/old_results/5_19_role_evo")
+    # generate_evalplus_weights_file("results/8_6_multirole")
+    # multirun_evalplus_exp("results/8_17_multirole")
+    compare_agent_chat_stats("results/8_17_multirole",
+        indv_quartile=[0.8, 1.0])
+    compare_agent_chat_stats("results/8_17_multirole",
+        indv_quartile=[0.0, 0.2])
+    compare_agent_chat_stats("results/8_17_multirole",
+        indv_quartile=[0.0, 1.0])

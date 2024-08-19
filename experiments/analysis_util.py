@@ -112,16 +112,20 @@ def get_checkpoints(experiment_dir, is_base_dir=True, min_gen=None,
     checkpoints = sorted(checkpoints,
         key=lambda x: int(x.rstrip(".yaml").split("_")[-1]))
 
-    if min_gen is None or min_gen < 0:
+    if min_gen is None:
         min_gen = 0
-    if max_gen is None or max_gen > len(checkpoints):
+    if max_gen is None:
         max_gen = len(checkpoints)
 
-    within_range = []
-    for checkpoint in checkpoints:
-        n = int(checkpoint.rstrip(".yaml").split("_")[-1])
-        if n >= min_gen and n < max_gen:
-            within_range.append(checkpoint)
+    checkpoints = sorted(checkpoints,
+        key=lambda x: int(x.rstrip(".yaml").split("_")[-1]))
+    within_range = checkpoints[min_gen:max_gen]
+
+    # within_range = []
+    # for checkpoint in checkpoints:
+    #     n = int(checkpoint.rstrip(".yaml").split("_")[-1])
+    #     if n >= min_gen and n < max_gen:
+    #         within_range.append(checkpoint)
     if verbose:
         print("Retrieved %s checkpoints" % len(within_range))
     return within_range
