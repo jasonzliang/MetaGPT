@@ -212,7 +212,7 @@ def extract_evalplus(result_file, logger=None):
                 result_dict['sys_time_sec'] = float(line.split()[4])
 
         result_dict['hybrid_score'] = \
-            0.5 * result_dict["base_score"] + 0.5 * result_dict["hybrid_score"]
+            0.5 * result_dict["base_score"] + 0.5 * result_dict["plus_score"]
     except:
         if logger is None:
             print("Evalplus extraction failed: %s" % result_file)
