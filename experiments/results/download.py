@@ -19,5 +19,5 @@ if __name__ == "__main__":
         EXPERIMENT_NAME = sys.argv[1]
         SERVER_IP = sys.argv[2]
 
-    os.system("rsync -avz %s:%s/%s %s" % \
+    os.system("rsync -Phavz --stats %s:%s/%s %s" % \
         (SERVER_IP, SERVER_DIR, EXPERIMENT_NAME, LOCAL_DIR))
