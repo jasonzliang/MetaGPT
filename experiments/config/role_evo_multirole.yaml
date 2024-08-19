@@ -16,11 +16,11 @@ role_ga_config:
             model: gpt-4o
             temperature: 0.9
             top_p: 0.9
-            builder_llm_config:
-                custom_coding_instruct: True
-                temperature: 0.9
+            # builder_llm_config:
+            #     custom_coding_instruct: True
+            #     temperature: 0.9
 
-    num_gen: 50
+    num_gen: 18
     pop_size: 20
     num_elites: 10
     tournament_size: 2
