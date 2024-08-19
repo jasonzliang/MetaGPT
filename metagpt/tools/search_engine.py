@@ -9,7 +9,9 @@ import importlib
 from typing import Callable, Coroutine, Literal, Optional, Union, overload
 
 from pydantic import BaseModel, ConfigDict, model_validator
+# Jason: changed due to library api changes
 # from semantic_kernel.skill_definition import sk_function
+from semantic_kernel.functions.kernel_function_decorator import kernel_function
 
 from metagpt.configs.search_config import SearchConfig
 from metagpt.logs import logger
@@ -26,12 +28,13 @@ class SkSearchEngine:
     def __init__(self, **kwargs):
         self.search_engine = SearchEngine(**kwargs)
 
-    # @sk_function(
-    #     description="searches results from Google. Useful when you need to find short "
-    #     "and succinct answers about a specific topic. Input should be a search query.",
-    #     name="searchAsync",
-    #     input_description="search",
-    # )
+    # Jason: changed due to library api changes
+    @kernel_function(
+        description="searches results from Google. Useful when you need to find short "
+        "and succinct answers about a specific topic. Input should be a search query.",
+        name="searchAsync",
+        # input_description="search",
+    )
     async def run(self, query: str) -> str:
         result = await self.search_engine.run(query)
         return result
