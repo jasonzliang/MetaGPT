@@ -37,7 +37,7 @@ CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
 CHAT_LLM_CONFIG = {"temperature": 0.0,
     "model": "gpt-4o-mini",
     "cache_seed": None}
-BUILDER_LLM_CONFIG = {"temperature": 0.0,
+BUILDER_LLM_CONFIG = {"temperature": 0.9,
     "builder_model": "gpt-4o",
     "agent_model": "gpt-4o-mini",
     "cache_seed": None,
@@ -149,11 +149,11 @@ def init_builder(building_task=None,
             "work_dir": work_dir
         }
         # hack to prevent "builder_model" error msg when running start_task
-        default_llm_config = {'temperature': builder_llm_config['temperature'],
+        _builder_llm_config = {'temperature': builder_llm_config['temperature'],
             'cache_seed': builder_llm_config['cache_seed']}
         agent_list, agent_configs = builder.build(
             building_task=building_task,
-            default_llm_config=default_llm_config,
+            default_llm_config=_builder_llm_config,
             coding=True,
             code_execution_config=code_execution_config)
         builder_dict = copy.copy(builder.cached_configs)
@@ -211,7 +211,6 @@ def autogen_mutate(
     work_dir='groupchat',
     builder_llm_config=BUILDER_LLM_CONFIG,
     eval_mode=False):
-
     builder_str = _parse_builder_cfgs([builder_cfg], eval_mode=eval_mode)[0]
     mutate_prompt = \
 """Here is a JSON string that describes an existing team that contains experts with different roles for generating code.
@@ -271,10 +270,11 @@ Combine and merge these experts to create a new and improved team for generating
 
 def run_evalplus(
     result_dir="results/evalplus_results_%s" % get_time(space=False),
-    builder_cfg="config/autogen_builder_init.json",
+    builder_cfg="config/autogen_builder_init2.json",
     work_dir="/tmp/eval_%s" % randomword(12),
     clear_cache=True,
     humaneval=True,
+    max_agents=3,
 ):
     print(locals()); time.sleep(3)
     if work_dir is None: work_dir = result_dir
@@ -284,7 +284,8 @@ def run_evalplus(
         init_builder(building_task,
             work_dir=work_dir,
             builder_cfg=builder_cfg,
-            clear_cache=clear_cache)
+            clear_cache=clear_cache,
+            max_agents=max_agents)
     print("Save path: %s" % builder_cfg)
     print("Agent list: %s" % agent_list)
     print("Agent configs:")
@@ -308,7 +309,7 @@ def run_evalplus(
         code = ""; n_tries = 3
         while n_tries > 0:
             try:
-                chat_result = start_task(
+                chat_result, chat_messages = start_task(
                     execution_task=prompt,
                     agent_list=agent_list,
                     coding=agent_configs["coding"])

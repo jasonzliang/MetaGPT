@@ -279,18 +279,24 @@ def llm_crossover2(prompt, additional_prompts, llm_config):
 
 
 ### AUTOGEN TEAM MUTATION/CROSSOVER ###
-@retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
-    logger=logging.getLogger('evolve_role'))
-def llm_mutate_team(team_role, llm_config):
-    assert isinstance(team_role, dict)
+def get_builder_llm_config(llm_config):
+    logger = logging.getLogger('evolve_role')
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config.update(llm_config.get("builder_llm_config", {}))
+    # logger.info("Builder llm config: %s" % builder_llm_config)
+    return builder_llm_config
 
+
+# @retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
+#     logger=logging.getLogger('evolve_role'))
+def llm_mutate_team(team_role, llm_config):
+    assert isinstance(team_role, dict)
     if 'building_task' in team_role: team_role['building_task'] = ''
+
     agent_list, agent_configs, builder, builder_dict = autogen_mutate(
         builder_cfg=team_role,
         output_cfg=None,
-        builder_llm_config=builder_llm_config,
+        builder_llm_config=get_builder_llm_config(llm_config),
         eval_mode=True,
         work_dir="/tmp/mut_%s" % randomword(ID_LENGTH))
     builder.clear_all_agents(recycle_endpoint=False)
@@ -298,19 +304,17 @@ def llm_mutate_team(team_role, llm_config):
     return builder_dict
 
 
-@retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
-    logger=logging.getLogger('evolve_role'))
+# @retry(Exception, tries=-1, delay=1, max_delay=16, backoff=2,
+#     logger=logging.getLogger('evolve_role'))
 def llm_crossover_team(team_role, other_team_role, llm_config):
     # pprint.pprint(team_role); print(type(team_role))
     assert isinstance(team_role, dict) and isinstance(other_team_role, dict)
-    builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
-    builder_llm_config.update(llm_config.get("builder_llm_config", {}))
 
     if 'building_task' in team_role: team_role['building_task'] = ''
     agent_list, agent_configs, builder, builder_dict = autogen_crossover(
         builder_cfgs=[team_role, other_team_role],
         output_cfg=None,
-        builder_llm_config=builder_llm_config,
+        builder_llm_config=get_builder_llm_config(llm_config),
         eval_mode=True,
         work_dir="/tmp/xover_%s" % randomword(ID_LENGTH))
     builder.clear_all_agents(recycle_endpoint=False)
@@ -334,7 +338,7 @@ with no additional text outside the code block.
 
 
 def _test_mutation_crossover(test_err=False):
-    llm_model = 'N/A' if test_err else 'gpt-4o'
+    llm_model = 'N/A' if test_err else 'gpt-4o-mini'
     llm_config = {'model': llm_model, 'temperature': 1.2, 'top_p': 1.0}
 
     try:
@@ -358,7 +362,7 @@ def _test_mutation_crossover(test_err=False):
 def _test_mutation_crossover2(test_err=False):
     result_dirs = sorted(glob.glob('results/**/humaneval_*'))
     assert len(result_dirs) > 0; result_dir = result_dirs[0]; print(result_dir)
-    llm_model = 'N/A' if test_err else 'gpt-4o'
+    llm_model = 'N/A' if test_err else 'gpt-4o-mini'
     llm_config = {'model': llm_model, 'temperature': 1.2, 'top_p': 1.0}
 
     try:
@@ -386,18 +390,20 @@ def _test_autogen_mutation_crossover(
     test_err=False):
 
     clear_autogen_cache()
-    llm_model = 'N/A' if test_err else 'gpt-4o'
+    llm_model = 'N/A' if test_err else 'gpt-4o-mini'
     builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
     builder_llm_config['builder_model'] = llm_model
     builder_llm_config['agent_model'] = llm_model
-    print("BUILDER LLM CONFIG:")
-    pprint.pprint(builder_llm_config)
+    builder_llm_config['temperature'] = 0.1337
+    builder_llm_config['custom_coding_instruct'] = True
+    print("BUILDER LLM CONFIG:"); pprint.pprint(builder_llm_config)
 
+    llm_config = {'builder_llm_config': builder_llm_config}
     with open(team_role, 'r') as f: team_role = json.load(f)
     with open(other_team_role, 'r') as f: other_team_role = json.load(f)
 
     try:
-        output = llm_mutate_team(team_role, llm_config=builder_llm_config)
+        output = llm_mutate_team(team_role, llm_config=llm_config)
         print("### LLM_MUTATE RETURN VALUE ###")
         pprint.pprint(output)
         print("###############################")
@@ -406,7 +412,7 @@ def _test_autogen_mutation_crossover(
 
     try:
         output = llm_crossover_team(team_role, other_team_role,
-            llm_config=builder_llm_config)
+            llm_config=llm_config)
         print("### LLM_CROSSOVER RETURN VALUE ###")
         pprint.pprint(output)
         print("##################################")

@@ -286,9 +286,11 @@ Match roles in the role set to each expert in expert set.
         agent_name = agent_config["name"]
         system_message = agent_config["system_message"]
         description = agent_config["description"]
-        if self.custom_coding_instruct:
+        if "coding_instruction" in agent_config:
+            assert self.custom_coding_instruct is True
             agent_coding_instruct = agent_config["coding_instruction"]
         else:
+            # assert self.custom_coding_instruct is False
             agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
 
         # Path to the customize **ConversableAgent** class.

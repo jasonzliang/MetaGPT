@@ -36,7 +36,7 @@
     },
     "code_execution_config": {
         "last_n_messages": "auto",
-        "work_dir": "groupchat",
+        "work_dir": "/tmp/eval_qDKel30jDTtF",
         "use_docker": false,
         "timeout": 10
     }

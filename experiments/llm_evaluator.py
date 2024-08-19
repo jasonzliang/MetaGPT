@@ -200,6 +200,8 @@ class LLMEvaluator(object):
         builder_llm_config.update(indv.llm_config.get("builder_llm_config", {}))
         chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
         chat_llm_config.update(indv.llm_config.get("chat_llm_config", {}))
+        self.logger.info("Indv: %s\nChat config: %s\nBuilder config: %s" \
+            (indv.id, chat_llm_config, builder_llm_config))
 
         agent_list, agent_configs, builder, builder_dict = \
             init_builder(building_task=None,
