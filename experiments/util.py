@@ -27,14 +27,14 @@ from alg_util import is_numpy_type, randomword
 OBJECTIVES = {'base_score': lambda x: x,
     'plus_score': lambda x: x,
     'hybrid_score': lambda x: x,
+    'weighted_base_score': lambda x: x,
+    'weighted_plus_score': lambda x: x,
+    'weighted_hybrid_score': lambda x: x,
     'wall_time_sec': lambda x: -x,
     'user_time_sec': lambda x: -x,
     'sys_time_sec': lambda x: -x,
     'num_instructions': lambda x: -x,
-    'memory_usage_mb': lambda x: -x,
-    'weighted_base_score': lambda x: x,
-    'weighted_plus_score': lambda x: x,
-    'weighted_hybrid_score': lambda x: x}
+    'memory_usage_mb': lambda x: -x}
 
 
 def delete_contents_in_directory(directory_path, verbose=False):

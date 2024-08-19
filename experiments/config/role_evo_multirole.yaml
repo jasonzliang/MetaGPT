@@ -16,9 +16,8 @@ role_ga_config:
             model: gpt-4o
             temperature: 0.9
             top_p: 0.9
-            # builder_llm_config:
-            #     custom_coding_instruct: True
-            #     temperature: 0.9
+            builder_llm_config:
+                custom_coding_instruct: True
 
     num_gen: 18
     pop_size: 20
@@ -31,7 +30,7 @@ role_ga_config:
     eval_cache: True
 
 llm_evaluator_config:
-    objective: weighted_plus_score
+    objective: hybrid_score
     evalplus_weights: config/5_19_role_evo_weights.json
     debug_mode: False
     use_timestamp: False

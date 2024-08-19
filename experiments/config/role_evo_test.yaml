@@ -29,7 +29,7 @@ role_ga_config:
     eval_cache: True
 
 llm_evaluator_config:
-    objective: weighted_plus_score
+    objective: hybrid_score
     evalplus_weights: config/5_19_role_evo_weights.json
     debug_mode: False
     n_workers: 2
