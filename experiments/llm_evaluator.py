@@ -181,6 +181,8 @@ class LLMEvaluator(object):
                 calc_weighted_evalplus_score(result_dir, self.evalplus_weights)
             evalplus_result['weighted_base_score'] = weighted_base_score
             evalplus_result['weighted_plus_score'] = weighted_plus_score
+            evalplus_result['weight_hybrid_score'] = \
+                0.5 * weighted_base_score + 0.5 * weighted_plus_score
         assert self.objective in evalplus_result
         assert "base_score" in evalplus_result
 

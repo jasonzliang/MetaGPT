@@ -444,44 +444,66 @@ def multirun_evalplus_exp(experiment_dir,
 
 
 def generate_evalplus_weights_file(jsons_dir,
-    result_dir="config",
+    result_dir=".",
     min_weight=0.0,
-    max_weight=1.0):
+    max_weight=1.0,
+    use_quantile_weights=True,
+    quantiles_probs=[0.25, 0.5, 0.75, 1.0],
+    quantile_weights=[0.25, 0.5, 0.75, 1.0]):
 
     def normalize(v):
         return v * (max_weight - min_weight) + min_weight
 
-    base_counter = {}; plus_counter = {}; total_counter = 0.0
-    for eval_json in glob.glob(os.path.join(
-        jsons_dir, "**/eval_results.json"), recursive=True):
-        print("Processing %s" % eval_json)
-        total_counter += 1.0
-        with open(eval_json, 'r') as f:
-            eval_dict = json.load(f)
+    def get_weights(score_count, total_count):
+        for k, v in score_count.items():
+            score_count[k] = normalize(v/total_count)
+
+        if use_quantile_weights:
+            assert len(quantiles_probs) == len(quantile_weights)
+            quantiles = np.quantile(list(score_count.values()), quantiles_probs)
+            # print("Quantiles: %s" % quantiles)
+            weights_dict = {}
+            for k, v in score_count.items():
+                for q, qw in zip(quantiles, quantile_weights):
+                    if q >= v:
+                        weights_dict[k] = qw; break
+            return weights_dict
+        else:
+            return score_count
+
+    base_count = {}; plus_count = {}; _b = {}; _p = {}; total_count = 0.0
+    for eval_json in glob.glob(os.path.join(jsons_dir, "**/eval_results.json"),
+        recursive=True):
+
+        print("Processing %s" % eval_json); total_count += 1.0
+        with open(eval_json, 'r') as f: eval_dict = json.load(f)
+
         for task_id, result in eval_dict['eval'].items():
-            if task_id not in base_counter:
-                base_counter[task_id] = 0.0
-            if task_id not in plus_counter:
-                plus_counter[task_id] = 0.0
+            if task_id not in base_count:
+                base_count[task_id] = 0.0; _b[task_id] = 0.0
+            if task_id not in plus_count:
+                plus_count[task_id] = 0.0; _p[task_id] = 0.0
 
-            if result[0]['base_status'] == "fail":
-                base_counter[task_id] += 1.0
-            if result[0]['plus_status'] == "fail":
-                plus_counter[task_id] += 1.0
-    print("Processed %d results" % total_counter)
+            if result[0]['base_status'] != "pass": base_count[task_id] += 1.0
+            else: _b[task_id] += 1.0
+            if result[0]['plus_status'] != "pass": plus_count[task_id] += 1.0
+            else: _p[task_id] += 1.0
 
-    for k, v in base_counter.items():
-        base_counter[k] = normalize(v/total_counter)
-    for k, v in plus_counter.items():
-        plus_counter[k] = normalize(v/total_counter)
+    for k in base_count:
+        assert k in _b; assert _b[k] + base_count[k] == total_count
+    for k in plus_count:
+        assert k in _p; assert _p[k] + plus_count[k] == total_count
+    print("Processed %d results" % total_count)
 
-    b = list(base_counter.values()); p = list(plus_counter.values())
-    weights_dict = {'base_weights': base_counter,
-        'plus_weights': plus_counter,
-        'base_weights_mean': np.mean(b),
-        'base_weights_std': np.std(b),
-        'plus_weights_mean': np.mean(p),
-        'plus_weights_std': np.std(p)}
+    base_weights = get_weights(base_count, total_count)
+    plus_weights = get_weights(plus_count, total_count)
+    bw = list(base_weights.values()); pw = list(plus_weights.values())
+    weights_dict = {'base_weights': base_weights,
+        'plus_weights': plus_weights,
+        'base_weights_mean': np.mean(bw),
+        'base_weights_std': np.std(bw),
+        'plus_weights_mean': np.mean(pw),
+        'plus_weights_std': np.std(pw)}
 
     outfile = os.path.join(result_dir,
         os.path.basename(jsons_dir) + "_weights.json")

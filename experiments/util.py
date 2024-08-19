@@ -26,13 +26,15 @@ from alg_util import is_numpy_type, randomword
 
 OBJECTIVES = {'base_score': lambda x: x,
     'plus_score': lambda x: x,
+    'hybrid_score': lambda x: x,
     'wall_time_sec': lambda x: -x,
     'user_time_sec': lambda x: -x,
     'sys_time_sec': lambda x: -x,
     'num_instructions': lambda x: -x,
     'memory_usage_mb': lambda x: -x,
     'weighted_base_score': lambda x: x,
-    'weighted_plus_score': lambda x: x}
+    'weighted_plus_score': lambda x: x,
+    'weighted_hybrid_score': lambda x: x}
 
 
 def delete_contents_in_directory(directory_path, verbose=False):
@@ -208,6 +210,9 @@ def extract_evalplus(result_file, logger=None):
                 result_dict['wall_time_sec'] = float(line.split()[0])
                 result_dict['user_time_sec'] = float(line.split()[2])
                 result_dict['sys_time_sec'] = float(line.split()[4])
+
+        result_dict['hybrid_score'] = \
+            0.5 * result_dict["base_score"] + 0.5 * result_dict["hybrid_score"]
     except:
         if logger is None:
             print("Evalplus extraction failed: %s" % result_file)
