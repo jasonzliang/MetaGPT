@@ -118,7 +118,7 @@ For example: Python_Expert, Math_Expert, ... """
     AGENT_SYS_MSG_PROMPT = """# Your goal
 - According to the task and expert name, write a high-quality description for the expert by filling the given template.
 - Ensure that your description is clear, concise, and unambiguous, and include all necessary information.
-- Ensure the length of your description does not exceed 200 words.
+- Ensure the total length of your description does not exceed 200 words.
 
 # Task
 {task}
@@ -144,6 +144,7 @@ Summarize the following expert's description in a sentence.
 - According to the expert's name and description, write a high-quality list of instructions for task solving, answer verification, and using generated code.
 - Ensure that your list of instructions are clear and unambiguous, include all necessary information, and are relevant to the expert's name and description.
 - Use the provided template as a guide for writing the instructions.
+- Ensure the total length of your instructions does not exceed 250 words.
 
 # Expert name
 {position}
