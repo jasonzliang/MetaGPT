@@ -25,7 +25,7 @@ role_ga_config:
     tournament_size: 2
     checkpoint: True
     reevaluate_elites: True
-    init_mutate: False
+    init_mutate: True
     n_workers: 20
     eval_cache: True
 
