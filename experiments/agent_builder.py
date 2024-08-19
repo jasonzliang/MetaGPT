@@ -286,7 +286,8 @@ Match roles in the role set to each expert in expert set.
         agent_name = agent_config["name"]
         system_message = agent_config["system_message"]
         description = agent_config["description"]
-        if "coding_instruction" in agent_config:
+        if "coding_instruction" in agent_config and \
+            len(agent_config['coding_instruction']) > 0:
             assert self.custom_coding_instruct is True
             agent_coding_instruct = agent_config["coding_instruction"]
         else:
