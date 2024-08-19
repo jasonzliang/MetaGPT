@@ -40,7 +40,8 @@ CHAT_LLM_CONFIG = {"temperature": 0.0,
 BUILDER_LLM_CONFIG = {"temperature": 0.0,
     "builder_model": "gpt-4o",
     "agent_model": "gpt-4o-mini",
-    "cache_seed": None}
+    "cache_seed": None,
+    "custom_coding_instruct": False}
 MIN_CHAT_HIST_LEN = 32000
 MAX_CHAT_HIST_LEN = 128000
 MAX_MSG_LEN = 5000
@@ -133,8 +134,8 @@ def init_builder(building_task=None,
         config_file_or_env=CONFIG_FILE_OR_ENV,
         builder_model=builder_llm_config['builder_model'],
         agent_model=builder_llm_config['agent_model'],
-        max_agents=max_agents
-    )
+        max_agents=max_agents,
+        custom_coding_instruct=builder_llm_config['custom_coding_instruct'])
 
     if (use_builder_dict and builder_dict is None) or \
         (not use_builder_dict and not os.path.exists(builder_cfg)):

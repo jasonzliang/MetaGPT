@@ -117,7 +117,8 @@ For example: Python_Expert, Math_Expert, ... """
 
     AGENT_SYS_MSG_PROMPT = """# Your goal
 - According to the task and expert name, write a high-quality description for the expert by filling the given template.
-- Ensure that your description are clear and unambiguous, and include all necessary information.
+- Ensure that your description is clear, concise, and unambiguous, and include all necessary information.
+- Ensure the length of your description does not exceed 200 words.
 
 # Task
 {task}
@@ -138,6 +139,28 @@ Summarize the following expert's description in a sentence.
 # Expert's description
 {sys_msg}
 """
+
+    AGENT_CODING_INSTRUCTION_PROMPT = """# Your goal
+- According to the expert's name and description, write a high-quality list of instructions for task solving, answer verification, and using generated code.
+- Ensure that your list of instructions are clear and unambiguous, include all necessary information, and are relevant to the expert's name and description.
+- Use the provided template as a guide for writing the instructions.
+
+# Expert name
+{position}
+
+# Expert's description
+{sys_msg}
+
+# Template
+{instruct_template}
+"""
+# ## Useful instructions for task-solving
+# - [Complete this part with useful instructions for task solving]
+# ## How to verify?
+# - [Complete this part with useful instructions for task verification]
+# ## How to use code?
+# - [Complete this part with useful instructions for using the code]
+# """
 
     AGENT_SEARCHING_PROMPT = """# Your goal
 Considering the following task, what experts should be involved to the task?
@@ -183,6 +206,7 @@ Match roles in the role set to each expert in expert set.
         builder_model_tags: Optional[list] = [],
         agent_model_tags: Optional[list] = [],
         max_agents: Optional[int] = 5,
+        custom_coding_instruct: Optional[bool] = False,
     ):
         """
         (These APIs are experimental and may change in the future.)
@@ -220,6 +244,7 @@ Match roles in the role set to each expert in expert set.
         self.cached_configs: Dict = {}
 
         self.max_agents = max_agents
+        self.custom_coding_instruct = custom_coding_instruct
 
     def set_builder_model(self, model: str):
         self.builder_model = model
@@ -261,6 +286,10 @@ Match roles in the role set to each expert in expert set.
         agent_name = agent_config["name"]
         system_message = agent_config["system_message"]
         description = agent_config["description"]
+        if self.custom_coding_instruct:
+            agent_coding_instruct = agent_config["coding_instruction"]
+        else:
+            agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
 
         # Path to the customize **ConversableAgent** class.
         model_path = agent_config.get("model_path", None)
@@ -309,7 +338,8 @@ Match roles in the role set to each expert in expert set.
             additional_config = {
                 k: v
                 for k, v in agent_config.items()
-                if k not in ["model", "name", "system_message", "description", "model_path", "tags"]
+                if k not in ["model", "name", "system_message", "description", \
+                    "model_path", "tags", "coding_instruction"]
             }
             agent = model_class(
                 name=agent_name, llm_config=current_config.copy(), description=description, **additional_config
@@ -317,7 +347,7 @@ Match roles in the role set to each expert in expert set.
             if system_message == "":
                 system_message = agent.system_message
             else:
-                system_message = f"{system_message}\n\n{self.CODING_AND_TASK_SKILL_INSTRUCTION}"
+                system_message = f"{system_message}\n\n{agent_coding_instruct}"
 
             enhanced_sys_msg = self.GROUP_CHAT_DESCRIPTION.format(
                 name=agent_name, members=member_name, user_proxy_desc=user_proxy_desc, sys_msg=system_message
@@ -402,7 +432,9 @@ Match roles in the role set to each expert in expert set.
                 messages=[
                     {
                         "role": "user",
-                        "content": self.AGENT_NAME_PROMPT.format(task=building_task, max_agents=max_agents),
+                        "content": self.AGENT_NAME_PROMPT.format(
+                            task=building_task,
+                            max_agents=max_agents),
                     }
                 ]
             )
@@ -443,7 +475,9 @@ Match roles in the role set to each expert in expert set.
                     messages=[
                         {
                             "role": "user",
-                            "content": self.AGENT_DESCRIPTION_PROMPT.format(position=name, sys_msg=sys_msg),
+                            "content": self.AGENT_DESCRIPTION_PROMPT.format(
+                                position=name,
+                                sys_msg=sys_msg),
                         }
                     ]
                 )
@@ -452,7 +486,31 @@ Match roles in the role set to each expert in expert set.
             )
             agent_description_list.append(resp_agent_description)
 
-        for name, sys_msg, description in list(zip(agent_name_list, agent_sys_msg_list, agent_description_list)):
+        if self.custom_coding_instruct:
+            print(colored("==> Generating coding instructions...", "green"), flush=True)
+            agent_coding_instruct_list = []
+            for name, sys_msg in list(zip(agent_name_list, agent_sys_msg_list)):
+                print(f"Preparing coding instructions for {name}", flush=True)
+                resp_agent_coding_instruct = (
+                    self.builder_model.create(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": self.AGENT_CODING_INSTRUCTION_PROMPT.format(
+                                    position=name,
+                                    sys_msg=sys_msg,
+                                    instruct_template=self.CODING_AND_TASK_SKILL_INSTRUCTION),
+                            }
+                        ]
+                    )
+                    .choices[0]
+                    .message.content
+                )
+                agent_coding_instruct_list.append(resp_agent_coding_instruct)
+        else:
+            agent_coding_instruct_list = [""] * len(agent_name_list)
+
+        for name, sys_msg, description, coding_instruction in list(zip(agent_name_list, agent_sys_msg_list, agent_description_list, agent_coding_instruct_list)):
             agent_configs.append(
                 {
                     "name": name,
@@ -460,6 +518,7 @@ Match roles in the role set to each expert in expert set.
                     "tags": self.agent_model_tags,
                     "system_message": sys_msg,
                     "description": description,
+                    "coding_instruction": coding_instruction,
                 }
             )
 
