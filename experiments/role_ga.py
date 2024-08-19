@@ -259,7 +259,7 @@ class RoleEvolutionGA(object):
             self.fitness_logs = \
                 {'fitness': FitnessLog('fitness', self.checkpoint_dir),
                 'true_fitness': FitnessLog('true_fitness', self.checkpoint_dir),
-                'true_fit_of_best_indv': FitnessLog('true_fit_of_best_indv',
+                'best_indv_true_fit': FitnessLog('best_indv_true_fit',
                     self.checkpoint_dir)}
             chkpt_file = self._find_latest_checkpoint()
             loaded_chkpt = self._deserialize(file_path=chkpt_file)
@@ -363,7 +363,7 @@ class RoleEvolutionGA(object):
             best_indv = max(self.individuals)
             fit = best_indv.get_fitness(True)
             true_fit = best_indv.get_true_fitness()
-            fitness_log = self.fitness_logs["true_fit_of_best_indv"]
+            fitness_log = self.fitness_logs["best_indv_true_fit"]
             fitness_log.update(self.gen, fit, true_fit, abs(fit - true_fit))
 
         self.logger.debug("Population:")
