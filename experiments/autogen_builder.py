@@ -270,7 +270,7 @@ Combine and merge these experts to create a new and improved team for generating
 
 def run_evalplus(
     result_dir="results/evalplus_results_%s" % get_time(space=False),
-    builder_cfg="config/autogen_builder_init2.json",
+    builder_cfg="config/autogen_builder_cfg2.json",
     work_dir="/tmp/eval_%s" % randomword(12),
     clear_cache=True,
     humaneval=True,
