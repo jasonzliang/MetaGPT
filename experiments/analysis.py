@@ -509,10 +509,10 @@ def generate_evalplus_weights_file(jsons_dir,
 
 
 def compare_agent_chat_stats(experiment_dir,
-    indv_quartile=[0.8, 1.0],
-    gen_range=(10, None),
     top_n=5,
-    agg_func=np.mean):
+    agg_func=np.mean,
+    gen_range=(10, None),
+    indv_quartile=[0.8, 1.0]):
 
     print("Experiment dir: %s" % experiment_dir)
     indv_list = []; indv_config = get_indv_config(experiment_dir)
