@@ -142,8 +142,9 @@ Summarize the following expert's description in a sentence.
 
     AGENT_CODING_INSTRUCTION_PROMPT = """# Your goal
 - According to the expert's name and description, write a high-quality list of instructions for task solving, answer verification, and using generated code.
-- Ensure that your list of instructions are clear and unambiguous, include all necessary information, and are relevant to the expert's name and description.
 - Use the provided template as a guide for writing the instructions.
+- You must include the following instruction: "When writing test cases, you must first write the code for the task or function being tested."
+- Ensure that your list of instructions are clear and unambiguous and include all necessary information.
 - Ensure the total length of your instructions does not exceed 250 words.
 
 # Expert name
