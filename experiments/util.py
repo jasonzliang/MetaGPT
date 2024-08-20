@@ -80,8 +80,8 @@ def calc_weighted_evalplus_score(result_dir,
     assert os.path.exists(eval_json)
     with open(eval_json, 'r') as f: eval_dict = json.load(f)
 
-    base_score = 0.0; plus_score = 0.0
-    max_base_score = 0.0; max_plus_score = 0.0
+    base_score = 0.0; max_base_score = 0.0
+    plus_score = 0.0; max_plus_score = 0.0
     for task_id, result in eval_dict['eval'].items():
         base_weight = evalplus_weights['base_weights'][task_id]
         plus_weight = evalplus_weights['plus_weights'][task_id]
