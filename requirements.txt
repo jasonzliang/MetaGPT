@@ -46,7 +46,6 @@ playwright # Used at metagpt/tools/libs/web_scraping.py
 anytree
 ipywidgets
 Pillow
-
 imap_tools # Used by metagpt/tools/libs/email_login.py
 qianfan
 dashscope
