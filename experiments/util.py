@@ -35,6 +35,7 @@ OBJECTIVES = {'base_score': lambda x: x,
     'sys_time_sec': lambda x: -x,
     'num_instructions': lambda x: -x,
     'memory_usage_mb': lambda x: -x}
+SLEEP_TIME = 5
 
 
 def delete_contents_in_directory(directory_path, verbose=False):

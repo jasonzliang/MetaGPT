@@ -6,6 +6,7 @@ import logging
 import os
 import platform
 import re
+import subprocess
 import sys
 import pprint
 import random
@@ -33,15 +34,14 @@ from llm_operators import DEFAULT_MAIN_ROLE
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
 from util import format_prompt, clear_autogen_cache, collect_stats_from_chat
 from util import calc_weighted_evalplus_score
-from util import OBJECTIVES
-
-EVAL_SLEEP_TIME = 5
+from util import OBJECTIVES, SLEEP_TIME
 
 
 class LLMEvaluator(object):
     def __init__(self, config, evaluator_dir):
         self.config = config
         self.evaluator_dir = evaluator_dir
+        # self.logger maybe not necessary with mlogger?
         self.logger = logging.getLogger('evolve_role')
 
         self.n_workers = self.config.get("n_workers", 1)
@@ -76,11 +76,42 @@ class LLMEvaluator(object):
             self.pool.close(); self.pool.join(); self.pool.clear(); del self.pool
         self.pool = Pool(self.n_workers)
         os.makedirs(self.evaluator_dir, exist_ok=True)
+        # self._reset_pbar()
         # self.pool = ParallelPool(self.n_workers)
 
-    # TODO: Check evaluation progress for all indv
-    # def _check_eval_progress(self):
-    #     pass
+    # def _reset_pbar(self):
+    #     try: self.pbar.close()
+    #     except: pass
+    #     self.pbar = None
+
+    def _check_eval_progress(self, n_indv, debug=False):
+        # f = open(os.path.join(self.evaluator_dir, "progress.txt"), "w")
+        # if self.pbar is None:
+        #     self.pbar = tqdm.tqdm(total=n_problems * n_indv, file=f)
+        #     self.pbar.update(0)
+        # self.pbar.n = count; self.pbar.refresh(); self.pbar.update(0); f.close()
+        if self.dataset not in ['humaneval', 'mbpp']:
+            return
+
+        n_problems = 164 if self.dataset == "humaneval" else 1000
+        n_problems = min(self.max_problems, n_problems)
+
+        try:
+            eval_dirs = os.path.join(self.evaluator_dir, "evalG-%s*" % self.gen)
+            cmd = 'ls %s | grep -i "^%s_" | wc' % (eval_dirs, self.dataset)
+            result = subprocess.check_output(cmd, shell=True, text=True)
+            count, _, _ = result.split(); count = int(count)
+            percent = count/float(n_problems * n_indv) * 100
+        except:
+            stack_trace = traceback.format_exc()
+            mlogger.info("_check_eval_progress failed")
+            mlogger.info(stack_trace); return
+
+        summary = "Eval gen: %s, Num results: %s/%s, Progress: %.2f%%" % \
+            (self.gen, count, n_problems * n_indv, percent)
+        if debug: mlogger.info(summary)
+        with open(os.path.join(self.evaluator_dir, "progress.txt"), "w") as f:
+            f.write(summary)
 
     def evaluate(self, population, gen=0):
         if gen % self.restart_interval == 0: self.reset()
@@ -106,8 +137,10 @@ class LLMEvaluator(object):
                 result_dicts.append(result_dict)
         else:
             async_results = self.pool.amap(eval_func, population)
+            # self._reset_pbar()
             while not async_results.ready():
-                time.sleep(EVAL_SLEEP_TIME)
+                self._check_eval_progress(len(population))
+                time.sleep(SLEEP_TIME)
             result_dicts = async_results.get()
         # killtree(os.getpid(), including_parent=False) # Prevent zombie process
         return result_dicts
@@ -154,7 +187,9 @@ class LLMEvaluator(object):
                         output = eval_func(problem, result_dict); break
                     except:
                         stack_trace = traceback.format_exc()
-                        mlogger.info(stack_trace); err_str += stack_trace + "\n"
+                        mlogger.info("eval_func failed for %s" % task_id)
+                        mlogger.info(stack_trace)
+                        err_str += stack_trace + "\n"
                         output = ""; n_tries -= 1; time.sleep(5)
 
                         if n_tries == 0:
@@ -187,7 +222,7 @@ class LLMEvaluator(object):
             "--dataset %s --samples %s 2>&1 | tee %s" \
             % (flag, self.dataset, result_dir, evalplus_fp))
 
-        evalplus_result = extract_evalplus(evalplus_fp, self.logger)
+        evalplus_result = extract_evalplus(evalplus_fp, mlogger)
         if self.objective.startswith('weighted_'):
             weighted_base_score, weighted_plus_score = \
                 calc_weighted_evalplus_score(result_dir, self.evalplus_weights)
@@ -214,7 +249,7 @@ class LLMEvaluator(object):
         builder_llm_config.update(indv.llm_config.get("builder_llm_config", {}))
         chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
         chat_llm_config.update(indv.llm_config.get("chat_llm_config", {}))
-        self.logger.info("Indv: %s\nChat config: %s\nBuilder config: %s" % \
+        mlogger.info("Indv: %s\nChat config: %s\nBuilder config: %s" % \
             (indv.id, chat_llm_config, builder_llm_config))
 
         agent_list, agent_configs, builder, builder_dict = \
@@ -256,7 +291,7 @@ class LLMEvaluator(object):
     def _eval_indv_main_role(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
 
-        @retry(Exception, tries=3, delay=1, backoff=2, logger=self.logger)
+        @retry(Exception, tries=3, delay=1, backoff=2, logger=mlogger)
         def _eval_prompt(prompt_template, prompt):
             team, coder = create_new_team(
                 indv.llm_config.get('eval_llm_config', {}))
@@ -344,6 +379,7 @@ def _test_calc_weighted_evalplus_score(
 
     evalplus_result = extract_evalplus(os.path.join(result_dir, "evalplus.txt"))
     pprint.pprint(evalplus_result)
+
     print(calc_weighted_evalplus_score(result_dir, evalplus_weights))
     with open(evalplus_weights, 'r') as f: weights_dict = json.load(f)
     print(calc_weighted_evalplus_score(result_dir, weights_dict))
@@ -354,7 +390,19 @@ def _test_calc_weighted_evalplus_score(
         normalize=True, debug_weights=True))
 
 
+def _test_check_eval_progress(
+    evaluator_dir="results/8_19_multirole_coding_prompt/llm_evaluator",
+    gen=17,
+    n_indv=20):
+
+    log = logging.getLogger("evolve_role"); log.debug("debug")
+
+    evaluator = LLMEvaluator(config={}, evaluator_dir=evaluator_dir)
+    evaluator.gen = gen
+    evaluator._check_eval_progress(n_indv, debug=True)
+
 if __name__ == "__main__":
-    _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
-    _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
+    _test_check_eval_progress()
+    # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
+    # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
     # _test_evaluator(team_role_fp='config/autogen_builder_init.json')
