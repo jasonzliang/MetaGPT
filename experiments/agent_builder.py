@@ -447,6 +447,8 @@ Match roles in the role set to each expert in expert set.
             .message.content
         )
         agent_name_list = [agent_name.strip().replace(" ", "_") for agent_name in resp_agent_name.split(",")]
+        if len(agent_name_list) > self.max_agents:
+            agent_name_list = agent_name_list[:self.max_agents]
         print(f"{agent_name_list} are generated.", flush=True)
 
         print(colored("==> Generating system message...", "green"), flush=True)
