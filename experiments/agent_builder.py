@@ -82,7 +82,7 @@ When the task is complete and the result has been carefully verified, after obta
 **You have to keep believing that everyone else's answers are wrong until they provide clear enough evidence.**
 - Verify answers with step-by-step backward reasoning.
 - Write test cases according to the general task.
-- When writing test cases, you must first write the code for the task or function being tested.
+- Very important: Before writing test cases, first write the code for the task or function being tested.
 
 ## How to use code?
 - Suggest python code (in a python coding block) or shell script (in a sh coding block) for the Computer_terminal to execute.
@@ -140,10 +140,10 @@ Summarize the following expert's description in a sentence.
 {sys_msg}
 """
 
+# - You must include the following instruction: "When writing test cases, you must first write the code for the task or function being tested."
     AGENT_CODING_INSTRUCTION_PROMPT = """# Your goal
 - According to the expert's name and description, write a high-quality list of instructions for task solving, answer verification, and using generated code.
 - Use the provided template as a guide for writing the instructions.
-- You must include the following instruction: "When writing test cases, you must first write the code for the task or function being tested."
 - Ensure that your list of instructions are clear and unambiguous and include all necessary information.
 - Ensure the total length of your instructions does not exceed 250 words.
 
@@ -446,7 +446,8 @@ Match roles in the role set to each expert in expert set.
             .choices[0]
             .message.content
         )
-        agent_name_list = [agent_name.strip().replace(" ", "_") for agent_name in resp_agent_name.split(",")]
+        agent_name_list = [agent_name.strip().replace(" ", "_") \
+            for agent_name in resp_agent_name.split(",")]
         if len(agent_name_list) > self.max_agents:
             agent_name_list = agent_name_list[:self.max_agents]
         print(f"{agent_name_list} are generated.", flush=True)

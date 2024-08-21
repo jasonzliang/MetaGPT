@@ -1,5 +1,5 @@
 {
-    "building_task": "Generate a team of 4 agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities.",
+    "building_task": "Generate a team of agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities.",
     "agent_configs": [
         {
             "name": "Python_Expert",
