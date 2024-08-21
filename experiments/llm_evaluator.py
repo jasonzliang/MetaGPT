@@ -84,7 +84,7 @@ class LLMEvaluator(object):
     #     except: pass
     #     self.pbar = None
 
-    def _check_eval_progress(self, n_indv, debug=False):
+    def _check_eval_progress(self, n_indv):
         # f = open(os.path.join(self.evaluator_dir, "progress.txt"), "w")
         # if self.pbar is None:
         #     self.pbar = tqdm.tqdm(total=n_problems * n_indv, file=f)
@@ -108,7 +108,7 @@ class LLMEvaluator(object):
 
         summary = "Eval gen: %s, Num results: %s/%s, Progress: %.2f%%" % \
             (self.gen, count, total_count, percent)
-        if debug: mlogger.info(summary)
+        mlogger.info(summary)
         with open(os.path.join(self.evaluator_dir, "progress.txt"), "w") as f:
             f.write(summary)
 
@@ -398,7 +398,7 @@ def _test_check_eval_progress(
 
     evaluator = LLMEvaluator(config={}, evaluator_dir=evaluator_dir)
     evaluator.gen = gen
-    evaluator._check_eval_progress(n_indv, debug=True)
+    evaluator._check_eval_progress(n_indv)
 
 
 if __name__ == "__main__":
