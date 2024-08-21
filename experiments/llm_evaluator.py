@@ -94,20 +94,20 @@ class LLMEvaluator(object):
             return
 
         n_problems = 164 if self.dataset == "humaneval" else 1000
-        n_problems = min(self.max_problems, n_problems)
+        total_count = n_problems * n_indv
 
         try:
             eval_dirs = os.path.join(self.evaluator_dir, "evalG-%s*" % self.gen)
             cmd = 'ls %s | grep -i "^%s_" | wc' % (eval_dirs, self.dataset)
             result = subprocess.check_output(cmd, shell=True, text=True)
-            count, _, _ = result.split(); count = int(count)
-            percent = count/float(n_problems * n_indv) * 100
+            count, _, _ = result.split(); count = min(int(count), total_count)
+            percent = count/float(total_count) * 100
         except:
             mlogger.info("_check_eval_progress failed")
             mlogger.info(traceback.format_exc()); return
 
         summary = "Eval gen: %s, Num results: %s/%s, Progress: %.2f%%" % \
-            (self.gen, count, n_problems * n_indv, percent)
+            (self.gen, count, total_count, percent)
         if debug: mlogger.info(summary)
         with open(os.path.join(self.evaluator_dir, "progress.txt"), "w") as f:
             f.write(summary)
