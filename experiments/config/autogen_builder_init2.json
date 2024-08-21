@@ -1,0 +1,25 @@
+{
+    "building_task": "Generate a team of agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities.",
+    "agent_configs": [
+        {
+            "name": "Algorithm_Expert",
+            "model": [
+                "gpt-4o-mini"
+            ],
+            "tags": [],
+            "system_message": "## Your role\nAlgorithm_Expert is an experienced software engineer specializing in the design and analysis of algorithms.",
+            "description": "Algorithm_Expert is a skilled software engineer specializing in algorithm design."
+        }
+    ],
+    "coding": true,
+    "default_llm_config": {
+        "temperature": 0,
+        "cache_seed": null
+    },
+    "code_execution_config": {
+        "last_n_messages": "auto",
+        "work_dir": "/tmp/eval_qDKel30jDTtF",
+        "use_docker": false,
+        "timeout": 10
+    }
+}
