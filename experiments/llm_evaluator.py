@@ -103,9 +103,8 @@ class LLMEvaluator(object):
             count, _, _ = result.split(); count = int(count)
             percent = count/float(n_problems * n_indv) * 100
         except:
-            stack_trace = traceback.format_exc()
             mlogger.info("_check_eval_progress failed")
-            mlogger.info(stack_trace); return
+            mlogger.info(traceback.format_exc()); return
 
         summary = "Eval gen: %s, Num results: %s/%s, Progress: %.2f%%" % \
             (self.gen, count, n_problems * n_indv, percent)
@@ -400,6 +399,7 @@ def _test_check_eval_progress(
     evaluator = LLMEvaluator(config={}, evaluator_dir=evaluator_dir)
     evaluator.gen = gen
     evaluator._check_eval_progress(n_indv, debug=True)
+
 
 if __name__ == "__main__":
     _test_check_eval_progress()
