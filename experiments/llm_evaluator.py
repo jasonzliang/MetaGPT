@@ -35,6 +35,8 @@ from util import format_prompt, clear_autogen_cache, collect_stats_from_chat
 from util import calc_weighted_evalplus_score
 from util import OBJECTIVES
 
+EVAL_SLEEP_TIME = 5
+
 
 class LLMEvaluator(object):
     def __init__(self, config, evaluator_dir):
@@ -71,10 +73,14 @@ class LLMEvaluator(object):
     def reset(self):
         self.gen = None
         if hasattr(self, "pool"):
-            self.pool.close(); self.pool.join(); self.pool.clear()
+            self.pool.close(); self.pool.join(); self.pool.clear(); del self.pool
         self.pool = Pool(self.n_workers)
         os.makedirs(self.evaluator_dir, exist_ok=True)
         # self.pool = ParallelPool(self.n_workers)
+
+    # TODO: Check evaluation progress for all indv
+    # def _check_eval_progress(self):
+    #     pass
 
     def evaluate(self, population, gen=0):
         if gen % self.restart_interval == 0: self.reset()
@@ -99,9 +105,13 @@ class LLMEvaluator(object):
                     result_dict = eval_func(indv)
                 result_dicts.append(result_dict)
         else:
-            result_dicts = self.pool.map(eval_func, population)
+            async_results = self.pool.amap(eval_func, population)
+            while not async_results.ready():
+                time.sleep(EVAL_SLEEP_TIME)
+            result_dicts = async_results.get()
         # killtree(os.getpid(), including_parent=False) # Prevent zombie process
         return result_dicts
+
 
     def _setup_result_dir(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
