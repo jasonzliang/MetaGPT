@@ -88,7 +88,7 @@ class LLMEvaluator(object):
         with open(os.path.join(self.evaluator_dir, "progress"), "w") as f:
             if self.n_workers == 1 or self.debug_mode:
                 result_dicts = []
-                for indv in tqdm.map(population):
+                for indv in tqdm.map(population, file=f):
                     if self.debug_mode:
                         fitness = random.random()
                         result_dict = {}
@@ -98,7 +98,8 @@ class LLMEvaluator(object):
                         result_dict = eval_func(indv)
                     result_dicts.append(result_dict)
             else:
-                result_dicts = tqdm.map(self.pool.map(eval_func, population), f)
+                result_dicts = tqdm.map(self.pool.map(eval_func, population),
+                    file=f)
 
         # killtree(os.getpid(), including_parent=False) # Prevent zombie process
         return result_dicts
