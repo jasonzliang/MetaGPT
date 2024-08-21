@@ -11,10 +11,11 @@ import pprint
 import random
 import traceback
 import time
-from tqdm.auto import tqdm
+import tqdm
 
 from metagpt.logs import logger as mlogger
-from pathos.pools import ProcessPool
+from pathos.pools import ProcessPool as Pool
+# from multiprocessing import Pool
 # from pathos.pp import ParallelPool
 from retry import retry
 # from wrapt_timeout_decorator import *
@@ -71,7 +72,8 @@ class LLMEvaluator(object):
         self.gen = None
         if hasattr(self, "pool"):
             self.pool.close(); self.pool.join(); self.pool.clear()
-        self.pool = ProcessPool(self.n_workers)
+        self.pool = Pool(self.n_workers)
+        os.makedirs(self.evaluator_dir, exist_ok=True)
         # self.pool = ParallelPool(self.n_workers)
 
     def evaluate(self, population, gen=0):
@@ -85,22 +87,19 @@ class LLMEvaluator(object):
         else:
             eval_func = self._eval_indv_team_role
 
-        with open(os.path.join(self.evaluator_dir, "progress"), "w") as f:
-            if self.n_workers == 1 or self.debug_mode:
-                result_dicts = []
-                for indv in tqdm.map(population, file=f):
-                    if self.debug_mode:
-                        fitness = random.random()
-                        result_dict = {}
-                        result_dict['fitness'] = fitness
-                        result_dict['true_fitness'] = fitness
-                    else:
-                        result_dict = eval_func(indv)
-                    result_dicts.append(result_dict)
-            else:
-                result_dicts = tqdm.map(self.pool.map(eval_func, population),
-                    file=f)
-
+        if self.n_workers == 1 or self.debug_mode:
+            result_dicts = []
+            for indv in population:
+                if self.debug_mode:
+                    fitness = random.random()
+                    result_dict = {}
+                    result_dict['fitness'] = fitness
+                    result_dict['true_fitness'] = fitness
+                else:
+                    result_dict = eval_func(indv)
+                result_dicts.append(result_dict)
+        else:
+            result_dicts = self.pool.map(eval_func, population)
         # killtree(os.getpid(), including_parent=False) # Prevent zombie process
         return result_dicts
 
