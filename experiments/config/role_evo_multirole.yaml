@@ -20,6 +20,7 @@ role_ga_config:
                 custom_coding_instruct: True
                 min_agents: 1
                 max_agents: 1
+                temperature: 0.9
 
     num_gen: 18
     pop_size: 20

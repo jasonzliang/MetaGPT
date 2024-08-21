@@ -16,6 +16,8 @@ role_ga_config:
             model: gpt-4o
             builder_llm_config:
                 custom_coding_instruct: True
+                min_agents: 1
+                max_agents: 1
                 temperature: 0.1337
 
     num_gen: 4
