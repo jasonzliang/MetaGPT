@@ -41,12 +41,12 @@ BUILDER_LLM_CONFIG = {"temperature": 0.9,
     "builder_model": "gpt-4o",
     "agent_model": "gpt-4o-mini",
     "cache_seed": None,
-    "custom_coding_instruct": False}
+    "custom_coding_instruct": False,
+    "min_agents": 2,
+    "max_agents": 4}
 MIN_CHAT_HIST_LEN = 32000
 MAX_CHAT_HIST_LEN = 128000
 MAX_MSG_LEN = 5000
-MIN_AGENTS = 2
-MAX_AGENTS = 4
 CHAT_TIMEOUT = 100
 # TODO: FIX CACHING/CACHE SEED
 
@@ -121,14 +121,19 @@ def init_builder(building_task=None,
     builder_cfg=None,
     builder_dict=None,
     builder_llm_config=BUILDER_LLM_CONFIG,
-    max_agents=5,
     clear_cache=False,
-    use_builder_dict=False):
+    use_builder_dict=False,
+    max_agents=None):
 
     os.makedirs(work_dir, exist_ok=True)
     if clear_cache: os.system("rm -rf .cache")
     if builder_cfg is None:
         builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
+    if max_agents is None:
+        a = builder_llm_config['min_agents']
+        b = builder_llm_config['max_agents']
+        assert a > 0 and b > 0 and a <= b; max_agents = random.randint(a, b)
+    else: assert max_agents > 0
 
     builder = AgentBuilder(
         config_file_or_env=CONFIG_FILE_OR_ENV,
@@ -227,8 +232,7 @@ Build a new and improved version of the team that generates more efficient, accu
             builder_llm_config=builder_llm_config,
             work_dir=work_dir,
             use_builder_dict=True,
-            clear_cache=False,
-            max_agents=random.randint(MIN_AGENTS, MAX_AGENTS))
+            clear_cache=False)
     else:
         return init_builder(building_task=building_task,
             builder_cfg=output_cfg,
@@ -259,8 +263,7 @@ Combine and merge these experts to create a new and improved team for generating
             builder_llm_config=builder_llm_config,
             work_dir=work_dir,
             use_builder_dict=True,
-            clear_cache=False,
-            max_agents=random.randint(MIN_AGENTS, MAX_AGENTS))
+            clear_cache=False)
     else:
         return init_builder(building_task=building_task,
             builder_cfg=output_cfg,
