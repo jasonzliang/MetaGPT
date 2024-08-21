@@ -9,7 +9,7 @@ role_ga_config:
             the function is clear, modular, and follows best practices in coding, such as
             the Google Python style guide. Consider efficiency, accuracy, and maintainability
             in your solution.\n\nReturn:\n```python\nyour_code_here\n```
-        initial_team_role: config/autogen_builder_init.json
+        initial_team_role: config/autogen_builder_init2.json
         evolve_mode: team
 
         llm_config:
