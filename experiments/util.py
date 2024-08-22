@@ -197,7 +197,7 @@ def extract_evalplus(result_file, logger=None):
             if "Maximum resident set size (kbytes)" in line:
                 result_dict['memory_usage_mb'] = float(line.split()[-1]) / 1e3
             if "Elapsed (wall clock) time" in line:
-                result_dict['wall_time_sec'] = get_sec(line.split()[-1])
+                result_dict['wall_time_sec'] = time_to_sec(line.split()[-1])
             if "User time" in line:
                 result_dict['user_time_sec'] = float(line.split()[-1])
             if "System time" in line:
@@ -225,7 +225,7 @@ def extract_evalplus(result_file, logger=None):
         return result_dict
 
 
-def get_sec(time_str):
+def time_to_sec(time_str):
     """Get seconds from time."""
     fields = [float(x) for x in time_str.split(':')]
     if len(fields) == 2:

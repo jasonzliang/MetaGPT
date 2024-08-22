@@ -24,7 +24,7 @@ from analysis_util import \
     get_fitness_file, load_checkpoint, get_checkpoints
 from analysis_util import COLORS, FIG_SIZE, PLOT_FMT, PROP_CYCLER
 from role_ga import Individual, DEFAULT_MAIN_ROLE
-from util import extract_evalplus, get_indv_config
+from util import extract_evalplus, get_indv_config, datetime_to_epoch
 
 # Directory to get results from
 EXPERIMENT_DIRS = []
@@ -57,7 +57,7 @@ OUT_FILE = ('%s_GEN-%s_RANGE-%s_METRIC-%s_comp.%s' % \
         MAX_GEN, FITNESS_RANGE, FITNESS_METRIC, PLOT_FMT))[:255]
 
 
-def load_fitness(experiment_dir, max_gen=MAX_GEN, fit_metric=FITNESS_METRIC):
+def _load_fitness(experiment_dir, max_gen=MAX_GEN, fit_metric=FITNESS_METRIC):
     if fit_metric == "fitness":
             fitness_file = get_fitness_file(experiment_dir, 'fitness.txt')
     else:
@@ -69,8 +69,9 @@ def load_fitness(experiment_dir, max_gen=MAX_GEN, fit_metric=FITNESS_METRIC):
         for line in f:
             if line.startswith("#"):
                 continue
-            t, g, b, m = line.rstrip().split()
-            t = t.split("/")[0]
+            d, t, g, b, m, s = line.rstrip().split()
+            t = datetime_to_epoch("%s %s" % (d, t))
+            # t = t.split("/")[0]
             gen_dict[int(g)] = (t, b, m)
 
     sorted_fit_list = sorted(gen_dict.items(), key=lambda x: x[0])
@@ -90,7 +91,7 @@ def load_fitness(experiment_dir, max_gen=MAX_GEN, fit_metric=FITNESS_METRIC):
     return result_dict
 
 
-def get_experiment_dirs():
+def _get_experiment_dirs():
     expanded_dirs = []
     for experiment_label, experiment_dir in EXPERIMENT_DIRS:
         experiment_dirs = sorted([x for x in glob.glob(experiment_dir) \
@@ -214,13 +215,15 @@ def get_experiment_dirs():
 #             print("T-test %s/%s: %.2f" % (exp_label, b_label, p))
 
 
-def compare_experiments():
+def _compare_experiments():
     experiment_dict = {}
-    for experiment_label, experiment_dir in get_experiment_dirs():
-
+    for experiment_label, experiment_dir in _get_experiment_dirs():
         experiment_name = os.path.basename(experiment_dir)
-        try: result_dict = load_fitness(experiment_dir)
-        except: result_dict = None
+        try:
+            result_dict = _load_fitness(experiment_dir, max_gen=MAX_GEN,
+                fit_metric=FITNESS_METRIC)
+        except:
+            traceback.print_exc(); result_dict = None
         if result_dict is None: continue
         if experiment_label is None: experiment_label = experiment_name
 
@@ -276,34 +279,36 @@ def compare_experiments():
     plt.grid(which='major', axis='y')
     plt.grid(which='minor', linestyle='--', axis='y')
 
-    if X_LABEL is not None:
-        plt.xlabel(X_LABEL)
-    elif PLOT_WALL_TIME:
-        plt.xlabel("Wall Time (Seconds)")
-    else:
-        plt.xlabel("Generations")
-    plt.ylabel(Y_LABEL) if Y_LABEL is not None else plt.ylabel('Fitness')
+    if X_LABEL is not None: plt.xlabel(X_LABEL)
+    elif PLOT_WALL_TIME: plt.xlabel("Wall Time (Seconds)")
+    else: plt.xlabel("Generations")
+
+    default_y_label = FITNESS_METRIC.title().replace("_", " ")
+    plt.ylabel(Y_LABEL) if Y_LABEL is not None else plt.ylabel(default_y_label)
     plt.savefig(OUT_FILE, bbox_inches='tight', dpi=200)
 
 
 def compare_experiments_main():
     _experiment_dirs = [
-        [('5/19 Role Evolution', 'results/5_19_role_evo')],
-    ]
+        [('Single Agent Team', 'results/8_20_multirole_coding_prompt'),
+        ('Multi Agent Team', 'results/8_19_multirole_coding_prompt')],
 
+        [('Single Agent Team', 'results/8_20_multirole_coding_prompt'),
+        ('Multi Agent Team', 'results/8_19_multirole_coding_prompt')],
+    ]
     _blacklists = [[]] * len(_experiment_dirs)
     _combine_labels = [None] * len(_experiment_dirs)
+    _fitness_metrics = ['fitness', 'true_fitness']
 
-    for x in zip(_experiment_dirs, _blacklists, _combine_labels):
-        print(x)
-        EXPERIMENT_DIRS, EXPERIMENT_NAME_BLACKLIST, COMBINE_LABELS = x
-        labels = EXPERIMENT_DIRS; assert len(labels) > 0
-
-        OUT_FILE = ('%s_TIME-%s_GEN-%s_RAN-%s_MET-%s_comp.%s' % \
-            ("-".join([os.path.basename(y) for x, y in labels]),
-            int(time.time()), MAX_GEN, FITNESS_RANGE, FITNESS_METRIC,
-            PLOT_FMT))[:255]
-        compare_experiments()
+    global EXPERIMENT_DIRS, EXPERIMENT_NAME_BLACKLIST, COMBINE_LABELS
+    global FITNESS_METRIC, OUT_FILE
+    for x in zip(_experiment_dirs, _blacklists, _combine_labels, _fitness_metrics):
+        print(x); EXPERIMENT_DIRS, EXPERIMENT_NAME_BLACKLIST, COMBINE_LABELS, \
+            FITNESS_METRIC = x
+        exp_names = "-".join([os.path.basename(y) for x, y in EXPERIMENT_DIRS])
+        OUT_FILE = ('%s_MAXGEN-%s_RANGE-%s_METRIC-%s.%s' % \
+            (exp_names, MAX_GEN, FITNESS_RANGE, FITNESS_METRIC, PLOT_FMT))[:255]
+        _compare_experiments()
 
 
 def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
@@ -396,12 +401,12 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
 
 
 def multirun_evalplus_exp(experiment_dir,
-    top_n=3,
-    min_evals=1,
+    top_n=1,
+    min_samples=3,
     agg_func=np.max, # np.mean, np.median, np.max, lambda x: x[-1]
     gen_range=(0, 999),
     use_true_fitness=False,
-    eval_indv=False,
+    eval_indv=True,
     *args,
     **kwargs):
 
@@ -423,7 +428,7 @@ def multirun_evalplus_exp(experiment_dir,
             _indv_dict[indv.id] = indv
 
     for indv_id, fit_list in _fit_list_dict.items():
-        if len(fit_list) < min_evals:
+        if len(fit_list) < min_samples:
             del _indv_dict[indv_id]; continue
         agg_fit = agg_func(fit_list)
         true_agg_fit = agg_func(_true_fit_list_dict[indv_id])
@@ -558,12 +563,9 @@ def compare_agent_chat_stats(experiment_dir,
     print("\n")
 
 if __name__ == "__main__":
+    compare_experiments_main()
+    # multirun_evalplus_exp(sys.argv[1], eval_indv=False)
+    # multirun_evalplus_exp("results/8_20_multirole_coding_prompt",
+    #     eval_indv=False)
     # generate_evalplus_weights_file("results/old_results/5_19_role_evo")
-    # generate_evalplus_weights_file("results/8_6_multirole")
-    # multirun_evalplus_exp("results/8_17_multirole")
-    compare_agent_chat_stats("results/8_17_multirole",
-        indv_quartile=[0.8, 1.0])
-    compare_agent_chat_stats("results/8_17_multirole",
-        indv_quartile=[0.0, 0.2])
-    compare_agent_chat_stats("results/8_17_multirole",
-        indv_quartile=[0.0, 1.0])
+    # compare_agent_chat_stats("results/8_17_multirole", indv_quartile=[0.0, 1.0])
