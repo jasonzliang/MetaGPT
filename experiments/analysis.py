@@ -563,7 +563,7 @@ def compare_agent_chat_stats(experiment_dir,
     print("\n")
 
 if __name__ == "__main__":
-    multirun_evalplus_exp(sys.argv[1], use_true_fitness=False, eval_indv=False)
+    multirun_evalplus_exp(sys.argv[1], use_true_fitness=False, eval_indv=True)
     # compare_experiments_main()
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
