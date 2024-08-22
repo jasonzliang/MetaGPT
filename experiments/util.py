@@ -261,8 +261,7 @@ def datetime_to_epoch(datetime_str, space=True):
         h, _m, s = time.split("-")
     y, m, d = date.split("-")
     t = datetime.datetime(int(y), int(m), int(d), int(h), int(_m), int(s))
-    # tz = pytz.timezone('America/Los_Angeles')
-    # t = t.astimezone(tz)
+    # tz = pytz.timezone('America/Los_Angeles'); t = t.astimezone(tz)
     return calendar.timegm(t.timetuple())
 
 
