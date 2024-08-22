@@ -236,7 +236,7 @@ class LLMEvaluator(object):
         result_dict['fitness'] = scaling_fn(evalplus_result[self.objective])
         result_dict['true_fitness'] = evalplus_result['base_score']
         result_dict['result_dir'] = result_dir
-        # result_dict['evalplus_result'] = evalplus_result
+        result_dict['evalplus_result'] = evalplus_result
         return result_dict
 
     def _eval_indv_team_role(self, indv):
