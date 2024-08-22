@@ -22,7 +22,7 @@ from scipy.stats import ttest_ind
 
 from analysis_util import \
     get_fitness_file, load_checkpoint, get_checkpoints
-from analysis_util import COLORS, FIG_SIZE, PLOT_FMT, PROP_CYCLER
+from analysis_util import COLORS, LINEWIDTH, FIG_SIZE, PLOT_FMT, PROP_CYCLER
 from role_ga import Individual, DEFAULT_MAIN_ROLE
 from util import extract_evalplus, get_indv_config, datetime_to_epoch
 
@@ -254,7 +254,7 @@ def _compare_experiments():
 
         kwargs = PROP_CYCLER[i]
         plt.plot(epochs, result_dict.get('best'),
-            label='%s' % experiment_label, **kwargs)
+            label='%s' % experiment_label, linewidth=LINEWIDTH, **kwargs)
         if 'best_std' in result_dict:
             yerr=np.array(result_dict.get('best_std'))/ \
                 math.sqrt(result_dict.get('num_trials'))
@@ -266,7 +266,8 @@ def _compare_experiments():
 
         if PLOT_MEAN and 'mean' in result_dict:
             plt.plot(epochs, result_dict.get('mean'),
-                label='mean %s' % experiment_label, alpha=0.5, **kwargs)
+                label='mean %s' % experiment_label, alpha=0.5,
+                linewidth=LINEWIDTH * 0.75, **kwargs)
 
     if FITNESS_RANGE is not None:
         plt.ylim(FITNESS_RANGE)
@@ -305,8 +306,8 @@ def compare_experiments_main():
     for x in zip(_experiment_dirs, _blacklists, _combine_labels, _fitness_metrics):
         print(x); EXPERIMENT_DIRS, EXPERIMENT_NAME_BLACKLIST, COMBINE_LABELS, \
             FITNESS_METRIC = x
-        exp_names = "-".join([os.path.basename(y) for x, y in EXPERIMENT_DIRS])
-        OUT_FILE = ('%s_MAXGEN-%s_RANGE-%s_METRIC-%s.%s' % \
+        exp_names = '-'.join([os.path.basename(y) for x, y in EXPERIMENT_DIRS])
+        OUT_FILE = ('results/%s_MAXGEN-%s_RANGE-%s_METRIC-%s.%s' % \
             (exp_names, MAX_GEN, FITNESS_RANGE, FITNESS_METRIC, PLOT_FMT))[:255]
         _compare_experiments()
 
@@ -563,7 +564,7 @@ def compare_agent_chat_stats(experiment_dir,
     print("\n")
 
 if __name__ == "__main__":
-    multirun_evalplus_exp(sys.argv[1], use_true_fitness=False, eval_indv=True)
-    # compare_experiments_main()
+    compare_experiments_main()
+    # multirun_evalplus_exp(sys.argv[1], use_true_fitness=False, eval_indv=True)
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])

@@ -16,6 +16,8 @@ COLORS = ['b', 'g', 'r', 'c', 'm', 'y', 'k'] * 100
 FIG_SIZE = (12, 5)
 # Different line styles for plotting
 LINESTYLES = ['-', '--', '-.',':'] * 100
+# Default line width for plotting
+LINEWIDTH = 1.5
 # Get true fitness from indv dict
 TRUE_FITNESS = True
 # Format for plots
