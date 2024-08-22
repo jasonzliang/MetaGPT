@@ -405,7 +405,7 @@ def multirun_evalplus_exp(experiment_dir,
     min_samples=3,
     agg_func=np.max, # np.mean, np.median, np.max, lambda x: x[-1]
     gen_range=(0, 999),
-    use_true_fitness=False,
+    use_true_fitness=True,
     eval_indv=True,
     *args,
     **kwargs):
@@ -563,9 +563,7 @@ def compare_agent_chat_stats(experiment_dir,
     print("\n")
 
 if __name__ == "__main__":
-    compare_experiments_main()
-    # multirun_evalplus_exp(sys.argv[1], eval_indv=False)
-    # multirun_evalplus_exp("results/8_20_multirole_coding_prompt",
-    #     eval_indv=False)
-    # generate_evalplus_weights_file("results/old_results/5_19_role_evo")
-    # compare_agent_chat_stats("results/8_17_multirole", indv_quartile=[0.0, 1.0])
+    multirun_evalplus_exp(sys.argv[1], use_true_fitness=False, eval_indv=False)
+    # compare_experiments_main()
+    # generate_evalplus_weights_file(sys.argv[1])
+    # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
