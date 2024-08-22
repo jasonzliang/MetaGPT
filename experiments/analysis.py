@@ -315,6 +315,7 @@ def compare_experiments_main():
 def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
     team_prompt='config/autogen_builder_init.json',
     indv=None,
+    exp_name=None,
     use_prompt=True,
     n_trials=10,
     n_workers=10,
@@ -339,9 +340,10 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
     else:
         from llm_evaluator import LLMEvaluator; assert n_trials > 0
         if not use_prompt: assert indv is not None; _id = indv.id; t = None
-        else: _id = "NO_ID"; t = int(time.time())
+        else: _id = None; t = int(time.time())
 
-        result_dir = "results/multirun_indv_%s_N-%s_T-%s" % (_id, n_trials, t)
+        result_dir = "results/multirun_%s_%s_N-%s_T-%s" % \
+            (exp_name, _id, n_trials, t)
         os.makedirs(result_dir, exist_ok=True)
 
         if use_prompt:
@@ -403,10 +405,10 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
 def multirun_evalplus_exp(experiment_dir,
     top_n=1,
     min_samples=3,
-    agg_func=np.max, # np.mean, np.median, np.max, lambda x: x[-1]
+    agg_func=np.median, # np.mean, np.median, np.max, lambda x: x[-1]
     gen_range=(0, 999),
-    use_true_fitness=True,
-    eval_indv=True,
+    use_true_fitness=False,
+    eval_indv=False,
     *args,
     **kwargs):
 
@@ -442,7 +444,11 @@ def multirun_evalplus_exp(experiment_dir,
             (agg_func.__name__, i+1, len(_fit_list_dict[indv.id])))
         print(indv); print("\n\n")
         if eval_indv:
-            multirun_evalplus(indv=indv, use_prompt=False, *args, **kwargs)
+            multirun_evalplus(indv=indv,
+                exp_name=os.path.basename(experiment_dir),
+                use_prompt=False,
+                *args,
+                **kwargs)
 
 
 def generate_evalplus_weights_file(jsons_dir,
