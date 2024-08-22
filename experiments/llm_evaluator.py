@@ -106,7 +106,7 @@ class LLMEvaluator(object):
             mlogger.info("_check_eval_progress failed")
             mlogger.info(traceback.format_exc()); return
 
-        summary = "Eval gen: %s, Num results: %s/%s, Progress: %.2f%%" % \
+        summary = "Eval gen: %s, Num results: %s/%s, Progress: %.2f%%\n" % \
             (self.gen, count, total_count, percent)
         mlogger.info(summary)
         with open(os.path.join(self.evaluator_dir, "progress.txt"), "w") as f:
