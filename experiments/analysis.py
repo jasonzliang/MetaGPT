@@ -445,7 +445,7 @@ def multirun_evalplus_exp(experiment_dir,
         print(indv); print("\n\n")
         if eval_indv:
             multirun_evalplus(indv=indv,
-                exp_name=os.path.basename(experiment_dir),
+                exp_name=os.path.basename(experiment_dir.rstrip("/")),
                 use_prompt=False,
                 *args,
                 **kwargs)
@@ -569,7 +569,7 @@ def compare_agent_chat_stats(experiment_dir,
     print("\n")
 
 if __name__ == "__main__":
-    # compare_experiments_main()
     multirun_evalplus_exp(sys.argv[1], use_true_fitness=False, eval_indv=True)
+    # compare_experiments_main()
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
