@@ -338,11 +338,10 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
             evalplus_results.append(extract_evalplus(evalplus_fp))
     else:
         from llm_evaluator import LLMEvaluator; assert n_trials > 0
-        if not use_prompt: assert indv is not None; _id = indv.id
-        else: _id = "NO_ID"
+        if not use_prompt: assert indv is not None; _id = indv.id; t = None
+        else: _id = "NO_ID"; t = int(time.time())
 
-        result_dir = "results/multirun_indv_%s_N-%s_T-%s" % \
-            (_id, n_trials, int(time.time()))
+        result_dir = "results/multirun_indv_%s_N-%s_T-%s" % (_id, n_trials, t)
         os.makedirs(result_dir, exist_ok=True)
 
         if use_prompt:
