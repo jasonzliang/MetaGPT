@@ -301,8 +301,8 @@ def compare_experiments_main():
     _combine_labels = [None] * len(_experiment_dirs)
     _fitness_metrics = ['fitness', 'true_fitness']
 
-    global EXPERIMENT_DIRS, EXPERIMENT_NAME_BLACKLIST, COMBINE_LABELS
-    global FITNESS_METRIC, OUT_FILE
+    global EXPERIMENT_DIRS, EXPERIMENT_NAME_BLACKLIST
+    global COMBINE_LABELS, FITNESS_METRIC, OUT_FILE
     for x in zip(_experiment_dirs, _blacklists, _combine_labels, _fitness_metrics):
         print(x); EXPERIMENT_DIRS, EXPERIMENT_NAME_BLACKLIST, COMBINE_LABELS, \
             FITNESS_METRIC = x
