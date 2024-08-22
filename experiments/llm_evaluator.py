@@ -102,12 +102,16 @@ class LLMEvaluator(object):
             result = subprocess.check_output(cmd, shell=True, text=True)
             count, _, _ = result.split(); count = min(int(count), total_count)
             percent = count/float(total_count) * 100
+
+            cmd = 'ls %s | grep -i ".err$" | wc' % eval_dirs
+            result = subprocess.check_output(cmd, shell=True, text=True)
+            n_errors, _, _ = result.split(); n_errors = int(n_errors)
         except:
             mlogger.info("_check_eval_progress failed")
             mlogger.info(traceback.format_exc()); return
 
-        summary = "Eval gen: %s, Num results: %s/%s, Progress: %.2f%%\n" % \
-            (self.gen, count, total_count, percent)
+        summary = "Gen: %s, Results: %s/%s, Progress: %.2f%%, Errors: %s\n" % \
+            (self.gen, count, total_count, percent, n_errors)
         mlogger.info(summary)
         with open(os.path.join(self.evaluator_dir, "progress.txt"), "w") as f:
             f.write(summary)
