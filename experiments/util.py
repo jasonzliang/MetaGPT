@@ -348,3 +348,14 @@ def get_indv_config(experiment_dir):
         print("Cannot load indv config!"); time.sleep(3); indv_config = {}
     return indv_config
 
+
+def get_eval_config(experiment_dir):
+    try:
+        with open(os.path.join(experiment_dir, "config.yaml"), "r") as f:
+            exp_cfg = YAML().load(f)
+        eval_config = exp_cfg['llm_evaluator_config']
+        print("Evaluator config:"); pprint.pprint(eval_config)
+    except:
+        print("Cannot load evaluator config!"); time.sleep(3); eval_config = {}
+    return eval_config
+

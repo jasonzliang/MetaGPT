@@ -24,7 +24,8 @@ from analysis_util import \
     get_fitness_file, load_checkpoint, get_checkpoints
 from analysis_util import COLORS, LINEWIDTH, FIG_SIZE, PLOT_FMT, PROP_CYCLER
 from role_ga import Individual, DEFAULT_MAIN_ROLE
-from util import extract_evalplus, get_indv_config, datetime_to_epoch
+from util import extract_evalplus, datetime_to_epoch
+from util import get_indv_config, get_eval_config
 
 # Directory to get results from
 EXPERIMENT_DIRS = []
@@ -405,7 +406,7 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
 def multirun_evalplus_exp(experiment_dir,
     top_n=1,
     min_samples=3,
-    agg_func=np.median, # np.mean, np.median, np.max, lambda x: x[-1]
+    agg_func=np.mean, # np.mean, np.median, np.max, lambda x: x[-1]
     gen_range=(0, 999),
     use_true_fitness=False,
     eval_indv=False,
@@ -413,6 +414,7 @@ def multirun_evalplus_exp(experiment_dir,
     **kwargs):
 
     indv_config = get_indv_config(experiment_dir)
+    eval_config = get_eval_config(experiment_dir)
     _fit_list_dict = defaultdict(list)
     _true_fit_list_dict = defaultdict(list)
     _indv_dict = {}
@@ -441,12 +443,13 @@ def multirun_evalplus_exp(experiment_dir,
 
     for i, indv in enumerate(best_indv):
         print("#### agg_func: %s, rank: %s, samples: %s ####" % \
-            (agg_func.__name__, i+1, len(_fit_list_dict[indv.id])))
+            (agg_func.__name__, i + 1, len(_fit_list_dict[indv.id])))
         print(indv); print("\n\n")
         if eval_indv:
             multirun_evalplus(indv=indv,
                 exp_name=os.path.basename(experiment_dir.rstrip("/")),
                 use_prompt=False,
+                eval_config=eval_config,
                 *args,
                 **kwargs)
 
@@ -569,7 +572,7 @@ def compare_agent_chat_stats(experiment_dir,
     print("\n")
 
 if __name__ == "__main__":
-    multirun_evalplus_exp(sys.argv[1], use_true_fitness=False, eval_indv=True)
+    multirun_evalplus_exp(sys.argv[1], use_true_fitness=True, eval_indv=False)
     # compare_experiments_main()
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
