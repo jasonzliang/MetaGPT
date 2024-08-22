@@ -47,7 +47,7 @@ BUILDER_LLM_CONFIG = {"temperature": 0.9,
 MIN_CHAT_HIST_LEN = 32000
 MAX_CHAT_HIST_LEN = 128000
 MAX_MSG_LEN = 5000
-CHAT_TIMEOUT = 100
+CHAT_TIMEOUT = 120
 # TODO: FIX CACHING/CACHE SEED
 
 # @timeout_decorator.timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError)
