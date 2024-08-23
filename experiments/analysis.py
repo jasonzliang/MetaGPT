@@ -68,11 +68,11 @@ def _load_fitness(experiment_dir, max_gen=MAX_GEN, fit_metric=FITNESS_METRIC):
     gen_dict = {}
     with open(fitness_file) as f:
         for line in f:
-            if line.startswith("#"):
-                continue
-            d, t, g, b, m, s = line.rstrip().split()
+            if line.startswith("#"): continue
+            try: d, t, g, b, m, s = line.rstrip().split()
+            except: d, t, g, b, m = line.rstrip().split()
             t = datetime_to_epoch("%s %s" % (d, t))
-            # t = t.split("/")[0]
+            # t, g, b, m  = line.rstrip().split(); t = t.split("/")[0]
             gen_dict[int(g)] = (t, b, m)
 
     sorted_fit_list = sorted(gen_dict.items(), key=lambda x: x[0])
@@ -292,11 +292,13 @@ def _compare_experiments():
 
 def compare_experiments_main():
     _experiment_dirs = [
-        [('Single Agent Team', 'results/8_20_multirole_coding_prompt'),
-        ('Multi Agent Team', 'results/8_19_multirole_coding_prompt')],
+        [('Single Agent', 'results/8_20_multirole_coding_prompt'),
+        ('Multi Agent', 'results/8_19_multirole_coding_prompt')],
 
-        [('Single Agent Team', 'results/8_20_multirole_coding_prompt'),
-        ('Multi Agent Team', 'results/8_19_multirole_coding_prompt')],
+        [('Single Agent', 'results/8_20_multirole_coding_prompt'),
+        ('Multi Agent (8/19)', 'results/8_19_multirole_coding_prompt'),
+        ('Multi Agent (8/17)', 'results/8_17_multirole'),
+        ('Multi Agent (8/6)', 'results/8_6_multirole')],
     ]
     _blacklists = [[]] * len(_experiment_dirs)
     _combine_labels = [None] * len(_experiment_dirs)
@@ -572,7 +574,7 @@ def compare_agent_chat_stats(experiment_dir,
     print("\n")
 
 if __name__ == "__main__":
-    multirun_evalplus_exp(sys.argv[1], use_true_fitness=True, eval_indv=True)
-    # compare_experiments_main()
+    # multirun_evalplus_exp(sys.argv[1], use_true_fitness=True, eval_indv=True)
+    compare_experiments_main()
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
