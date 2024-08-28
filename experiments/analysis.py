@@ -316,7 +316,7 @@ def compare_experiments_main():
 
 
 def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
-    team_prompt='config/autogen_builder_init.json',
+    team_prompt='config/autogen_builder_init2.json',
     indv=None,
     exp_name=None,
     use_prompt=True,
@@ -574,7 +574,8 @@ def compare_agent_chat_stats(experiment_dir,
     print("\n")
 
 if __name__ == "__main__":
+    multirun_evalplus()
     # multirun_evalplus_exp(sys.argv[1], use_true_fitness=True, eval_indv=True)
-    compare_experiments_main()
+    # compare_experiments_main()
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
