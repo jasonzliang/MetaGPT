@@ -360,6 +360,7 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
             for indv in population:
                 indv.main_role = main_prompt; indv.team_role = team_prompt
                 indv.eval_mode = eval_mode
+            print("Creating individual from main/team prompts")
             print(population[0])
         else:
             population = [indv.create_child(indv.gen_created) \
