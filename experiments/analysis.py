@@ -317,6 +317,7 @@ def compare_experiments_main():
 
 def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
     team_prompt='config/autogen_builder_init2.json',
+    eval_mode='team',
     indv=None,
     exp_name=None,
     use_prompt=True,
@@ -350,13 +351,14 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
         os.makedirs(result_dir, exist_ok=True)
 
         if use_prompt:
-            assert os.path.exists(main_prompt) and os.path.exists(team_prompt)
+            assert os.path.exists(main_prompt) or os.path.exists(team_prompt)
             with open(main_prompt, "r") as f: main_prompt = f.read()
             with open(team_prompt, "r") as f: team_prompt = json.load(f)
 
             population = [Individual({}) for i in range(n_trials)]
             for indv in population:
                 indv.main_role = main_prompt; indv.team_role = team_prompt
+                indv.eval_mode = eval_mode
         else:
             population = [indv.create_child(indv.gen_created) \
                 for i in range(n_trials)]
