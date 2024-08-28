@@ -351,14 +351,16 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
         os.makedirs(result_dir, exist_ok=True)
 
         if use_prompt:
-            assert os.path.exists(main_prompt) or os.path.exists(team_prompt)
-            with open(main_prompt, "r") as f: main_prompt = f.read()
-            with open(team_prompt, "r") as f: team_prompt = json.load(f)
+            if os.path.exists(main_prompt):
+                with open(main_prompt, "r") as f: main_prompt = f.read()
+            if os.path.exists(team_prompt):
+                with open(team_prompt, "r") as f: team_prompt = json.load(f)
 
             population = [Individual({}) for i in range(n_trials)]
             for indv in population:
                 indv.main_role = main_prompt; indv.team_role = team_prompt
                 indv.eval_mode = eval_mode
+            print(population[0])
         else:
             population = [indv.create_child(indv.gen_created) \
                 for i in range(n_trials)]
