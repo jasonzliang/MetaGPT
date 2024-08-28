@@ -317,7 +317,7 @@ def compare_experiments_main():
 
 def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
     team_prompt='config/autogen_builder_init2.json',
-    eval_mode='team',
+    evolve_mode='team',
     indv=None,
     exp_name=None,
     use_prompt=True,
@@ -359,7 +359,7 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
             population = [Individual({}) for i in range(n_trials)]
             for indv in population:
                 indv.main_role = main_prompt; indv.team_role = team_prompt
-                indv.eval_mode = eval_mode
+                indv.evolve_mode = evolve_mode
             print("Creating individual from main/team prompts")
             print(population[0])
         else:
