@@ -267,8 +267,7 @@ def _compare_experiments():
 
         if PLOT_MEAN and 'mean' in result_dict:
             plt.plot(epochs, result_dict.get('mean'),
-                label='mean %s' % experiment_label, alpha=0.5,
-                linewidth=LINEWIDTH * 0.75, **kwargs)
+                alpha=0.5, linewidth=LINEWIDTH * 0.75, **kwargs)
 
     if FITNESS_RANGE is not None:
         plt.ylim(FITNESS_RANGE)
@@ -292,17 +291,17 @@ def _compare_experiments():
 
 def compare_experiments_main():
     _experiment_dirs = [
-        [('Single Agent', 'results/8_20_multirole_coding_prompt'),
-        ('Multi Agent', 'results/8_19_multirole_coding_prompt')],
+        [('Single-agent + weighted fitness/coding instruct (8/20)', 'results/8_20_multirole_coding_prompt'),
+        ('Multi-agent + weighted fitness/coding instruct (8/19)', 'results/8_19_multirole_coding_prompt')],
 
-        [('Single Agent', 'results/8_20_multirole_coding_prompt'),
-        ('Multi Agent (8/19)', 'results/8_19_multirole_coding_prompt'),
-        ('Multi Agent (8/17)', 'results/8_17_multirole'),
-        ('Multi Agent (8/6)', 'results/8_6_multirole')],
+        [('Single-agent + weighted fitness/coding instruct (8/20)', 'results/8_20_multirole_coding_prompt'),
+        ('Multi-agent + weighted fitness/coding instruct (8/19)', 'results/8_19_multirole_coding_prompt'),
+        ('Multi-agent + weighted fitness (8/17)', 'results/8_17_multirole'),
+        ('Multi-agent (8/6)', 'results/8_6_multirole')],
     ]
     _blacklists = [[]] * len(_experiment_dirs)
     _combine_labels = [None] * len(_experiment_dirs)
-    _fitness_metrics = ['fitness', 'true_fitness']
+    _fitness_metrics = ['true_fitness', 'true_fitness']
 
     global EXPERIMENT_DIRS, EXPERIMENT_NAME_BLACKLIST
     global COMBINE_LABELS, FITNESS_METRIC, OUT_FILE
@@ -326,7 +325,7 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
     dataset='humaneval',
     eval_config={},
     result_dir=None,
-    baseline_result_dir="results/multirole_baseline",
+    baseline_result_dir="results/multirun_single_agent_baseline",
     seed=0):
 
     random.seed(seed); np.random.seed(seed)
@@ -396,7 +395,7 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
         if baseline_results is not None:
             print("Computing t-tests from baseline results: %s" % \
                 baseline_result_dir); f.write("\n\n")
-            f.write("Baseline: %s\n" % baseline_result_dir)
+            f.write("Comparison to baseline: %s\n" % baseline_result_dir)
             for key in evalplus_results[0]:
                 if key not in baseline_results[0]: continue
                 _baselines = [x[key] for x in baseline_results]
@@ -579,8 +578,8 @@ def compare_agent_chat_stats(experiment_dir,
     print("\n")
 
 if __name__ == "__main__":
-    multirun_evalplus()
-    # multirun_evalplus_exp(sys.argv[1], use_true_fitness=True, eval_indv=True)
     # compare_experiments_main()
+    multirun_evalplus_exp(sys.argv[1], use_true_fitness=True, eval_indv=False)
+    # multirun_evalplus()
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
