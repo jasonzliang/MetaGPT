@@ -94,14 +94,16 @@ class LLMEvaluator(object):
             return
 
         n_problems = 164 if self.dataset == "humaneval" else 1000
-        total_count = n_problems * n_indv
+        total = n_problems * n_indv
 
         try:
             eval_dirs = os.path.join(self.evaluator_dir, "evalG-%s*" % self.gen)
-            cmd = 'ls %s | grep -i "^%s_" | wc' % (eval_dirs, self.dataset)
+            cmd = 'find %s -name 0.py | wc;find %s -name 0.py -size +0 | wc' % \
+                (eval_dirs, eval_dirs)
             result = subprocess.check_output(cmd, shell=True, text=True)
-            count, _, _ = result.split(); count = min(int(count), total_count)
-            percent = count/float(total_count) * 100
+            result = result.replace("\n", " "); c,_,_,c2,_,_ = result.split()
+            c = min(int(c), total); c2 = min(int(c2), total)
+            percent = c/float(total) * 100; empty = max(c - c2, 0)
 
             cmd = 'ls %s | grep -i ".err$" | wc' % eval_dirs
             result = subprocess.check_output(cmd, shell=True, text=True)
@@ -110,8 +112,8 @@ class LLMEvaluator(object):
             mlogger.info("_check_eval_progress failed")
             mlogger.info(traceback.format_exc()); return
 
-        summary = "Gen: %s, Results: %s/%s, Progress: %.2f%%, Errors: %s\n" % \
-            (self.gen, count, total_count, percent, n_errors)
+        summary = "Gen: %s, Results: %s/%s, Progress: %.2f%%, Empty: %s, Errors: %s\n" % \
+            (self.gen, c, total, percent, empty, n_errors)
         mlogger.info(summary)
         with open(os.path.join(self.evaluator_dir, "progress.txt"), "w") as f:
             f.write(summary)
