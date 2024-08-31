@@ -18,13 +18,13 @@ role_ga_config:
             top_p: 0.9
             chat_llm_config:
                 model: gpt-3.5-turbo
-                temperature: 0.1
+                temperature: 0.8
             builder_llm_config:
                 custom_coding_instruct: True
                 min_agents: 2
                 max_agents: 4
                 agent_model: gpt-3.5-turbo
-                temperature: 0.9
+                temperature: 1.0
 
     num_gen: 18
     pop_size: 20
