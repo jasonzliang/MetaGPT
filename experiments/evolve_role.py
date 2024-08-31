@@ -76,8 +76,8 @@ class RoleEvolutionServer(object):
         try:
             self.run()
         except Exception as e:
-            error = str(e).replace(" ", "_").replace("'", "").replace('"', '')\
-                .replace("\\", "_")
+            error = type(e).__name__.replace(" ", "_").replace("'", ""). \
+                replace('"', '').replace("\\", "_")
             filename = "%s_%s.err" % (int(time.time()), error)
             filename = filename[:MAX_PATH_LENGTH]
             with open(os.path.join(self.experiment_dir, filename), 'w') as f:

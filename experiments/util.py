@@ -216,8 +216,7 @@ def extract_evalplus(result_file, logger=None):
             0.5 * result_dict["base_score"] + 0.5 * result_dict["plus_score"]
     except:
         stack_trace = traceback.format_exc()
-        with open(result_file + ".err", "w") as f:
-            f.write(stack_trace)
+        with open(result_file + ".err", "w") as f: f.write(stack_trace)
         if logger is None:
             print("Evalplus extraction failed: %s" % result_file)
             print(stack_trace)
