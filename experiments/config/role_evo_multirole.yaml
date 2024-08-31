@@ -9,7 +9,7 @@ role_ga_config:
             the function is clear, modular, and follows best practices in coding, such as
             the Google Python style guide. Consider efficiency, accuracy, and maintainability
             in your solution.\n\nReturn:\n```python\nyour_code_here\n```
-        initial_team_role: config/autogen_builder_init2.json
+        initial_team_role: config/autogen_builder_init.json
         evolve_mode: team
 
         llm_config:
@@ -18,13 +18,13 @@ role_ga_config:
             top_p: 0.9
             chat_llm_config:
                 model: gpt-3.5-turbo
-                temperature: 0.8
+                temperature: 0.1
             builder_llm_config:
                 custom_coding_instruct: True
                 min_agents: 2
                 max_agents: 4
                 agent_model: gpt-3.5-turbo
-                temperature: 1.0
+                temperature: 0.9
 
     num_gen: 18
     pop_size: 20
