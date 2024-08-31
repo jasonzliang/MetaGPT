@@ -194,8 +194,8 @@ def extract_evalplus(result_file, logger=None):
                 score = float(lines[i+1].rstrip().rsplit()[1])
                 assert 0.0 <= score <= 1.0
                 result_dict['plus_score'] = score
-
-            if platform.system() == 'Linux': # Linux performance metrics
+            # Linux performance metrics
+            if platform.system() == 'Linux':
                 if "Maximum resident set size (kbytes)" in line:
                     result_dict['memory_usage_mb'] = float(line.split()[-1])/1e3
                 if "Elapsed (wall clock) time" in line:
