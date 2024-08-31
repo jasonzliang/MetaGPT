@@ -18,13 +18,13 @@ role_ga_config:
             top_p: 0.9
             chat_llm_config:
                 model: gpt-3.5-turbo
-                temperature: 0.8
+                temperature: 0.1
             builder_llm_config:
                 custom_coding_instruct: True
                 min_agents: 2
                 max_agents: 4
                 agent_model: gpt-3.5-turbo
-                temperature: 1.0
+                temperature: 0.9
 
     num_gen: 18
     pop_size: 20
@@ -37,7 +37,7 @@ role_ga_config:
     eval_cache: True
 
 llm_evaluator_config:
-    objective: weighted_base_score
+    objective: base_score
     evalplus_weights: config/5_19_role_evo_weights2.json
     debug_mode: False
     use_timestamp: False
