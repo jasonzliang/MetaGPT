@@ -212,6 +212,7 @@ def extract_evalplus(result_file, logger=None):
                 result_dict['user_time_sec'] = float(line.split()[2])
                 result_dict['sys_time_sec'] = float(line.split()[4])
 
+        assert "base_score" in result_dict and "plus_score" in result_dict
         result_dict['hybrid_score'] = \
             0.5 * result_dict["base_score"] + 0.5 * result_dict["plus_score"]
     except:
