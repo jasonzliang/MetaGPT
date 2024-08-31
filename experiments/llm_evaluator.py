@@ -235,8 +235,8 @@ class LLMEvaluator(object):
             evalplus_result['weighted_plus_score'] = weighted_plus_score
             evalplus_result['weight_hybrid_score'] = \
                 0.5 * weighted_base_score + 0.5 * weighted_plus_score
-        assert self.objective in evalplus_result
-        assert "base_score" in evalplus_result
+        assert self.objective in evalplus_result, str(evalplus_result)
+        assert "base_score" in evalplus_result, str(evalplus_result)
 
         result_dict = {}; scaling_fn = OBJECTIVES[self.objective]
         result_dict['fitness'] = scaling_fn(evalplus_result[self.objective])
