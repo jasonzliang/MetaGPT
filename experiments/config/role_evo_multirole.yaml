@@ -26,7 +26,7 @@ role_ga_config:
                 agent_model: gpt-3.5-turbo
                 temperature: 0.9
 
-    num_gen: 18
+    num_gen: 50
     pop_size: 20
     num_elites: 10
     tournament_size: 2
