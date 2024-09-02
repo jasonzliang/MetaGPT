@@ -407,12 +407,14 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
 
     with open(os.path.join(result_dir, 'evalplus_results.yaml'), 'w') as f:
         YAML().dump(evalplus_results, f)
+    return result_dir
+
 
 
 def multirun_evalplus_exp(experiment_dir,
     top_n=1,
     min_samples=3,
-    agg_func=np.max, # np.mean, np.median, np.max, lambda x: x[-1]
+    agg_func=np.median, # np.mean, np.median, np.max, lambda x: x[-1]
     gen_range=(0, 999),
     use_true_fitness=False,
     eval_indv=False,
@@ -445,19 +447,20 @@ def multirun_evalplus_exp(experiment_dir,
         _indv_dict[indv_id].set_fitness(agg_fit)
         _indv_dict[indv_id].set_true_fitness(true_agg_fit)
 
-    best_indv = sorted(_indv_dict.values(), reverse=True)[:top_n]
-
-    for i, indv in enumerate(best_indv):
+    best = sorted(_indv_dict.values(), reverse=True)[:top_n]; result_dirs = []
+    for i, indv in enumerate(best):
         print("#### agg_func: %s, rank: %s, samples: %s ####" % \
             (agg_func.__name__, i + 1, len(_fit_list_dict[indv.id])))
         print(indv); print("\n\n")
-        if eval_indv:
-            multirun_evalplus(indv=indv,
-                exp_name=os.path.basename(experiment_dir.rstrip("/")),
-                use_prompt=False,
-                eval_config=eval_config,
-                *args,
-                **kwargs)
+        if not eval_indv: continue
+        result_dir = multirun_evalplus(indv=indv,
+            exp_name=os.path.basename(experiment_dir.rstrip("/")),
+            use_prompt=False,
+            eval_config=eval_config,
+            *args,
+            **kwargs)
+        result_dirs.append(result_dir)
+    return result_dirs
 
 
 def generate_evalplus_weights_file(jsons_dir,
@@ -579,7 +582,8 @@ def compare_agent_chat_stats(experiment_dir,
 
 if __name__ == "__main__":
     # compare_experiments_main()
-    multirun_evalplus_exp(sys.argv[1], use_true_fitness=True, eval_indv=False)
+    multirun_evalplus_exp(sys.argv[1], use_true_fitness=True,
+        eval_indv=False, baseline_result_dir=None)
     # multirun_evalplus()
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
