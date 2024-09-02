@@ -300,7 +300,7 @@ class LLMEvaluator(object):
         @retry(Exception, tries=3, delay=1, backoff=2, logger=mlogger)
         def _eval_prompt(prompt_template, prompt):
             team, coder = create_new_team(
-                indv.llm_config.get('eval_llm_config', {}))
+                indv.llm_config.get('metagpt_llm_config', {}))
             coder.set_prompt_template(prompt_template)
             team.run_project(prompt)
             asyncio.run(team.run(n_round=1))

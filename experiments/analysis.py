@@ -412,7 +412,7 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
 def multirun_evalplus_exp(experiment_dir,
     top_n=1,
     min_samples=3,
-    agg_func=np.mean, # np.mean, np.median, np.max, lambda x: x[-1]
+    agg_func=np.max, # np.mean, np.median, np.max, lambda x: x[-1]
     gen_range=(0, 999),
     use_true_fitness=False,
     eval_indv=False,
