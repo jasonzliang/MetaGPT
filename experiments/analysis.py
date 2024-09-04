@@ -315,21 +315,29 @@ def compare_experiments_main():
 
 
 def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
-    team_prompt='config/autogen_builder_init2.json',
+    team_prompt='config/autogen_builder_init.json',
     evolve_mode='team',
     indv=None,
-    exp_name=None,
+    experiment_dir=None,
     use_prompt=True,
     n_trials=10,
     n_workers=10,
     dataset='humaneval',
-    eval_config={},
     result_dir=None,
-    baseline_result_dir="results/multirun_single_agent_baseline",
+    baseline_result_dir=None,
     seed=0):
 
-    random.seed(seed); np.random.seed(seed)
-    if result_dir is None: result_dir = "."
+    random.seed(seed); np.random.seed(seed); assert n_trials > 0
+    if experiment_dir is not None:
+        assert os.path.exists(experiment_dir)
+        exp_name = os.path.basename(experiment_dir.rstrip("/"))
+    else: exp_name = None
+    if not use_prompt: assert indv is not None; _id = indv.id; t = None
+    else: _id = None; t = int(time.time())
+    if result_dir is None:
+        result_dir = "results/multirun_%s_%s_N-%s_T-%s" % \
+            (exp_name, _id, n_trials, t)
+    os.makedirs(result_dir, exist_ok=True)
 
     results_file = os.path.join(result_dir, "evalplus_results.yaml")
     eval_results_list = glob.glob(os.path.join(result_dir, "*/evalplus.txt"))
@@ -341,21 +349,18 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
         for evalplus_fp in eval_results_list:
             evalplus_results.append(extract_evalplus(evalplus_fp))
     else:
-        from llm_evaluator import LLMEvaluator; assert n_trials > 0
-        if not use_prompt: assert indv is not None; _id = indv.id; t = None
-        else: _id = None; t = int(time.time())
-
-        result_dir = "results/multirun_%s_%s_N-%s_T-%s" % \
-            (exp_name, _id, n_trials, t)
-        os.makedirs(result_dir, exist_ok=True)
-
+        from llm_evaluator import LLMEvaluator
         if use_prompt:
+            if experiment_dir is not None:
+                indv_config = get_indv_config(experiment_dir)
+            else: indv_config = {}
+
             if os.path.exists(main_prompt):
                 with open(main_prompt, "r") as f: main_prompt = f.read()
             if os.path.exists(team_prompt):
                 with open(team_prompt, "r") as f: team_prompt = json.load(f)
 
-            population = [Individual({}) for i in range(n_trials)]
+            population = [Individual(indv_config) for i in range(n_trials)]
             for indv in population:
                 indv.main_role = main_prompt; indv.team_role = team_prompt
                 indv.evolve_mode = evolve_mode
@@ -370,8 +375,13 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
         with open(os.path.join(result_dir, 'indv_config.yaml'), 'w') as f:
             YAML().dump(population[0].config, f)
 
-        eval_config['n_workers'] = n_workers
-        eval_config['dataset'] = dataset
+        if experiment_dir is not None:
+            eval_config = get_eval_config(experiment_dir)
+        else: eval_config = {}
+        eval_config['n_workers'] = n_workers; eval_config['dataset'] = dataset
+        print("Running %s trials with following config:" % n_trials)
+        pprint.pprint(indv_config); pprint.pprint(eval_config); time.sleep(3)
+
         evaluator = LLMEvaluator(eval_config, evaluator_dir=result_dir)
         result_dicts = evaluator.evaluate(population)
         evalplus_results = [x.get('evalplus_result', {}) for x in result_dicts]
@@ -454,9 +464,8 @@ def multirun_evalplus_exp(experiment_dir,
         print(indv); print("\n\n")
         if not eval_indv: continue
         result_dir = multirun_evalplus(indv=indv,
-            exp_name=os.path.basename(experiment_dir.rstrip("/")),
+            experiment_dir=experiment_dir,
             use_prompt=False,
-            eval_config=eval_config,
             *args,
             **kwargs)
         result_dirs.append(result_dir)
@@ -582,8 +591,9 @@ def compare_agent_chat_stats(experiment_dir,
 
 if __name__ == "__main__":
     # compare_experiments_main()
-    multirun_evalplus_exp(sys.argv[1], use_true_fitness=True,
-        eval_indv=False, baseline_result_dir=None)
-    # multirun_evalplus()
+    multirun_evalplus(experiment_dir='8_31_multirole_coding_prompt')
+    # multirun_evalplus_exp('8_31_multirole_coding_prompt',
+    #     use_true_fitness=True,
+    #     eval_indv=False)
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
