@@ -379,8 +379,7 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
             eval_config = get_eval_config(experiment_dir)
         else: eval_config = {}
         eval_config['n_workers'] = n_workers; eval_config['dataset'] = dataset
-        print("Running %s trials with following config:" % n_trials)
-        pprint.pprint(indv_config); pprint.pprint(eval_config); exit()
+        print("Running %s trials with evaluator" % n_trials); time.sleep(3)
 
         evaluator = LLMEvaluator(eval_config, evaluator_dir=result_dir)
         result_dicts = evaluator.evaluate(population)
@@ -432,7 +431,6 @@ def multirun_evalplus_exp(experiment_dir,
     **kwargs):
 
     indv_config = get_indv_config(experiment_dir)
-    eval_config = get_eval_config(experiment_dir)
     _fit_list_dict = defaultdict(list)
     _true_fit_list_dict = defaultdict(list)
     _indv_dict = {}
@@ -591,9 +589,9 @@ def compare_agent_chat_stats(experiment_dir,
 
 if __name__ == "__main__":
     # compare_experiments_main()
-    # multirun_evalplus(experiment_dir='results/8_31_multirole_coding_prompt')
-    multirun_evalplus_exp(sys.argv[1],
-        use_true_fitness=True,
-        eval_indv=True)
+    multirun_evalplus(experiment_dir='results/8_31_multirole_coding_prompt')
+    # multirun_evalplus_exp(sys.argv[1],
+    #     use_true_fitness=True,
+    #     eval_indv=True)
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
