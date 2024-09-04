@@ -591,7 +591,7 @@ def compare_agent_chat_stats(experiment_dir,
 
 if __name__ == "__main__":
     # compare_experiments_main()
-    multirun_evalplus(experiment_dir='8_31_multirole_coding_prompt')
+    multirun_evalplus(experiment_dir='results/8_31_multirole_coding_prompt')
     # multirun_evalplus_exp('8_31_multirole_coding_prompt',
     #     use_true_fitness=True,
     #     eval_indv=False)
