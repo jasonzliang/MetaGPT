@@ -589,9 +589,9 @@ def compare_agent_chat_stats(experiment_dir,
 
 if __name__ == "__main__":
     # compare_experiments_main()
-    multirun_evalplus(experiment_dir='results/8_31_multirole_coding_prompt')
-    # multirun_evalplus_exp(sys.argv[1],
-    #     use_true_fitness=True,
-    #     eval_indv=True)
+    # multirun_evalplus(experiment_dir='results/8_31_multirole_coding_prompt')
+    multirun_evalplus_exp(sys.argv[1],
+        use_true_fitness=True,
+        eval_indv=True)
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
