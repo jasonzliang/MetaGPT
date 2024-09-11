@@ -298,10 +298,13 @@ def compare_experiments_main():
         ('Multi-agent + weighted fitness/coding instruct (8/19)', 'results/8_19_multirole_coding_prompt'),
         ('Multi-agent + weighted fitness (8/17)', 'results/8_17_multirole'),
         ('Multi-agent (8/6)', 'results/8_6_multirole')],
+
+        [('8/30', 'results/8_30_multirole_coding_prompt'),
+        ('8/31', 'results/8_31_multirole_coding_prompt')],
     ]
     _blacklists = [[]] * len(_experiment_dirs)
     _combine_labels = [None] * len(_experiment_dirs)
-    _fitness_metrics = ['true_fitness', 'true_fitness']
+    _fitness_metrics = ['true_fitness', 'true_fitness', 'true_fitness']
 
     global EXPERIMENT_DIRS, EXPERIMENT_NAME_BLACKLIST
     global COMBINE_LABELS, FITNESS_METRIC, OUT_FILE
@@ -588,10 +591,10 @@ def compare_agent_chat_stats(experiment_dir,
     print("\n")
 
 if __name__ == "__main__":
-    # compare_experiments_main()
+    compare_experiments_main()
     # multirun_evalplus(experiment_dir='results/8_31_multirole_coding_prompt')
-    multirun_evalplus_exp(sys.argv[1],
-        use_true_fitness=True,
-        eval_indv=True)
+    # multirun_evalplus_exp(sys.argv[1],
+    #     use_true_fitness=True,
+    #     eval_indv=True)
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
