@@ -13,33 +13,33 @@ role_ga_config:
         evolve_mode: team
 
         llm_config:
-            model: gpt-4o
+            model: o1-mini
             temperature: 0.9
             top_p: 0.9
             chat_llm_config:
-                model: gpt-3.5-turbo
+                model: gpt-4o-mini
                 temperature: 0.1
                 top_p: 0.4
             builder_llm_config:
                 custom_coding_instruct: True
                 min_agents: 2
                 max_agents: 4
-                agent_model: gpt-3.5-turbo
+                agent_model: o1-mini
                 temperature: 0.9
                 top_p: 0.9
 
-    num_gen: 50
+    num_gen: 5
     pop_size: 20
     num_elites: 10
     tournament_size: 2
     checkpoint: True
     reevaluate_elites: True
-    init_mutate: True
+    init_mutate: False
     n_workers: 20
     eval_cache: True
 
 llm_evaluator_config:
-    objective: base_score
+    objective: weighted_base_score
     evalplus_weights: config/5_19_role_evo_weights2.json
     debug_mode: False
     use_timestamp: False
