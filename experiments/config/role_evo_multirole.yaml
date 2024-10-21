@@ -13,20 +13,20 @@ role_ga_config:
         evolve_mode: team
 
         llm_config:
-            model: o1-mini
+            model: gpt-4o
             temperature: 0.9
             top_p: 0.9
             chat_llm_config:
                 model: gpt-4o-mini
-                temperature: 0.1
-                top_p: 0.4
+                temperature: 1.0
             builder_llm_config:
                 custom_coding_instruct: True
+                user_for_system_msg: True
                 min_agents: 2
                 max_agents: 4
+                builder_model: o1-preview
                 agent_model: o1-mini
-                temperature: 0.9
-                top_p: 0.9
+                temperature: 1.0
 
     num_gen: 5
     pop_size: 20

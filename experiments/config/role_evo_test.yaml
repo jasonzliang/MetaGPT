@@ -14,11 +14,17 @@ role_ga_config:
 
         llm_config:
             model: gpt-4o
+            chat_llm_config:
+                model: gpt-4o-mini
+                temperature: 1.0
             builder_llm_config:
                 custom_coding_instruct: True
+                user_for_system_msg: True
+                builder_model: o1-mini
+                agent_model: o1-mini
                 min_agents: 1
                 max_agents: 1
-                temperature: 0.1337
+                temperature: 1.0
 
     num_gen: 4
     pop_size: 2
