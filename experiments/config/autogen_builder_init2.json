@@ -13,7 +13,7 @@
     ],
     "coding": true,
     "default_llm_config": {
-        "temperature": 1.0,
+        "temperature": 0.0,
         "cache_seed": null
     },
     "code_execution_config": {
