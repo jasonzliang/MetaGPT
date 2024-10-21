@@ -144,6 +144,10 @@ def init_builder(building_task=None,
         custom_coding_instruct=builder_llm_config['custom_coding_instruct'],
         user_for_system_msg=builder_llm_config['user_for_system_msg'])
 
+    # hack to prevent "builder_model" error msg when running start_task
+    _builder_llm_config = {'temperature': builder_llm_config['temperature'],
+        'cache_seed': builder_llm_config['cache_seed']}
+
     if (use_builder_dict and builder_dict is None) or \
         (not use_builder_dict and not os.path.exists(builder_cfg)):
 
@@ -155,10 +159,6 @@ def init_builder(building_task=None,
             "use_docker": False,
             "work_dir": work_dir
         }
-        # hack to prevent "builder_model" error msg when running start_task
-        _builder_llm_config = {'temperature': builder_llm_config['temperature'],
-            'cache_seed': builder_llm_config['cache_seed']}
-        # print(_builder_llm_config)
         agent_list, agent_configs = builder.build(
             building_task=building_task,
             default_llm_config=_builder_llm_config,
@@ -178,6 +178,7 @@ def init_builder(building_task=None,
         agent_config["model"] = [builder_llm_config['agent_model']]
     # overwrite builder cfg with current work_dir
     builder_dict["code_execution_config"]["work_dir"] = work_dir
+    builder_dict["default_llm_config"].update(_builder_llm_config)
     agent_list, agent_configs = builder.load(
         config_json=json.dumps(builder_dict, indent=4))
 
