@@ -158,6 +158,7 @@ def init_builder(building_task=None,
         # hack to prevent "builder_model" error msg when running start_task
         _builder_llm_config = {'temperature': builder_llm_config['temperature'],
             'cache_seed': builder_llm_config['cache_seed']}
+        # print(_builder_llm_config)
         agent_list, agent_configs = builder.build(
             building_task=building_task,
             default_llm_config=_builder_llm_config,
