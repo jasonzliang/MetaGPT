@@ -209,6 +209,7 @@ Match roles in the role set to each expert in expert set.
         agent_model_tags: Optional[list] = [],
         max_agents: Optional[int] = 5,
         custom_coding_instruct: Optional[bool] = False,
+        user_for_system_msg=False,
     ):
         """
         (These APIs are experimental and may change in the future.)
@@ -247,6 +248,7 @@ Match roles in the role set to each expert in expert set.
 
         self.max_agents = max_agents
         self.custom_coding_instruct = custom_coding_instruct
+        self.user_for_system_msg = user_for_system_msg
 
     def set_builder_model(self, model: str):
         self.builder_model = model
@@ -315,6 +317,7 @@ Match roles in the role set to each expert in expert set.
         server_id = self.online_server_name
         current_config = llm_config.copy()
         current_config.update({"config_list": config_list})
+        sys_msg_role = "user" if self.user_for_system_msg else "system"
         if use_oai_assistant:
             from autogen.agentchat.contrib.gpt_assistant_agent import GPTAssistantAgent
 
@@ -323,6 +326,7 @@ Match roles in the role set to each expert in expert set.
                 llm_config={**current_config, "assistant_id": None},
                 instructions=system_message,
                 overwrite_instructions=False,
+                role_for_system_message=sys_msg_role
             )
         else:
             user_proxy_desc = ""
@@ -347,7 +351,7 @@ Match roles in the role set to each expert in expert set.
                     "model_path", "tags", "coding_instruction"]
             }
             agent = model_class(
-                name=agent_name, llm_config=current_config.copy(), description=description, **additional_config
+                name=agent_name, llm_config=current_config.copy(), description=description, role_for_system_message=sys_msg_role, **additional_config
             )
             if system_message == "":
                 system_message = agent.system_message
