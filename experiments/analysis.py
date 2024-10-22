@@ -317,12 +317,13 @@ def compare_experiments_main():
         _compare_experiments()
 
 
-def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
-    team_prompt='config/autogen_builder_init.json',
+def multirun_evalplus(use_prompt=True,
+    main_prompt=DEFAULT_MAIN_ROLE,
+    team_prompt='config/8_3_best_multirole.json',
     evolve_mode='team',
     indv=None,
-    experiment_dir=None,
-    use_prompt=True,
+    experiment_dir='config',
+    config_name='role_evo_multirole.yaml',
     n_trials=10,
     n_workers=10,
     dataset='humaneval',
@@ -355,7 +356,8 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
         from llm_evaluator import LLMEvaluator
         if use_prompt:
             if experiment_dir is not None:
-                indv_config = get_indv_config(experiment_dir)
+                indv_config = get_indv_config(experiment_dir,
+                    config_name=config_name)
             else: indv_config = {}
 
             if os.path.exists(main_prompt):
@@ -379,7 +381,8 @@ def multirun_evalplus(main_prompt=DEFAULT_MAIN_ROLE,
             YAML().dump(population[0].config, f)
 
         if experiment_dir is not None:
-            eval_config = get_eval_config(experiment_dir)
+            eval_config = get_eval_config(experiment_dir,
+                config_name=config_name)
         else: eval_config = {}
         eval_config['n_workers'] = n_workers; eval_config['dataset'] = dataset
         print("Running %s trials with evaluator" % n_trials); time.sleep(3)
@@ -592,8 +595,9 @@ def compare_agent_chat_stats(experiment_dir,
 
 if __name__ == "__main__":
     # compare_experiments_main()
-    multirun_evalplus_exp(sys.argv[1],
-        use_true_fitness=True,
-        eval_indv=False)
+    multirun_evalplus()
+    # multirun_evalplus_exp(sys.argv[1],
+    #     use_true_fitness=True,
+    #     eval_indv=False)
     # generate_evalplus_weights_file(sys.argv[1])
     # compare_agent_chat_stats(sys.argv[1], indv_quartile=[0.0, 1.0])
