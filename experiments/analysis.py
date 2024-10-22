@@ -327,7 +327,7 @@ def multirun_evalplus(use_prompt=True,
     n_trials=10,
     n_workers=10,
     dataset='humaneval',
-    result_dir=None,
+    result_dir='results/multirun_config_None_N-10_T-1729576605',
     baseline_result_dir=None,
     seed=0):
 
