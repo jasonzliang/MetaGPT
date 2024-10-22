@@ -6,6 +6,7 @@ import time
 SERVER_IP = "biggpu"
 EXPERIMENT_NAME = "*"
 SERVER_DIR = "~/Desktop/MetaGPT/experiments/results"
+EXCLUDE_DIR = "old_results"
 LOCAL_DIR = SERVER_DIR
 
 if __name__ == "__main__":
@@ -23,5 +24,6 @@ if __name__ == "__main__":
         print("Error: too many arguments!"); exit()
 
     if not EXPERIMENT_NAME.endswith("*"): EXPERIMENT_NAME += "*"
-    os.system("rsync -Phavz --stats %s:%s %s" % \
-        (SERVER_IP, os.path.join(SERVER_DIR, EXPERIMENT_NAME), LOCAL_DIR))
+    os.system("rsync -Phavz --exclude '%s' --stats %s:%s %s" % \
+        (EXCLUDE_DIR, SERVER_IP,
+            os.path.join(SERVER_DIR, EXPERIMENT_NAME), LOCAL_DIR))
