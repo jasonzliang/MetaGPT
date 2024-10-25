@@ -23,7 +23,8 @@ from scipy.stats import ttest_ind
 from analysis_util import \
     get_fitness_file, load_checkpoint, get_checkpoints
 from analysis_util import COLORS, LINEWIDTH, FIG_SIZE, PLOT_FMT, PROP_CYCLER
-from role_ga import Individual, DEFAULT_MAIN_ROLE
+from role_ga import Individual
+from llm_operators import DEFAULT_MAIN_ROLE, DEFAULT_MAIN_ROLE_V2
 from util import extract_evalplus, datetime_to_epoch
 from util import get_indv_config, get_eval_config
 
@@ -318,7 +319,7 @@ def compare_experiments_main():
 
 
 def multirun_evalplus(use_prompt=True,
-    main_prompt=DEFAULT_MAIN_ROLE,
+    main_prompt=DEFAULT_MAIN_ROLE_V2,
     team_prompt='config/8_3_best_multirole.json',
     evolve_mode='team',
     indv=None,

@@ -36,6 +36,13 @@ Return ```python your_code_here ``` with NO other texts,
 your code:
 """
 
+DEFAULT_MAIN_ROLE_V2 = \
+"""Write a Python function following the specification: {instruction}. Ensure
+the function is clear, modular, and follows best practices in coding, such as
+the Google Python style guide. Consider efficiency, accuracy, and maintainability
+in your solution.\n\nReturn:\n```python\nyour_code_here\n```
+"""
+
 
 class MutateAction(Action):
     PROMPT_TEMPLATE: str = \
