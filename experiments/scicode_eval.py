@@ -16,9 +16,9 @@ from scicode.parse.parse import extract_function_name, get_function_from_code, \
 
 PROB_NUM = 65
 DEV_PROB_NUM = 15
-ALL_PROB_NUM = PROB_NUM + DEV_PROB_NUM
 STEP_NUM = 288
 DEV_STEP_NUM = 50
+ALL_PROB_NUM = PROB_NUM + DEV_PROB_NUM
 ALL_STEP_NUM = STEP_NUM + DEV_STEP_NUM
 
 DEFAULT_PROMPT_TEMPLATE = Path("scicode_data", "background_comment_template.txt").read_text()
@@ -280,8 +280,7 @@ def test_code(model_name, code_dir, log_dir, output_dir,
 from scicode.parse.parse import process_hdf5_to_tuple
 
 """)
-                f.write(f"targets = process_hdf5_to_tuple('{step_id}', \
-                    {len(test_lst)}, '{H5PY_FILE}')" + '\n')
+                f.write(f"targets = process_hdf5_to_tuple('{step_id}', {len(test_lst)}, '{H5PY_FILE}')" + '\n')
                 for idx in range(len(test_lst)):
                     f.write(f"target = targets[{idx}]\n\n")
                     for line in test_lst[idx].split('\n'):
