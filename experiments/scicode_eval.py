@@ -1,20 +1,18 @@
 import argparse
-from pathlib import Path
 import json
+import os
+from pathlib import Path
+import shutil
+import sys
 import subprocess
 import time
-import shutil
-import numpy as np
-import argparse
 
-from scicode.parse.parse import (
-    extract_function_name,
-    get_function_from_code,
-    read_from_jsonl
-)
+import numpy as np
+
 from scicode.gen.models import extract_python_script, get_model_function
+from scicode.parse.parse import extract_function_name, get_function_from_code, \
+    read_from_jsonl
 from scicode.parse.parse import H5PY_FILE
-from scicode.parse.parse import read_from_jsonl
 
 
 PROB_NUM = 80
@@ -31,7 +29,7 @@ class Gencode:
                  with_background: bool,
                  model: str = None,
                  temperature: float = None,
-                 llm_eval_func: Callable = None):
+                 llm_eval_func: callable = None):
 
         self.model = model
         self.temperature = temperature
@@ -54,16 +52,21 @@ class Gencode:
         output_file_path = output_dir / f"{prob_data['problem_id']}.{num_steps}.txt"
         output_file_path.write_text(prompt, encoding="utf-8")
 
-    def save_response_with_steps(self, prob_data: dict, response: str,
-                                 previous_code: str, num_steps: int) -> None:
-        output_dir = (
-                self.output_dir / Path(self.model).parts[-1] / self._get_background_dir()
-        )
-        output_dir.mkdir(parents=True, exist_ok=True)
+    def save_response_with_steps(self,
+        prob_data: dict,
+        response: str,
+        previous_code: str,
+        num_steps: int) -> None:
+
         prob_id = prob_data["problem_id"]
-        output_file_path = output_dir / f"{prob_id}.{num_steps}.py"
         python_code = extract_python_script(response)
-        output_file_path.write_text(f'{previous_code}\n{python_code}', encoding="utf-8")
+
+        res_output_dir = Path(self.output_dir, Path(self.model).parts[-1],
+            self._get_background_dir())
+        res_output_dir.mkdir(parents=True, exist_ok=True)
+        output_file_path = Path(res_output_dir, f"{prob_id}.{num_steps}.py")
+        output_file_path.write_text(f'{previous_code}\n{python_code}',
+            encoding="utf-8")
 
     def generate_response_with_steps(
         self, prob_data: dict, num_steps: int, tot_steps: int,
@@ -114,12 +117,10 @@ class Gencode:
             model_kwargs["max_tokens"] = 4096
         model_kwargs["temperature"] = self.temperature
         # write the response to a file if it doesn't exist
-        output_file_path = (
-                self.output_dir
-                / self.model
-                / f"{prob_id}.{num_steps}.py"
-        )
-        if not output_file_path.exists():
+        output_file_path = os.path.join(self.output_dir, self.model,
+            f"{prob_id}.{num_steps}.py")
+
+        if not os.path.exists(output_file_path):
             if self.llm_eval_func is None:
                 model_fct = get_model_function(model, **model_kwargs)
                 response_from_llm = model_fct(prompt)
@@ -252,8 +253,7 @@ def test_code(model_name, code_dir, log_dir, output_dir,
     start_time = time.time()
 
     code_dir_ = Path(code_dir, model_name, _get_background_dir(with_background))
-    tmp_dir = Path(f'tmp_{start_time}')
-
+    tmp_dir = Path('/tmp', f'tmp_{start_time}')
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
     for file_path in code_dir_.iterdir():

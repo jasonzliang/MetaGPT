@@ -71,5 +71,6 @@ simplejson
 pathos
 retry
 wrapt_timeout_decorator
+gdown
 # git+https://github.com/evalplus/evalplus.git
 # git+https://github.com/jasonzliang/autogen.git

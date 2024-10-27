@@ -14,6 +14,7 @@ import traceback
 import time
 import tqdm
 
+import gdown
 from metagpt.logs import logger as mlogger
 from pathos.pools import ProcessPool as Pool
 # from multiprocessing import Pool
@@ -24,13 +25,14 @@ from retry import retry
 from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
+from scicode.parse.parse import read_from_jsonl
 
 from alg_util import randomword
 from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from autogen_team import init_builder, start_task
 from autogen_team import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
 from llm_operators import create_new_team
-from llm_operators import DEFAULT_MAIN_ROLE
+from llm_operators import DEFAULT_MAIN_ROLE, DEFAULT_MAIN_ROLE_V2
 from scicode_eval import Gencode, test_code
 from scicode_eval import DEFAULT_PROMPT_TEMPLATE, BACKGOUND_PROMPT_TEMPLATE
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
@@ -185,7 +187,7 @@ class EvalPlusEvaluator(object):
                         mlogger.info("eval_func failed for %s" % task_id)
                         mlogger.info(stack_trace)
                         err_str += stack_trace + "\n"
-                        output = ""; n_tries -= 1; time.sleep(5)
+                        output = ""; n_tries -= 1; time.sleep(1)
 
                         if n_tries == 0:
                             err_fp = os.path.join(result_dir, '%s_%s.err' % \
@@ -307,7 +309,7 @@ class EvalPlusEvaluator(object):
         return self._get_evalplus_results(result_dir)
 
 
-class SciCodeEvaluator(object):
+class SciCodeEvaluator(EvalPlusEvaluator):
     def __init__(self, config, evaluator_dir):
         self.config = config
         self.evaluator_dir = evaluator_dir
@@ -328,16 +330,24 @@ class SciCodeEvaluator(object):
         assert self.max_problems > 0
 
         # Scicode specific stuff
-        dataset = self.config.get("dataset", "problems_all")
-        assert dataset in ['problems_all', 'problems_dev']
-        self.dev_set = dataset == "problems_dev"
-        self.dataset = os.path.join("scicode_eval", dataset + '.jsonl')
+        self.dataset = self.config.get("dataset", "problems_all")
+        assert self.dataset in ['problems_all', 'problems_dev']
+        self.dev_set = self.dataset == "problems_dev"
+        self.dataset_path = os.path.join("scicode_data",
+            self.dataset + '.jsonl')
         self.with_background = self.config.get("with_background", False)
         self.objective = self.config.get("objective", "problem_acc")
         self.shuffle_seed = self.config.get("shuffle_seed", None)
         assert self.objective in SCICODE_OBJ
 
+        self._download_testdata()
         super().reset()
+
+    def _download_testdata(self):
+        url = 'https://drive.google.com/uc?id=17G_k65N_6yFFZ2O-jQH00Lh6iaw3z-AW'
+        output = os.path.join("scicode_data", "test_data.h5")
+        if os.path.exists(output): return
+        gdown.download(url, output, quiet=False)
 
     def _eval_indv_main_role(self, indv):
         raise "Not implemented"
@@ -396,15 +406,15 @@ class SciCodeEvaluator(object):
         )
         prompt_template = BACKGOUND_PROMPT_TEMPLATE if \
             self.with_background else DEFAULT_PROMPT_TEMPLATE
-        problems = read_from_jsonl(os.path.join("scicode_eval", self.dataset))
+        problems = read_from_jsonl(self.dataset_path)
         if self.shuffle_seed is None:
             problems = sorted(problems, key=lambda x: x['problem_id'])
         else:
             random.Random(self.shuffle_seed).shuffle(problems)
 
         result_dict = {}; fail_flag = os.path.join(result_dir, "max_failures")
-        n_failures = 0 if not os.path.exists(fail_flag) else self.max_failures:
-        for i, problem in enumerate(problmes):
+        n_failures = 0 if not os.path.exists(fail_flag) else self.max_failures
+        for i, problem in enumerate(problems):
             task_id = problem['problem_id']; steps = len(problem['sub_steps'])
 
             if i >= self.max_problems or n_failures >= self.max_failures:
@@ -424,7 +434,7 @@ class SciCodeEvaluator(object):
                             prob_data=problem,
                             num_steps=i+1,
                             tot_steps=steps,
-                            prompt_tempalate=prompt_template,
+                            prompt_template=prompt_template,
                             result_dict=result_dict)
                     break
                 except:
@@ -432,7 +442,7 @@ class SciCodeEvaluator(object):
                     mlogger.info("eval_func failed for %s" % task_id)
                     mlogger.info(stack_trace)
                     err_str += stack_trace + "\n"
-                    output = ""; n_tries -= 1; time.sleep(5)
+                    output = ""; n_tries -= 1; time.sleep(1)
 
                     if n_tries == 0:
                         err_fp = os.path.join(result_dir, '%s_%s.err' % \
@@ -449,7 +459,7 @@ class SciCodeEvaluator(object):
             code_dir=os.path.join(result_dir, "generated_code"),
             log_dir=os.path.join(result_dir, "logs"),
             output_dir=result_dir,
-            jsonl_path=self.dataset,
+            jsonl_path=self.dataset_path,
             dev_set=self.dev_set,
             with_background=self.with_background)
 
@@ -464,29 +474,31 @@ class SciCodeEvaluator(object):
 
 #### Unit tests ####
 def _test_evaluator(main_role_fp=None,
-    team_role_fp=None,
+    team_role_fp="config/8_3_best_multirole.json",
+    evolve_mode="team",
     test_err=False,
     n_indv=1,
     num_gen=1,
     max_problems=1,
-    max_round=20,
-    llm_model='gpt-4o-mini'):
+    max_round=15,
+    llm_model='gpt-4o',
+    scicode=True):
 
     clear_autogen_cache()
     from role_ga import Individual
     indv = Individual({}, gen_created=0)
     assert indv.team_role is None
-    indv.evolve_mode = "single"
+    indv.evolve_mode = evolve_mode
 
     if main_role_fp is not None:
         assert os.path.exists(main_role_fp)
         with open(main_role_fp, "r") as f:
             indv.main_role = f.read()
     else:
-        indv.main_role = DEFAULT_MAIN_ROLE
+        indv.main_role = DEFAULT_MAIN_ROLE_V2
     if team_role_fp is not None:
-        indv.evolve_mode = "both"
         assert os.path.exists(team_role_fp)
+        assert evolve_mode in ['both', 'team']
         with open(team_role_fp, "r") as f:
             indv.team_role = json.load(f)
 
@@ -508,11 +520,11 @@ def _test_evaluator(main_role_fp=None,
         'max_round': max_round,
         'use_timestamp': False}
 
-    evaluator = EvalPlusEvaluator(eval_config, evaluator_dir='results/')
+    if scicode:
+        evaluator = SciCodeEvaluator(eval_config, evaluator_dir='results/')
+    else:
+        evaluator = EvalPlusEvaluator(eval_config, evaluator_dir='results/')
     for i in range(num_gen):
-        # a = indv.create_child(0); b = indv.create_child(0)
-        # a.id = "G-0_ID-DNrcOL1irjdO"; b.id = "G-0_ID-i6usMJsHu9xr"
-
         population = [indv.create_child(i) for j in range(n_indv)]
         result_dicts = evaluator.evaluate(population); evaluator.reset()
         print("Evaluation results:"); pprint.pprint(result_dicts)
@@ -554,7 +566,7 @@ def _test_check_eval_progress(
 
 
 if __name__ == "__main__":
-    _test_check_eval_progress()
+    _test_evaluator()
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
     # _test_evaluator(team_role_fp='config/autogen_builder_init.json')

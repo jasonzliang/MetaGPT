@@ -199,3 +199,5 @@ experiments/*.json
 *.jpeg
 *.png
 *.pdf
+*.h5
+
