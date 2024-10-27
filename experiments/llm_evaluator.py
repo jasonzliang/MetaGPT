@@ -475,7 +475,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
 #### Unit tests ####
 def _test_evaluator(main_role_fp=None,
-    team_role_fp="config/autogen_builder_init2.json",
+    team_role_fp=None,
     evolve_mode="team",
     test_err=False,
     n_indv=1,
@@ -571,7 +571,7 @@ def _test_check_eval_progress(
 
 
 if __name__ == "__main__":
-    _test_evaluator()
+    _test_evaluator(team_role_fp=sys.argv[1])
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
     # _test_evaluator(team_role_fp='config/autogen_builder_init.json')
