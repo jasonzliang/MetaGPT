@@ -22,17 +22,27 @@ DEV_PROB_NUM = 15
 STEP_NUM = 288
 DEV_STEP_NUM = 50
 
-DEFAULT_PROMPT_TEMPLATE = Path("eval", "data", "background_comment_template.txt").read_text()
-BACKGOUND_PROMPT_TEMPLATE = Path("eval", "data", "multistep_template.txt").read_text()
+DEFAULT_PROMPT_TEMPLATE = Path("scicode_data", "background_comment_template.txt").read_text()
+BACKGOUND_PROMPT_TEMPLATE = Path("scicode_data", "multistep_template.txt").read_text()
 
 class Gencode:
-    def __init__(self, model: str, output_dir: Path,
-                 prompt_dir: Path, with_background: bool, temperature: float):
+    def __init__(self, output_dir: Path,
+                 prompt_dir: Path,
+                 with_background: bool,
+                 model: str = None,
+                 temperature: float = None,
+                 llm_eval_func: Callable = None):
+
         self.model = model
+        self.temperature = temperature
+        self.llm_eval_func = llm_eval_func
+        # if self.llm_eval_func is not None:
+        #     assert self.model is None; assert self.temperature is None
+        #     self.model = self.llm_eval_func.__name__
+
         self.output_dir = output_dir
         self.prompt_dir = prompt_dir
         self.with_background = with_background
-        self.temperature = temperature
         self.previous_llm_code = []
 
     def _get_background_dir(self):
@@ -56,18 +66,19 @@ class Gencode:
         output_file_path.write_text(f'{previous_code}\n{python_code}', encoding="utf-8")
 
     def generate_response_with_steps(
-        self, prob_data: dict, num_steps: int, tot_steps: int, model="gpt-4o",
+        self, prob_data: dict, num_steps: int, tot_steps: int,
             prompt_template=DEFAULT_PROMPT_TEMPLATE,
-            *, save: bool = True) -> None:
+            result_dict: dict = None,
+            save: bool = True) -> None:
         """
 
         Args:
-            prob_data (dict): dict of the problem
+            prob_data (dict): Dict of the problem
             num_steps (int): Current generating step
             tot_steps (int): Total step of the problem
-            model (str)
             prompt_template (str)
-            save (bool, optional): Save propmt and model response. Defaults to True.
+            result_dict (dict): Evaluation dict
+            save (bool, optional): Save prompt and model response. Defaults to True.
         """
         prob_id = prob_data["problem_id"]
         if num_steps == 1:
@@ -77,15 +88,15 @@ class Gencode:
                 self.previous_llm_code = [None] * tot_steps
             for prev_step in range(num_steps - 1):
                 if self.previous_llm_code[prev_step] is None:
-                    if (prob_id == "13" and prev_step == 5) or (prob_id == "62" and prev_step == 0)\
-                            or (prob_id == "76" and prev_step == 2):
-                        prev_file_path = Path("eval", "data", f"{prob_id}.{prev_step+1}.txt")
-                    else:
-                        prev_file_path = (
-                                self.output_dir
-                                / model
-                                / f"{prob_id}.{prev_step + 1}.py"
-                        )
+                    # if (prob_id == "13" and prev_step == 5) or (prob_id == "62" and prev_step == 0)\
+                    #         or (prob_id == "76" and prev_step == 2):
+                    #     prev_file_path = Path("scicode_data", f"{prob_id}.{prev_step+1}.txt")
+                    # else:
+                    prev_file_path = (
+                            self.output_dir
+                            / self.model
+                            / f"{prob_id}.{prev_step + 1}.py"
+                    )
                     if prev_file_path.is_file():
                         prev_file_content = prev_file_path.read_text(encoding='utf-8')
                         func_name = extract_function_name(prob_data["sub_steps"][prev_step]["function_header"])
@@ -93,23 +104,27 @@ class Gencode:
                         self.previous_llm_code[prev_step] = function_code
                     else:
                         raise Exception(f'Generating {prob_id} step {num_steps} ahead of step {prev_step + 1}.')
-        prompt, previous_code = self.generate_prompt_with_steps(prob_data, num_steps, prompt_template)
+        prompt, previous_code = self.generate_prompt_with_steps(
+            prob_data, num_steps, prompt_template)
         if save:
             self.save_prompt_with_steps(prob_data, prompt, num_steps)
 
         model_kwargs = {}
-        if "claude" in model:
+        if "claude" in self.model:
             model_kwargs["max_tokens"] = 4096
         model_kwargs["temperature"] = self.temperature
         # write the response to a file if it doesn't exist
         output_file_path = (
                 self.output_dir
-                / model
+                / self.model
                 / f"{prob_id}.{num_steps}.py"
         )
         if not output_file_path.exists():
-            model_fct = get_model_function(model, **model_kwargs)
-            response_from_llm = model_fct(prompt)
+            if self.llm_eval_func is None:
+                model_fct = get_model_function(model, **model_kwargs)
+                response_from_llm = model_fct(prompt)
+            else:
+                response_from_llm = self.llm_eval_func(prompt, result_dict)
             self.previous_llm_code[num_steps - 1] = extract_python_script(response_from_llm)
             self.save_response_with_steps(prob_data, response_from_llm, previous_code, num_steps)
 
@@ -339,6 +354,14 @@ from scicode.parse.parse import process_hdf5_to_tuple
         json.dump(correct_dict, f, indent=4)
 
     shutil.rmtree(tmp_dir)
+
+    total_prob_num = DEV_PROB_NUM if dev_set else PROB_NUM - DEV_PROB_NUM
+    total_step_num = DEV_STEP_NUM if dev_set else STEP_NUM
+    problem_acc = float(correct_prob_num)/float(total_prob_num)
+    subproblem_acc = float(len(correct_step))/float(total_step_num)
+
+    return {'problem_acc': problem_acc, 'subproblem_acc': subproblem_acc,
+        'correct_prob_num': correct_prob_num, "correct_subprob_num": correct_step}
 
 
 def test_get_cli() -> argparse.ArgumentParser:

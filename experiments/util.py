@@ -25,7 +25,7 @@ from ruamel.yaml import YAML
 
 from alg_util import is_numpy_type, randomword
 
-OBJECTIVES = {'base_score': lambda x: x,
+EVALPLUS_OBJ = {'base_score': lambda x: x,
     'plus_score': lambda x: x,
     'hybrid_score': lambda x: x,
     'weighted_base_score': lambda x: x,
@@ -36,6 +36,10 @@ OBJECTIVES = {'base_score': lambda x: x,
     'sys_time_sec': lambda x: -x,
     'num_instructions': lambda x: -x,
     'memory_usage_mb': lambda x: -x}
+SCICODE_OBJ = {'problem_acc': lambda x: x,
+    'subproblem_acc': lambda x: x,
+    'correct_prob_num': lambda x: x,
+    'correct_subprob_num': lambda x: x}
 SLEEP_TIME = 5
 
 

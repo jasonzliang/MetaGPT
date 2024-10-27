@@ -31,10 +31,12 @@ from autogen_team import init_builder, start_task
 from autogen_team import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
 from llm_operators import create_new_team
 from llm_operators import DEFAULT_MAIN_ROLE
+from scicode_eval import Gencode, test_code
+from scicode_eval import DEFAULT_PROMPT_TEMPLATE, BACKGOUND_PROMPT_TEMPLATE
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
 from util import format_prompt, clear_autogen_cache, collect_stats_from_chat
 from util import calc_weighted_evalplus_score
-from util import OBJECTIVES, SLEEP_TIME
+from util import EVALPLUS_OBJ, SCICODE_OBJ, SLEEP_TIME
 
 
 class EvalPlusEvaluator(object):
@@ -61,7 +63,7 @@ class EvalPlusEvaluator(object):
         self.dataset = self.config.get("dataset", "humaneval")
         assert self.dataset in ['humaneval', 'mbpp']
         self.objective = self.config.get("objective", "base_score")
-        assert self.objective in OBJECTIVES
+        assert self.objective in EVALPLUS_OBJ
         self.evalplus_weights = self.config.get("evalplus_weights", None)
         if self.evalplus_weights is not None:
             assert os.path.exists(self.evalplus_weights)
@@ -226,7 +228,7 @@ class EvalPlusEvaluator(object):
         assert self.objective in evalplus_result, str(evalplus_result)
         assert "base_score" in evalplus_result, str(evalplus_result)
 
-        result_dict = {}; scaling_fn = OBJECTIVES[self.objective]
+        result_dict = {}; scaling_fn = EVALPLUS_OBJ[self.objective]
         result_dict['fitness'] = scaling_fn(evalplus_result[self.objective])
         result_dict['true_fitness'] = evalplus_result['base_score']
         result_dict['result_dir'] = result_dir
@@ -311,13 +313,11 @@ class SciCodeEvaluator(object):
         self.evaluator_dir = evaluator_dir
         self.logger = logging.getLogger('evolve_role')
 
-        self.max_round = s
-
         self.restart_interval = self.config.get("restart_interval", sys.maxsize)
         self.use_timestamp = self.config.get("use_timestamp", False)
-        self.n_tries = self.config.get("n_tries", 2)
+        self.n_tries = self.config.get("n_tries", 1)
         assert self.n_tries > 0
-        self.max_failures = self.config.get("max_failures", 10)
+        self.max_failures = self.config.get("max_failures", sys.maxsize)
         assert self.max_failures > 0
         self.debug_mode = self.config.get("debug_mode", False)
         self.n_workers = self.config.get("n_workers", 1)
@@ -326,6 +326,16 @@ class SciCodeEvaluator(object):
         assert self.max_round > 0
         self.max_problems = self.config.get("max_problems", sys.maxsize)
         assert self.max_problems > 0
+
+        # Scicode specific stuff
+        dataset = self.config.get("dataset", "problems_all")
+        assert dataset in ['problems_all', 'problems_dev']
+        self.dev_set = dataset == "problems_dev"
+        self.dataset = os.path.join("scicode_eval", dataset + '.jsonl')
+        self.with_background = self.config.get("with_background", False)
+        self.objective = self.config.get("objective", "problem_acc")
+        self.shuffle_seed = self.config.get("shuffle_seed", None)
+        assert self.objective in SCICODE_OBJ
 
         super().reset()
 
@@ -354,10 +364,7 @@ class SciCodeEvaluator(object):
         # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
-        def eval_func(problem, result_dict):
-            prompt = format_prompt(prompt=main_role,
-                instruction=problem['prompt'])
-
+        def eval_func(prompt, result_dict):
             start_time = time.time()
             chat_result, groupchat_messages = start_task(
                 execution_task=prompt,
@@ -380,71 +387,78 @@ class SciCodeEvaluator(object):
         return result_dict
 
     def _run_scicode(self, result_dir, eval_func):
-
+        gcode = Gencode(
+            model="scicode_eval",
+            output_dir=os.path.join(result_dir, "generated_code"),
+            prompt_dir=os.path.join(result_dir, "prompt"),
+            with_background=self.with_background,
+            llm_eval_func=eval_func,
+        )
+        prompt_template = BACKGOUND_PROMPT_TEMPLATE if \
+            self.with_background else DEFAULT_PROMPT_TEMPLATE
+        problems = read_from_jsonl(os.path.join("scicode_eval", self.dataset))
+        if self.shuffle_seed is None:
+            problems = sorted(problems, key=lambda x: x['problem_id'])
+        else:
+            random.Random(self.shuffle_seed).shuffle(problems)
 
         result_dict = {}; fail_flag = os.path.join(result_dir, "max_failures")
-        n_failures = 0 if not os.path.exists(fail_flag) else self.max_failures
-        for i, (task_id, problem) in enumerate(problems.items()):
-            task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
-            os.makedirs(task_id_dir, exist_ok=True)
-            result_file = os.path.join(task_id_dir, "0.py")
-            if os.path.exists(result_file) and os.path.getsize(result_file) > 0:
+        n_failures = 0 if not os.path.exists(fail_flag) else self.max_failures:
+        for i, problem in enumerate(problmes):
+            task_id = problem['problem_id']; steps = len(problem['sub_steps'])
+
+            if i >= self.max_problems or n_failures >= self.max_failures:
                 continue
 
-            if i < self.max_problems and n_failures < self.max_failures:
-                mlogger.info("\n\n#### Task ID: %s Prompt:\n%s" % \
-                    (task_id, problem['prompt']))
-                n_tries = self.n_tries; err_str = ""
-                while n_tries > 0:
-                    try:
-                        output = eval_func(problem, result_dict); break
-                    except:
-                        stack_trace = traceback.format_exc()
-                        mlogger.info("eval_func failed for %s" % task_id)
-                        mlogger.info(stack_trace)
-                        err_str += stack_trace + "\n"
-                        output = ""; n_tries -= 1; time.sleep(5)
+            mlogger.info("\n\n#### Task ID: %s Problem:\n%s" % \
+                (task_id, problem['problem_description_main']))
+            n_tries = self.n_tries; err_str = ""
+            while n_tries > 0:
+                try:
+                    for i in range(steps):
+                        # if (prob_id == "13" and i == 5) or \
+                        #     (prob_id == "62" and i == 0) or \
+                        #     (prob_id == "76" and i == 2):
+                        #     continue
+                        gcode.generate_response_with_steps(
+                            prob_data=problem,
+                            num_steps=i+1,
+                            tot_steps=steps,
+                            prompt_tempalate=prompt_template,
+                            result_dict=result_dict)
+                    break
+                except:
+                    stack_trace = traceback.format_exc()
+                    mlogger.info("eval_func failed for %s" % task_id)
+                    mlogger.info(stack_trace)
+                    err_str += stack_trace + "\n"
+                    output = ""; n_tries -= 1; time.sleep(5)
 
-                        if n_tries == 0:
-                            err_fp = os.path.join(result_dir, '%s_%s.err' % \
-                                (os.getpid(), get_time(space=False)))
-                            with open(err_fp, 'w') as f: f.write(err_str)
-                            n_failures += 1
-
-
-                mlogger.info("#### Evalplus Problem Output:\n%s" % output)
-            else:
-                output = ""
-
-            with open(result_file, 'w') as f: f.write(output)
+                    if n_tries == 0:
+                        err_fp = os.path.join(result_dir, '%s_%s.err' % \
+                            (os.getpid(), get_time(space=False)))
+                        with open(err_fp, 'w') as f: f.write(err_str)
+                        n_failures += 1
 
         if n_failures >= self.max_failures: os.system("touch %s" % fail_flag)
         return result_dict
 
     def _get_scicode_results(self, result_dir):
-        flag = "-v" if platform.system() == 'Linux' else '-l' # Flag for MacOS
-        evalplus_fp = os.path.join(result_dir, "evalplus.txt")
-        os.system("/usr/bin/time %s evalplus.evaluate " \
-            "--dataset %s --samples %s 2>&1 | tee %s" \
-            % (flag, self.dataset, result_dir, evalplus_fp))
+        scicode_result = test_code(
+            model_name="scicode_eval",
+            code_dir=os.path.join(result_dir, "generated_code"),
+            log_dir=os.path.join(result_dir, "logs"),
+            output_dir=result_dir,
+            jsonl_path=self.dataset,
+            dev_set=self.dev_set,
+            with_background=self.with_background)
 
-        evalplus_result = extract_evalplus(evalplus_fp, mlogger)
-        if self.objective.startswith('weighted_'):
-            weighted_base_score, weighted_plus_score = \
-                calc_weighted_evalplus_score(result_dir, self.evalplus_weights)
-            evalplus_result['weighted_base_score'] = weighted_base_score
-            evalplus_result['weighted_plus_score'] = weighted_plus_score
-            evalplus_result['weight_hybrid_score'] = \
-                0.5 * weighted_base_score + 0.5 * weighted_plus_score
-        assert self.objective in evalplus_result, str(evalplus_result)
-        assert "base_score" in evalplus_result, str(evalplus_result)
-
-        result_dict = {}; scaling_fn = OBJECTIVES[self.objective]
-        result_dict['fitness'] = scaling_fn(evalplus_result[self.objective])
-        result_dict['true_fitness'] = evalplus_result['base_score']
+        result_dict = {}; scaling_fn = SCICODE_OBJ[self.objective]
+        result_dict['fitness'] = scaling_fn(scicode_result[self.objective])
+        result_dict['true_fitness'] = scicode_result['problem_acc']
         result_dict['result_dir'] = result_dir
         # Needed for multirun_evalplus in analysis
-        result_dict['evalplus_result'] = evalplus_result
+        result_dict['scicode_result'] = scicode_result
         return result_dict
 
 
