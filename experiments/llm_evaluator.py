@@ -475,7 +475,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
 #### Unit tests ####
 def _test_evaluator(main_role_fp=None,
-    team_role_fp="config/8_3_best_multirole.json",
+    team_role_fp="config/autogen_builder_init2.json",
     evolve_mode="team",
     test_err=False,
     n_indv=1,
