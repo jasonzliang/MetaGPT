@@ -409,7 +409,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         prompt_template = BACKGOUND_PROMPT_TEMPLATE if \
             self.with_background else DEFAULT_PROMPT_TEMPLATE
         problems = read_from_jsonl(self.dataset_path)
-        problems = sorted(problems, key=lambda x: x['problem_id'])
+        problems = sorted(problems, key=lambda x: int(x['problem_id']))
         # if self.shuffle_seed is None:
         # else: random.Random(self.shuffle_seed).shuffle(problems)
 
