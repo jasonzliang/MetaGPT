@@ -24,8 +24,8 @@ from retry import retry
 
 from alg_util import randomword
 from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
-from autogen_builder import autogen_mutate, autogen_crossover
-from autogen_builder import BUILDER_LLM_CONFIG
+from autogen_team import autogen_mutate, autogen_crossover
+from autogen_team import BUILDER_LLM_CONFIG
 from util import extract_evalplus, parse_code, parse_prompt_template
 from util import format_prompt, clear_autogen_cache
 

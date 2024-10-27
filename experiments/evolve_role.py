@@ -14,7 +14,7 @@ import numpy as np
 from ruamel.yaml import YAML
 
 from logger import setup_experiment_logging, log_results
-from llm_evaluator import LLMEvaluator
+from llm_evaluator import EvalPlusEvaluator, SciCodeEvaluator
 from role_ga import RoleEvolutionGA
 from util import get_time, sanitize_result_dict, clear_autogen_cache
 
@@ -68,9 +68,17 @@ class RoleEvolutionServer(object):
         # Setup GA and evaluator
         self.ga = RoleEvolutionGA(self.config.get("role_ga_config", {}),
             os.path.join(self.experiment_dir, "role_ga"))
-        self.evaluator = LLMEvaluator(
-            self.config.get("llm_evaluator_config", {}),
-            os.path.join(self.experiment_dir, "llm_evaluator"))
+
+        self.evaluator_name = self.config.get("evaluator_name", "evalplus")
+        if self.evaluator_name == "evalplus":
+            self.evaluator = EvalPlusEvaluator(
+                self.config.get("evalplus_evaluator_config", {}),
+                os.path.join(self.experiment_dir, "evaluator"))
+        else:
+            assert self.evaluator_name == "scicode":
+            self.evaluator = SciCodeEvaluator(
+                self.config.get("scicode_evaluator_config", {}),
+                os.path.join(self.experiment_dir, "evaluator"))
 
         # Wrap code to catch error and log it to file
         try:

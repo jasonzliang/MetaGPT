@@ -26,7 +26,7 @@ role_ga_config:
     mutate2_n: 3
     crossover2_n: 3
 
-llm_evaluator_config:
+evalplus_evaluator_config:
     debug_mode: False
     n_workers: 20
     # objective: user_time_sec

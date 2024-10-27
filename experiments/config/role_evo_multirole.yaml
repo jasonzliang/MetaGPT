@@ -28,7 +28,7 @@ role_ga_config:
                 agent_model: o1-mini
                 temperature: 1.0
 
-    num_gen: 5
+    num_gen: 2
     pop_size: 20
     num_elites: 10
     tournament_size: 2
@@ -38,7 +38,7 @@ role_ga_config:
     n_workers: 20
     eval_cache: True
 
-llm_evaluator_config:
+evalplus_evaluator_config:
     objective: weighted_base_score
     evalplus_weights: config/5_19_role_evo_weights2.json
     debug_mode: False

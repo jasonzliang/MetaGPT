@@ -354,7 +354,7 @@ def multirun_evalplus(use_prompt=True,
         for evalplus_fp in eval_results_list:
             evalplus_results.append(extract_evalplus(evalplus_fp))
     else:
-        from llm_evaluator import LLMEvaluator
+        from llm_evaluator import EvalPlusEvaluator
         if use_prompt:
             if experiment_dir is not None:
                 indv_config = get_indv_config(experiment_dir,
@@ -388,7 +388,7 @@ def multirun_evalplus(use_prompt=True,
         eval_config['n_workers'] = n_workers; eval_config['dataset'] = dataset
         print("Running %s trials with evaluator" % n_trials); time.sleep(3)
 
-        evaluator = LLMEvaluator(eval_config, evaluator_dir=result_dir)
+        evaluator = EvalPlusEvaluator(eval_config, evaluator_dir=result_dir)
         result_dicts = evaluator.evaluate(population)
         evalplus_results = [x.get('evalplus_result', {}) for x in result_dicts]
 
@@ -424,7 +424,6 @@ def multirun_evalplus(use_prompt=True,
     with open(os.path.join(result_dir, 'evalplus_results.yaml'), 'w') as f:
         YAML().dump(evalplus_results, f)
     return result_dir
-
 
 
 def multirun_evalplus_exp(experiment_dir,
