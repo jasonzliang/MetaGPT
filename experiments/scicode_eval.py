@@ -12,16 +12,21 @@ import numpy as np
 from scicode.gen.models import extract_python_script, get_model_function
 from scicode.parse.parse import extract_function_name, get_function_from_code, \
     read_from_jsonl
-from scicode.parse.parse import H5PY_FILE
+# from scicode.parse.parse import H5PY_FILE
 
-
-PROB_NUM = 80
+PROB_NUM = 65
 DEV_PROB_NUM = 15
+ALL_PROB_NUM = PROB_NUM + DEV_PROB_NUM
 STEP_NUM = 288
 DEV_STEP_NUM = 50
+ALL_STEP_NUM = STEP_NUM + DEV_STEP_NUM
 
 DEFAULT_PROMPT_TEMPLATE = Path("scicode_data", "background_comment_template.txt").read_text()
 BACKGOUND_PROMPT_TEMPLATE = Path("scicode_data", "multistep_template.txt").read_text()
+
+H5PY_FILE = os.path.join("scicode_data/test_data.h5")
+CLEANUP_TMP_FILES = False
+
 
 class Gencode:
     def __init__(self, output_dir: Path,
@@ -243,6 +248,7 @@ def _get_background_dir(with_background):
 def test_code(model_name, code_dir, log_dir, output_dir,
               jsonl_path, dev_set=False, with_background=False):
 
+    assert os.path.exists(H5PY_FILE)
     jsonl_data = read_from_jsonl(jsonl_path)
     json_dct = {}
     json_idx = {}
@@ -274,7 +280,8 @@ def test_code(model_name, code_dir, log_dir, output_dir,
 from scicode.parse.parse import process_hdf5_to_tuple
 
 """)
-                f.write(f"targets = process_hdf5_to_tuple('{step_id}', {len(test_lst)})" + '\n')
+                f.write(f"targets = process_hdf5_to_tuple('{step_id}', \
+                    {len(test_lst)}, '{H5PY_FILE}')" + '\n')
                 for idx in range(len(test_lst)):
                     f.write(f"target = targets[{idx}]\n\n")
                     for line in test_lst[idx].split('\n'):
@@ -293,12 +300,12 @@ from scicode.parse.parse import process_hdf5_to_tuple
             print(f"Runtime error while running script {script_path}: {e}")
             return 2
 
-    correct_prob = np.zeros(PROB_NUM)
-    tot_prob = np.zeros(PROB_NUM)
+    correct_prob = np.zeros(ALL_PROB_NUM)
+    tot_prob = np.zeros(ALL_PROB_NUM)
     correct_step = []
     correct_dict = {}
 
-    for i in range(PROB_NUM):
+    for i in range(ALL_PROB_NUM):
         correct_dict[f'{i+1}'] = []
 
     for file_path in tmp_dir.iterdir():
@@ -334,28 +341,28 @@ from scicode.parse.parse import process_hdf5_to_tuple
 
     test_time = time.time() - start_time
 
-    correct_prob_num = sum(1 for i in range(PROB_NUM) if
+    correct_prob_num = sum(1 for i in range(ALL_PROB_NUM) if
                            correct_prob[i] == tot_prob[i]
                            and tot_prob[i] != 0)
 
-    print(f'correct problems: {correct_prob_num}/{DEV_PROB_NUM if dev_set else PROB_NUM - DEV_PROB_NUM}')
+    print(f'correct problems: {correct_prob_num}/{DEV_PROB_NUM if dev_set else PROB_NUM}')
     print(f'correct steps: {len(correct_step)}/{DEV_STEP_NUM if dev_set else STEP_NUM}')
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     with open(f'{output_dir}/{model_name}_{_get_background_dir(with_background)}.txt', 'w') as f:
-        f.write(f'correct problems: {correct_prob_num}/{DEV_PROB_NUM if dev_set else PROB_NUM - DEV_PROB_NUM}\n')
+        f.write(f'correct problems: {correct_prob_num}/{DEV_PROB_NUM if dev_set else PROB_NUM}\n')
         f.write(f'correct steps: {len(correct_step)}/{DEV_STEP_NUM if dev_set else STEP_NUM}\n\n')
         f.write(f'duration: {test_time} seconds\n')
         f.write('\ncorrect problems: ')
-        f.write(f'\n\n{[i + 1 for i in range(PROB_NUM) if correct_prob[i] == tot_prob[i] and tot_prob[i] != 0]}\n')
+        f.write(f'\n\n{[i + 1 for i in range(ALL_PROB_NUM) if correct_prob[i] == tot_prob[i] and tot_prob[i] != 0]}\n')
 
     with open(f'{output_dir}/{model_name}_{_get_background_dir(with_background)}.json', 'w', encoding='utf-8') as f:
         json.dump(correct_dict, f, indent=4)
 
-    shutil.rmtree(tmp_dir)
+    if CLEANUP_TMP_FILES: shutil.rmtree(tmp_dir)
 
-    total_prob_num = DEV_PROB_NUM if dev_set else PROB_NUM - DEV_PROB_NUM
+    total_prob_num = DEV_PROB_NUM if dev_set else PROB_NUM
     total_step_num = DEV_STEP_NUM if dev_set else STEP_NUM
     problem_acc = float(correct_prob_num)/float(total_prob_num)
     subproblem_acc = float(len(correct_step))/float(total_step_num)

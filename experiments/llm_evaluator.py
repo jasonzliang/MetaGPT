@@ -330,14 +330,14 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         assert self.max_problems > 0
 
         # Scicode specific stuff
-        self.dataset = self.config.get("dataset", "problems_all")
-        assert self.dataset in ['problems_all', 'problems_dev']
+        self.dataset = self.config.get("dataset", "example")
+        assert self.dataset in ['problems_all', 'problems_dev', 'example']
         self.dev_set = self.dataset == "problems_dev"
         self.dataset_path = os.path.join("scicode_data",
             self.dataset + '.jsonl')
         self.with_background = self.config.get("with_background", False)
         self.objective = self.config.get("objective", "problem_acc")
-        self.shuffle_seed = self.config.get("shuffle_seed", None)
+        # self.shuffle_seed = self.config.get("shuffle_seed", None)
         assert self.objective in SCICODE_OBJ
 
         self._download_testdata()
@@ -384,6 +384,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                 max_round=self.max_round)
             time_elapsed = time.time() - start_time
 
+            # There is another extract code function in scicode_eval
+            # Either this one or the one in scicode_eval may be disabled
             output = extract_code_from_chat(chat_result); assert len(output) > 0
             collect_stats_from_chat(result_dict,
                 groupchat_messages=groupchat_messages,
@@ -407,10 +409,9 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         prompt_template = BACKGOUND_PROMPT_TEMPLATE if \
             self.with_background else DEFAULT_PROMPT_TEMPLATE
         problems = read_from_jsonl(self.dataset_path)
-        if self.shuffle_seed is None:
-            problems = sorted(problems, key=lambda x: x['problem_id'])
-        else:
-            random.Random(self.shuffle_seed).shuffle(problems)
+        problems = sorted(problems, key=lambda x: x['problem_id'])
+        # if self.shuffle_seed is None:
+        # else: random.Random(self.shuffle_seed).shuffle(problems)
 
         result_dict = {}; fail_flag = os.path.join(result_dir, "max_failures")
         n_failures = 0 if not os.path.exists(fail_flag) else self.max_failures
@@ -479,7 +480,7 @@ def _test_evaluator(main_role_fp=None,
     test_err=False,
     n_indv=1,
     num_gen=1,
-    max_problems=1,
+    max_problems=999,
     max_round=15,
     llm_model='gpt-4o',
     scicode=True):
@@ -491,9 +492,11 @@ def _test_evaluator(main_role_fp=None,
     indv.evolve_mode = evolve_mode
 
     if main_role_fp is not None:
-        assert os.path.exists(main_role_fp)
-        with open(main_role_fp, "r") as f:
-            indv.main_role = f.read()
+        if os.path.exists(main_role_fp):
+            with open(main_role_fp, "r") as f:
+                indv.main_role = f.read()
+        else:
+            indv.main_role = main_role_fp
     else:
         indv.main_role = DEFAULT_MAIN_ROLE_V2
     if team_role_fp is not None:
