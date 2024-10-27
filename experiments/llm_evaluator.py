@@ -330,7 +330,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         assert self.max_problems > 0
 
         # Scicode specific stuff
-        self.dataset = self.config.get("dataset", "example")
+        self.dataset = self.config.get("dataset", "problems_all")
         assert self.dataset in ['problems_all', 'problems_dev', 'example']
         self.dev_set = self.dataset == "problems_dev"
         self.dataset_path = os.path.join("scicode_data",
@@ -482,6 +482,7 @@ def _test_evaluator(main_role_fp=None,
     num_gen=1,
     max_problems=999,
     max_round=15,
+    dataset='problems_all',
     llm_model='gpt-4o',
     scicode=True):
 
@@ -521,6 +522,7 @@ def _test_evaluator(main_role_fp=None,
         'debug_mode': False,
         'max_problems': max_problems,
         'max_round': max_round,
+        'dataset': dataset,
         'use_timestamp': False}
 
     if scicode:
