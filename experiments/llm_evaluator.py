@@ -321,13 +321,13 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         assert self.n_tries > 0
         self.max_failures = self.config.get("max_failures", sys.maxsize)
         assert self.max_failures > 0
-        self.debug_mode = self.config.get("debug_mode", False)
+        self.max_problems = self.config.get("max_problems", sys.maxsize)
+        assert self.max_problems > 0
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
         self.max_round = self.config.get("max_round", 15)
         assert self.max_round > 0
-        self.max_problems = self.config.get("max_problems", sys.maxsize)
-        assert self.max_problems > 0
+        self.debug_mode = self.config.get("debug_mode", False)
 
         # Scicode specific stuff
         self.dataset = self.config.get("dataset", "problems_all")
