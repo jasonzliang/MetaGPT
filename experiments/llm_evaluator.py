@@ -537,7 +537,8 @@ def _test_evaluator(main_role_fp=None,
         population = []
         for j in range(n_indv):
             child = indv.create_child(i)
-            child._set_id(i, seed=indv_id_seed + counter)
+            if indv_id_seed not None:
+                child._set_id(i, seed=indv_id_seed + counter)
             counter += 1; population.append(child)
 
         result_dicts = evaluator.evaluate(population); evaluator.reset()
