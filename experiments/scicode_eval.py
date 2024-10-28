@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import sys
 import subprocess
@@ -296,8 +297,11 @@ from scicode.parse.parse import process_hdf5_to_tuple
 
     def run_script(script_path):
         try:
-            subprocess.run(['python', script_path], check=True, capture_output=True,
-                           text=True, timeout=TEST_TIMEOUT)
+            subprocess.run(['python', script_path],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=TEST_TIMEOUT)
             return 0
         except subprocess.CalledProcessError as e:
             print(f"Error running script {script_path}: {e}")
@@ -315,7 +319,8 @@ from scicode.parse.parse import process_hdf5_to_tuple
     for i in range(ALL_PROB_NUM):
         correct_dict[f'{i+1}'] = []
 
-    for file_path in tmp_dir.iterdir():
+    sorted_iterdir = sorted(tmp_dir.iterdir())
+    for file_path in sorted_iterdir:
         if file_path.is_file():
             func_id = file_path.stem
             prob_id = func_id.split('.')[0]
