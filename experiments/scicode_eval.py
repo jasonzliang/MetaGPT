@@ -37,13 +37,9 @@ class Gencode:
                  model: str = None,
                  temperature: float = None,
                  llm_eval_func: callable = None):
-
         self.model = model
         self.temperature = temperature
         self.llm_eval_func = llm_eval_func
-        # if self.llm_eval_func is not None:
-        #     assert self.model is None; assert self.temperature is None
-        #     self.model = self.llm_eval_func.__name__
 
         self.output_dir = output_dir
         self.prompt_dir = prompt_dir
@@ -142,9 +138,10 @@ class Gencode:
         prob_id = prob_data["problem_id"]
         output_file_path = self._get_output_file_path(prob_id, num_steps)
         if output_file_path.exists() and output_file_path.stat().st_size > 0:
-            print("Output exists, skipping generation: %s" % output_file_path)
+            print("Output exists, skipping file gen: %s" % output_file_path)
             return
 
+        # write the response to a file if it doesn't exist
         if num_steps == 1:
             self.previous_llm_code = [None] * tot_steps
         else:
@@ -175,9 +172,7 @@ class Gencode:
         model_kwargs = {}
         if "claude" in self.model: model_kwargs["max_tokens"] = 4096
         model_kwargs["temperature"] = self.temperature
-        # write the response to a file if it doesn't exist
 
-        # if not output_file_path.exists():
         if self.llm_eval_func is None:
             model_fct = get_model_function(model, **model_kwargs)
             response_from_llm = model_fct(prompt)
