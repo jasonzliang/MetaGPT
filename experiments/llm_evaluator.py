@@ -479,6 +479,7 @@ def _test_evaluator(main_role_fp=None,
     evolve_mode="team",
     test_err=False,
     n_indv=1,
+    indv_id_seed=1337,
     num_gen=1,
     max_problems=999,
     max_round=15,
@@ -529,8 +530,15 @@ def _test_evaluator(main_role_fp=None,
         evaluator = SciCodeEvaluator(eval_config, evaluator_dir='results/')
     else:
         evaluator = EvalPlusEvaluator(eval_config, evaluator_dir='results/')
+
+    counter = 0
     for i in range(num_gen):
-        population = [indv.create_child(i) for j in range(n_indv)]
+        population = []
+        for j in range(n_indv):
+            child = indv.create_child(i)
+            child._set_id(i, seed=indv_id_seed + counter)
+            counter += 1; population.append(child)
+
         result_dicts = evaluator.evaluate(population); evaluator.reset()
         print("Evaluation results:"); pprint.pprint(result_dicts)
 

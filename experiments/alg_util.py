@@ -47,9 +47,12 @@ def remove_duplicate(my_list, key_func):
         temp_dict[key_func(l)] = l
     return list(temp_dict.values())
 
-def randomword(length):
+def randomword(length, seed=None):
     letters = string.ascii_uppercase + string.ascii_lowercase + string.digits
-    return ''.join(random.choice(letters) for i in range(length))
+    if seed is not None: state = random.getstate(); random.seed(seed)
+    rv = ''.join(random.choice(letters) for i in range(length))
+    if seed is not None: random.setstate(state)
+    return rv
 
 def is_numpy_type(obj):
     return type(obj).__module__ == np.__name__

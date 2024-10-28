@@ -26,7 +26,7 @@ BACKGOUND_PROMPT_TEMPLATE = Path("scicode_data", "multistep_template.txt").read_
 
 H5PY_FILE = os.path.join("scicode_data/test_data.h5")
 CLEANUP_TMP_FILES = False
-
+TEST_TIMEOUT = 1800
 
 class Gencode:
     def __init__(self, output_dir: Path,
@@ -289,7 +289,7 @@ from scicode.parse.parse import process_hdf5_to_tuple
     def run_script(script_path):
         try:
             subprocess.run(['python', script_path], check=True, capture_output=True,
-                           text=True, timeout=1800)
+                           text=True, timeout=TEST_TIMEOUT)
             return 0
         except subprocess.CalledProcessError as e:
             print(f"Error running script {script_path}: {e}")
