@@ -1,4 +1,5 @@
 verbosity: info
+evaluator_name: evalplus
 
 role_ga_config:
     indv_config:
