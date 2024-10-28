@@ -26,7 +26,7 @@ BACKGOUND_PROMPT_TEMPLATE = Path("scicode_data", "multistep_template.txt").read_
 
 H5PY_FILE = os.path.join("scicode_data/test_data.h5")
 CLEANUP_TMP_FILES = False
-TEST_TIMEOUT = 1800
+TEST_TIMEOUT = 600
 
 class Gencode:
     def __init__(self, output_dir: Path,
@@ -51,8 +51,18 @@ class Gencode:
     def _get_background_dir(self):
         return "with_background" if self.with_background else "without_background"
 
+    def _get_output_file_path(self, prob_id, num_steps):
+        res_output_dir = Path(self.output_dir,
+            Path(self.model).parts[-1],
+            self._get_background_dir())
+        res_output_dir.mkdir(parents=True, exist_ok=True)
+        output_file_path = Path(res_output_dir, f"{prob_id}.{num_steps}.py")
+        return output_file_path
+
     def save_prompt_with_steps(self, prob_data: dict, prompt: str, num_steps: int) -> None:
-        output_dir = Path(self.prompt_dir, Path(self.model).parts[-1], self._get_background_dir())
+        output_dir = Path(self.prompt_dir,
+            Path(self.model).parts[-1],
+            self._get_background_dir())
         output_dir.mkdir(parents=True, exist_ok=True)
         output_file_path = output_dir / f"{prob_data['problem_id']}.{num_steps}.txt"
         output_file_path.write_text(prompt, encoding="utf-8")
@@ -66,10 +76,7 @@ class Gencode:
         prob_id = prob_data["problem_id"]
         python_code = extract_python_script(response)
 
-        res_output_dir = Path(self.output_dir, Path(self.model).parts[-1],
-            self._get_background_dir())
-        res_output_dir.mkdir(parents=True, exist_ok=True)
-        output_file_path = Path(res_output_dir, f"{prob_id}.{num_steps}.py")
+        output_file_path = self._get_output_file_path(prob_id, num_steps)
         output_file_path.write_text(f'{previous_code}\n{python_code}',
             encoding="utf-8")
 
@@ -89,6 +96,11 @@ class Gencode:
             save (bool, optional): Save prompt and model response. Defaults to True.
         """
         prob_id = prob_data["problem_id"]
+        output_file_path = self._get_output_file_path(prob_id, num_steps)
+        if output_file_path.exists() and output_file_path.stat().st_size > 0:
+            print("Output exists, skipping generation: %s" % output_file_path)
+            return
+
         if num_steps == 1:
             self.previous_llm_code = [None] * tot_steps
         else:
@@ -100,11 +112,10 @@ class Gencode:
                     #         or (prob_id == "76" and prev_step == 2):
                     #     prev_file_path = Path("scicode_data", f"{prob_id}.{prev_step+1}.txt")
                     # else:
-                    prev_file_path = (
-                            self.output_dir
-                            / self.model
-                            / f"{prob_id}.{prev_step + 1}.py"
-                    )
+                    prev_file_path = Path(
+                        self.output_dir,
+                        self.model,
+                        f"{prob_id}.{prev_step + 1}.py")
                     if prev_file_path.is_file():
                         prev_file_content = prev_file_path.read_text(encoding='utf-8')
                         func_name = extract_function_name(prob_data["sub_steps"][prev_step]["function_header"])
@@ -118,21 +129,18 @@ class Gencode:
             self.save_prompt_with_steps(prob_data, prompt, num_steps)
 
         model_kwargs = {}
-        if "claude" in self.model:
-            model_kwargs["max_tokens"] = 4096
+        if "claude" in self.model: model_kwargs["max_tokens"] = 4096
         model_kwargs["temperature"] = self.temperature
         # write the response to a file if it doesn't exist
-        output_file_path = os.path.join(self.output_dir, self.model,
-            f"{prob_id}.{num_steps}.py")
 
-        if not os.path.exists(output_file_path):
-            if self.llm_eval_func is None:
-                model_fct = get_model_function(model, **model_kwargs)
-                response_from_llm = model_fct(prompt)
-            else:
-                response_from_llm = self.llm_eval_func(prompt, result_dict)
-            self.previous_llm_code[num_steps - 1] = extract_python_script(response_from_llm)
-            self.save_response_with_steps(prob_data, response_from_llm, previous_code, num_steps)
+        # if not output_file_path.exists():
+        if self.llm_eval_func is None:
+            model_fct = get_model_function(model, **model_kwargs)
+            response_from_llm = model_fct(prompt)
+        else:
+            response_from_llm = self.llm_eval_func(prompt, result_dict)
+        self.previous_llm_code[num_steps - 1] = extract_python_script(response_from_llm)
+        self.save_response_with_steps(prob_data, response_from_llm, previous_code, num_steps)
 
     @staticmethod
     def process_problem_code(prob_data: dict, num_steps: int) -> str:
