@@ -524,6 +524,7 @@ def _test_evaluator(main_role_fp=None,
         'max_problems': max_problems,
         'max_round': max_round,
         'dataset': dataset,
+        'with_background': True,
         'use_timestamp': False}
 
     if scicode:
