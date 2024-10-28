@@ -29,6 +29,7 @@ H5PY_FILE = os.path.join("scicode_data/test_data.h5")
 CLEANUP_TMP_FILES = False
 TEST_TIMEOUT = 600
 
+
 class Gencode:
     def __init__(self, output_dir: Path,
                  prompt_dir: Path,
@@ -60,7 +61,7 @@ class Gencode:
         output_file_path = Path(res_output_dir, f"{prob_id}.{num_steps}.py")
         return output_file_path
 
-    def save_prompt_with_steps(self, prob_data: dict, prompt: str, num_steps: int) -> None:
+    def _save_prompt_with_steps(self, prob_data: dict, prompt: str, num_steps: int) -> None:
         output_dir = Path(self.prompt_dir,
             Path(self.model).parts[-1],
             self._get_background_dir())
@@ -68,7 +69,7 @@ class Gencode:
         output_file_path = output_dir / f"{prob_data['problem_id']}.{num_steps}.txt"
         output_file_path.write_text(prompt, encoding="utf-8")
 
-    def save_response_with_steps(self,
+    def _save_response_with_steps(self,
         prob_data: dict,
         response: str,
         previous_code: str,
@@ -80,6 +81,48 @@ class Gencode:
         output_file_path = self._get_output_file_path(prob_id, num_steps)
         output_file_path.write_text(f'{previous_code}\n{python_code}',
             encoding="utf-8")
+
+    @staticmethod
+    def _process_problem_code(prob_data: dict, num_steps: int) -> str:
+        header_docstring = prob_data['sub_steps'][num_steps - 1]['function_header']
+        return_str = prob_data['sub_steps'][num_steps - 1]['return_line']
+        string = f"{header_docstring}\n\n{return_str}"
+        return string
+
+    def _process_problem_steps(self, problem_data: dict, num_steps: int):
+        """Process problem data and return previous steps and next steps"""
+        output_lines = []
+        next_step = []
+        previous_code = []
+        for i in range(num_steps - 1):
+            output_lines.append(problem_data["sub_steps"][i]["step_description_prompt"] + '\n' +
+                                problem_data["sub_steps"][i]["step_background"] if self.with_background
+                                else problem_data["sub_steps"][i]["step_description_prompt"])
+            output_lines.append(self.previous_llm_code[i])
+            previous_code.append(self.previous_llm_code[i])
+            output_lines.append("------")
+
+        next_step.append(problem_data["sub_steps"][num_steps - 1]["step_description_prompt"] + '\n' +
+                         problem_data["sub_steps"][num_steps - 1]["step_background"] if self.with_background
+                         else problem_data["sub_steps"][num_steps - 1]["step_description_prompt"])
+        next_step.append(self._process_problem_code(problem_data, num_steps))
+        output_str = "\n\n".join(output_lines[:-1])  # Remove the last "------"
+        next_step_str = "\n\n".join(next_step)
+        previous_code_str = "\n".join(previous_code)
+        return output_str, next_step_str, previous_code_str
+
+    def _generate_prompt_with_steps(self, prob_data: dict, num_steps: int,
+                                   prompt_template=DEFAULT_PROMPT_TEMPLATE):
+        # parse the input file and extract the content
+        problem_steps_str, next_step_str, previous_code_str = \
+            self._process_problem_steps(prob_data, num_steps)
+        dependencies = prob_data["required_dependencies"]
+        assert next_step_str
+        return prompt_template.format(
+            problem_steps_str=problem_steps_str,
+            next_step_str=next_step_str,
+            dependencies=dependencies,
+        ), f'{dependencies}\n{previous_code_str}\n'
 
     def generate_response_with_steps(
         self, prob_data: dict, num_steps: int, tot_steps: int,
@@ -124,10 +167,10 @@ class Gencode:
                         self.previous_llm_code[prev_step] = function_code
                     else:
                         raise Exception(f'Generating {prob_id} step {num_steps} ahead of step {prev_step + 1}.')
-        prompt, previous_code = self.generate_prompt_with_steps(
+        prompt, previous_code = self._generate_prompt_with_steps(
             prob_data, num_steps, prompt_template)
         if save:
-            self.save_prompt_with_steps(prob_data, prompt, num_steps)
+            self._save_prompt_with_steps(prob_data, prompt, num_steps)
 
         model_kwargs = {}
         if "claude" in self.model: model_kwargs["max_tokens"] = 4096
@@ -141,49 +184,7 @@ class Gencode:
         else:
             response_from_llm = self.llm_eval_func(prompt, result_dict)
         self.previous_llm_code[num_steps - 1] = extract_python_script(response_from_llm)
-        self.save_response_with_steps(prob_data, response_from_llm, previous_code, num_steps)
-
-    @staticmethod
-    def process_problem_code(prob_data: dict, num_steps: int) -> str:
-        header_docstring = prob_data['sub_steps'][num_steps - 1]['function_header']
-        return_str = prob_data['sub_steps'][num_steps - 1]['return_line']
-        string = f"{header_docstring}\n\n{return_str}"
-        return string
-
-    def process_problem_steps(self, problem_data: dict, num_steps: int):
-        """Process problem data and return previous steps and next steps"""
-        output_lines = []
-        next_step = []
-        previous_code = []
-        for i in range(num_steps - 1):
-            output_lines.append(problem_data["sub_steps"][i]["step_description_prompt"] + '\n' +
-                                problem_data["sub_steps"][i]["step_background"] if self.with_background
-                                else problem_data["sub_steps"][i]["step_description_prompt"])
-            output_lines.append(self.previous_llm_code[i])
-            previous_code.append(self.previous_llm_code[i])
-            output_lines.append("------")
-
-        next_step.append(problem_data["sub_steps"][num_steps - 1]["step_description_prompt"] + '\n' +
-                         problem_data["sub_steps"][num_steps - 1]["step_background"] if self.with_background
-                         else problem_data["sub_steps"][num_steps - 1]["step_description_prompt"])
-        next_step.append(self.process_problem_code(problem_data, num_steps))
-        output_str = "\n\n".join(output_lines[:-1])  # Remove the last "------"
-        next_step_str = "\n\n".join(next_step)
-        previous_code_str = "\n".join(previous_code)
-        return output_str, next_step_str, previous_code_str
-
-    def generate_prompt_with_steps(self, prob_data: dict, num_steps: int,
-                                   prompt_template=DEFAULT_PROMPT_TEMPLATE):
-        # parse the input file and extract the content
-        problem_steps_str, next_step_str, previous_code_str = self.process_problem_steps(prob_data,
-                                                                                         num_steps)
-        dependencies = prob_data["required_dependencies"]
-        assert next_step_str
-        return prompt_template.format(
-            problem_steps_str=problem_steps_str,
-            next_step_str=next_step_str,
-            dependencies=dependencies,
-        ), f'{dependencies}\n{previous_code_str}\n'
+        self._save_response_with_steps(prob_data, response_from_llm, previous_code, num_steps)
 
 
 def get_cli() -> argparse.ArgumentParser:
