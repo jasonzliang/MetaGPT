@@ -25,7 +25,7 @@ from util import get_time, sanitize_result_dict
 class Individual(object):
     def __init__(self, config, gen_created=None):
         self.config = config
-        self.id = self._set_id(gen_created) # Ids are unique, names are not
+        self._set_id(gen_created) # Ids are unique, names are not
         self.logger = logging.getLogger('role_ga')
 
         self.evolve_mode = self.config.get("evolve_mode", "single")
@@ -59,7 +59,8 @@ class Individual(object):
 
     def _set_id(self, gen_created, seed=None):
         self.gen_created = gen_created
-        return "G-%s_ID-%s" % (self.gen_created, randomword(ID_LENGTH, seed))
+        self.id = "G-%s_ID-%s" % (self.gen_created, randomword(ID_LENGTH, seed))
+        return self.id
 
     def _get_sort_fitness(self):
         if self.fitness is None:
@@ -101,7 +102,7 @@ class Individual(object):
         child.reset()
         child._inherit_roles(self)
 
-        child.id = child._set_id(gen_created)
+        child._set_id(gen_created)
         # child.fitness = self.fitness
         # child.true_fitness = self.true_fitness
         # child.result_dir = self.result_dir
