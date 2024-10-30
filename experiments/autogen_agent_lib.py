@@ -10,12 +10,12 @@
 
 # ## Requirement
 # 
-# AutoBuild require `pyautogen[autobuild]`, which can be installed by the following command:
+# AutoBuild require `autogen-agentchat[autobuild]~=0.2`, which can be installed by the following command:
 
 # In[1]:
 
 
-# get_ipython().run_line_magic('pip', 'install pyautogen[autobuild]')
+get_ipython().run_line_magic('pip', 'install autogen-agentchat[autobuild]~=0.2')
 
 
 # ## Preparation and useful tools
@@ -41,7 +41,7 @@ from agent_builder import AgentBuilder
 config_file_or_env = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST") # modify path
 llm_config = {"temperature": 0}
 config_list = autogen.config_list_from_json(config_file_or_env,
-    filter_dict={"model": ["gpt-4-turbo", "gpt-4o"]})
+    filter_dict={"model": ["gpt-4o"]})
 
 def start_task(execution_task: str, agent_list: list):
     group_chat = autogen.GroupChat(agents=agent_list, messages=[], max_round=12)
@@ -155,7 +155,7 @@ print(sys_msg_list)
 # In[6]:
 
 
-json.dump(sys_msg_list, open("./autogen_agent_library.json", "w"), indent=4)
+json.dump(sys_msg_list, open("./agent_library_example.json", "w"), indent=4)
 
 
 # ## Build agents from library (by LLM)
@@ -166,7 +166,7 @@ json.dump(sys_msg_list, open("./autogen_agent_library.json", "w"), indent=4)
 # In[7]:
 
 
-library_path_or_json = "./autogen_agent_library.json"
+library_path_or_json = "./agent_library_example.json"
 building_task = "Find a paper on arxiv by programming, and analyze its application in some domain. For example, find a recent paper about gpt-4 on arxiv and find its potential applications in software."
 
 

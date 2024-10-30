@@ -80,15 +80,15 @@ When the task is complete and the result has been carefully verified, after obta
 
 ## How to verify?
 **You have to keep believing that everyone else's answers are wrong until they provide clear enough evidence.**
-- Verify answers with step-by-step backward reasoning.
+- Verifying with step-by-step backward reasoning.
 - Write test cases according to the general task.
 - Very important: Before writing test cases, first write the code for the task or function being tested.
 
 ## How to use code?
 - Suggest python code (in a python coding block) or shell script (in a sh coding block) for the Computer_terminal to execute.
-- If missing python packages, modify the code to avoid using those packages.
+- If missing python packages, you can install the package by suggesting a `pip install` code in the ```sh ... ``` block.
 - When using code, you must indicate the script type in the coding block.
-- Do not suggest incomplete code which requires users to modify.
+- Do not the coding block which requires users to modify.
 - Do not suggest a coding block if it's not intended to be executed by the Computer_terminal.
 - The Computer_terminal cannot modify your code.
 - **Use 'print' function for the output when relevant**.
@@ -105,7 +105,7 @@ Answer only YES or NO.
 """
 
     AGENT_NAME_PROMPT = """# Your task
-Suggest no more then {max_agents} experts with their name according to the following user requirement.
+Suggest no more than {max_agents} experts with their name according to the following user requirement.
 
 ## User requirement
 {task}
@@ -117,8 +117,7 @@ For example: Python_Expert, Math_Expert, ... """
 
     AGENT_SYS_MSG_PROMPT = """# Your goal
 - According to the task and expert name, write a high-quality description for the expert by filling the given template.
-- Ensure that your description is clear, concise, and unambiguous, and include all necessary information.
-- Ensure the total length of your description does not exceed 200 words.
+- Ensure that your description are clear and unambiguous, and include all necessary information.
 
 # Task
 {task}
@@ -197,6 +196,26 @@ Match roles in the role set to each expert in expert set.
     ...
 }}
 ```
+"""
+
+    AGENT_FUNCTION_MAP_PROMPT = """Consider the following function.
+Function Name: {function_name}
+Function Description: {function_description}
+
+The agent details are given in the format: {format_agent_details}
+
+Which one of the following agents should be able to execute this function, preferably an agent with programming background?
+{agent_details}
+
+Hint:
+# Only respond with the name of the agent that is most suited to execute the function and nothing else.
+"""
+
+    UPDATED_AGENT_SYSTEM_MESSAGE = """
+{agent_system_message}
+
+You have access to execute the function: {function_name}.
+With following description: {function_description}
 """
 
     def __init__(
@@ -347,16 +366,15 @@ Match roles in the role set to each expert in expert set.
             additional_config = {
                 k: v
                 for k, v in agent_config.items()
-                if k not in ["model", "name", "system_message", "description", \
-                    "model_path", "tags", "coding_instruction"]
+                if k not in ["model", "name", "system_message", "description", "model_path", "tags"]
             }
             agent = model_class(
-                name=agent_name, llm_config=current_config.copy(), description=description, role_for_system_message=sys_msg_role, **additional_config
+                name=agent_name, llm_config=current_config.copy(), description=description, **additional_config
             )
             if system_message == "":
                 system_message = agent.system_message
             else:
-                system_message = f"{system_message}\n\n{agent_coding_instruct}"
+                system_message = f"{system_message}\n\n{self.CODING_AND_TASK_SKILL_INSTRUCTION}"
 
             enhanced_sys_msg = self.GROUP_CHAT_DESCRIPTION.format(
                 name=agent_name, members=member_name, user_proxy_desc=user_proxy_desc, sys_msg=system_message
@@ -399,6 +417,7 @@ Match roles in the role set to each expert in expert set.
         self,
         building_task: str,
         default_llm_config: Dict,
+        list_of_functions: Optional[List[Dict]] = None,
         coding: Optional[bool] = None,
         code_execution_config: Optional[Dict] = None,
         use_oai_assistant: Optional[bool] = False,
@@ -414,6 +433,7 @@ Match roles in the role set to each expert in expert set.
             coding: use to identify if the user proxy (a code interpreter) should be added.
             code_execution_config: specific configs for user proxy (e.g., last_n_messages, work_dir, ...).
             default_llm_config: specific configs for LLM (e.g., config_list, seed, temperature, ...).
+            list_of_functions: list of functions to be associated with Agents
             use_oai_assistant: use OpenAI assistant api instead of self-constructed agent.
             user_proxy: user proxy's class that can be used to replace the default user proxy.
 
@@ -441,18 +461,15 @@ Match roles in the role set to each expert in expert set.
                 messages=[
                     {
                         "role": "user",
-                        "content": self.AGENT_NAME_PROMPT.format(
-                            task=building_task,
-                            max_agents=max_agents),
+                        "content": self.AGENT_NAME_PROMPT.format(task=building_task, max_agents=max_agents),
                     }
                 ]
             )
             .choices[0]
             .message.content
         )
-        agent_name_list = [agent_name.strip().replace(" ", "_") \
-            for agent_name in resp_agent_name.split(",")]
-        if len(agent_name_list) > self.max_agents:
+        agent_name_list = [agent_name.strip().replace(" ", "_") for agent_name in resp_agent_name.split(",")]
+	if len(agent_name_list) > self.max_agents:
             agent_name_list = agent_name_list[:self.max_agents]
         print(f"{agent_name_list} are generated.", flush=True)
 
@@ -487,9 +504,7 @@ Match roles in the role set to each expert in expert set.
                     messages=[
                         {
                             "role": "user",
-                            "content": self.AGENT_DESCRIPTION_PROMPT.format(
-                                position=name,
-                                sys_msg=sys_msg),
+                            "content": self.AGENT_DESCRIPTION_PROMPT.format(position=name, sys_msg=sys_msg),
                         }
                     ]
                 )
@@ -553,8 +568,9 @@ Match roles in the role set to each expert in expert set.
                 "code_execution_config": code_execution_config,
             }
         )
+
         _config_check(self.cached_configs)
-        return self._build_agents(use_oai_assistant, user_proxy=user_proxy, **kwargs)
+        return self._build_agents(use_oai_assistant, list_of_functions, user_proxy=user_proxy, **kwargs)
 
     def build_from_library(
         self,
@@ -726,13 +742,18 @@ Match roles in the role set to each expert in expert set.
         return self._build_agents(use_oai_assistant, user_proxy=user_proxy, **kwargs)
 
     def _build_agents(
-        self, use_oai_assistant: Optional[bool] = False, user_proxy: Optional[autogen.ConversableAgent] = None, **kwargs
+        self,
+        use_oai_assistant: Optional[bool] = False,
+        list_of_functions: Optional[List[Dict]] = None,
+        user_proxy: Optional[autogen.ConversableAgent] = None,
+        **kwargs,
     ) -> Tuple[List[autogen.ConversableAgent], Dict]:
         """
         Build agents with generated configs.
 
         Args:
             use_oai_assistant: use OpenAI assistant api instead of self-constructed agent.
+            list_of_functions: list of functions to be associated to Agents
             user_proxy: user proxy's class that can be used to replace the default user proxy.
 
         Returns:
@@ -767,6 +788,53 @@ Match roles in the role set to each expert in expert set.
                     default_auto_reply=self.DEFAULT_PROXY_AUTO_REPLY,
                 )
             agent_list = agent_list + [user_proxy]
+
+            agent_details = []
+
+            for agent in agent_list[:-1]:
+                agent_details.append({"name": agent.name, "description": agent.description})
+
+            if list_of_functions:
+                for func in list_of_functions:
+                    resp = (
+                        self.builder_model.create(
+                            messages=[
+                                {
+                                    "role": "user",
+                                    "content": self.AGENT_FUNCTION_MAP_PROMPT.format(
+                                        function_name=func["name"],
+                                        function_description=func["description"],
+                                        format_agent_details='[{"name": "agent_name", "description": "agent description"}, ...]',
+                                        agent_details=str(json.dumps(agent_details)),
+                                    ),
+                                }
+                            ]
+                        )
+                        .choices[0]
+                        .message.content
+                    )
+
+                    autogen.agentchat.register_function(
+                        func["function"],
+                        caller=self.agent_procs_assign[resp][0],
+                        executor=agent_list[0],
+                        name=func["name"],
+                        description=func["description"],
+                    )
+
+                    agents_current_system_message = [
+                        agent["system_message"] for agent in agent_configs if agent["name"] == resp
+                    ][0]
+
+                    self.agent_procs_assign[resp][0].update_system_message(
+                        self.UPDATED_AGENT_SYSTEM_MESSAGE.format(
+                            agent_system_message=agents_current_system_message,
+                            function_name=func["name"],
+                            function_description=func["description"],
+                        )
+                    )
+
+                    print(f"Function {func['name']} is registered to agent {resp}.")
 
         return agent_list, self.cached_configs.copy()
 
