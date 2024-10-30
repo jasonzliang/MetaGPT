@@ -73,6 +73,7 @@ When the task is complete and the result has been carefully verified, after obta
 """
 
 # - If missing python packages, you can install the package by suggesting a `pip install` code in the ```sh ... ``` block.
+# - Very important: Before writing test cases, first write the code for the task or function being tested.
     CODING_AND_TASK_SKILL_INSTRUCTION = """## Useful instructions for task-solving
 - Solve the task step by step if you need to.
 - When you find an answer, verify the answer carefully. Include verifiable evidence with possible test case in your response if possible.
@@ -82,7 +83,7 @@ When the task is complete and the result has been carefully verified, after obta
 **You have to keep believing that everyone else's answers are wrong until they provide clear enough evidence.**
 - Verifying with step-by-step backward reasoning.
 - Write test cases according to the general task.
-- Very important: Before writing test cases, first write the code for the task or function being tested.
+- Before calling a function, ensure that the function has been properly defined first. Make sure to prevent "NameError: name <function name> is not defined" exceptions from occurring.
 
 ## How to use code?
 - Suggest python code (in a python coding block) or shell script (in a sh coding block) for the Computer_terminal to execute.
@@ -468,8 +469,9 @@ With following description: {function_description}
             .choices[0]
             .message.content
         )
-        agent_name_list = [agent_name.strip().replace(" ", "_") for agent_name in resp_agent_name.split(",")]
-	if len(agent_name_list) > self.max_agents:
+        agent_name_list = [agent_name.strip().replace(" ", "_") \
+            for agent_name in resp_agent_name.split(",")]
+        if len(agent_name_list) > self.max_agents:
             agent_name_list = agent_name_list[:self.max_agents]
         print(f"{agent_name_list} are generated.", flush=True)
 
