@@ -21,6 +21,7 @@ from pathos.pools import ProcessPool as Pool
 # from pathos.pp import ParallelPool
 from retry import retry
 # from wrapt_timeout_decorator import *
+from ruamel.yaml import YAML
 
 from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
@@ -79,8 +80,10 @@ class EvalPlusEvaluator(object):
         if hasattr(self, "pool"):
             self.pool.close(); self.pool.join(); self.pool.clear(); del self.pool
         self.pool = Pool(self.n_workers)
-        os.makedirs(self.evaluator_dir, exist_ok=True)
         # self.pool = ParallelPool(self.n_workers)
+        os.makedirs(self.evaluator_dir, exist_ok=True)
+        with open(os.path.join(self.evaluator_dir, 'eval_config.yaml'), 'w') as f:
+            YAML().dump(self.config, f)
 
     def _check_eval_progress(self, n_indv):
         if self.dataset not in ['humaneval', 'mbpp']:
