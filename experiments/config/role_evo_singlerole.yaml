@@ -6,11 +6,11 @@ role_ga_config:
         debug_mode: False
         # mutate_rate: 0.75
         llm_config:
-            model: gpt-4-turbo
+            model: gpt-4o
             temperature: 1.0
             top_p: 0.4
             eval_llm_config:
-                model: gpt-3.5-turbo
+                model: gpt-4o-mini
                 temperature: 0.3
                 top_p: 0.3
         # initial_role: initial_role_james.txt

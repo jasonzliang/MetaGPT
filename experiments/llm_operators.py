@@ -194,7 +194,7 @@ def create_new_team(llm_config):
             raise
 
     config = Config.default()
-    config.llm.model = llm_config.get("model", "gpt-3.5-turbo")
+    config.llm.model = llm_config.get("model", "gpt-4o-mini")
     config.llm.temperature = llm_config.get("temperature", 0.2)
     config.llm.top_p = llm_config.get("top_p", 1.0)
 
@@ -210,7 +210,7 @@ def create_new_team(llm_config):
     logger=logging.getLogger('evolve_role'))
 def llm_mutate(prompt, llm_config):
     config = Config.default()
-    config.llm.model = llm_config.get("model", "gpt-4-turbo")
+    config.llm.model = llm_config.get("model", "gpt-4o")
     config.llm.temperature = llm_config.get("temperature", 1.0)
     config.llm.top_p = llm_config.get("top_p", 1.0)
 
@@ -224,7 +224,7 @@ def llm_mutate(prompt, llm_config):
     logger=logging.getLogger('evolve_role'))
 def llm_mutate2(prompt, result_dir, n=3, llm_config={}):
     config = Config.default()
-    config.llm.model = llm_config.get("model", "gpt-4-turbo")
+    config.llm.model = llm_config.get("model", "gpt-4o")
     config.llm.temperature = llm_config.get("temperature", 1.0)
     config.llm.top_p = llm_config.get("top_p", 1.0)
 
@@ -255,7 +255,7 @@ def llm_mutate2(prompt, result_dir, n=3, llm_config={}):
     logger=logging.getLogger('evolve_role'))
 def llm_crossover(prompt_1, prompt_2, llm_config):
     config = Config.default()
-    config.llm.model = llm_config.get("model", "gpt-4-turbo")
+    config.llm.model = llm_config.get("model", "gpt-4o")
     config.llm.temperature = llm_config.get("temperature", 1.0)
     config.llm.top_p = llm_config.get("top_p", 1.0)
 
@@ -270,7 +270,7 @@ def llm_crossover(prompt_1, prompt_2, llm_config):
     logger=logging.getLogger('evolve_role'))
 def llm_crossover2(prompt, additional_prompts, llm_config):
     config = Config.default()
-    config.llm.model = llm_config.get("model", "gpt-4-turbo")
+    config.llm.model = llm_config.get("model", "gpt-4o")
     config.llm.temperature = llm_config.get("temperature", 1.0)
     config.llm.top_p = llm_config.get("top_p", 1.0)
 
