@@ -485,10 +485,10 @@ EVALPLUS_EVAL_CONFIG = {
 
 SCICODE_EVAL_CONFIG = {
     'max_problems': 999,
-    'max_round': 60,
+    'max_round': 50,
     'dataset': 'problems_all',
     'with_background': False,
-    'problem_list': ['2'],
+    'problem_list': [],
 }
 
 def _test_evaluator(main_role_fp=None,
