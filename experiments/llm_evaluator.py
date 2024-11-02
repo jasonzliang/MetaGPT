@@ -337,8 +337,9 @@ class SciCodeEvaluator(EvalPlusEvaluator):
             self.dataset + '.jsonl')
         self.with_background = self.config.get("with_background", False)
         self.objective = self.config.get("objective", "problem_acc")
-        # self.shuffle_seed = self.config.get("shuffle_seed", None)
         assert self.objective in SCICODE_OBJ
+        self.problem_list = self.config.get("problem_list", [])
+        # self.shuffle_seed = self.config.get("shuffle_seed", None)
 
         self._download_testdata()
         super().reset()
@@ -420,6 +421,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
             if i >= self.max_problems or n_failures >= self.max_failures:
                 continue
+            if len(self.problem_list) > 0 and task_id not in self.problem_list:
+                continue
 
             mlogger.info("\n\n#### Task ID: %s Problem:\n%s" % \
                 (task_id, problem['problem_description_main']))
@@ -474,16 +477,28 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
 
 #### Unit tests ####
+EVALPLUS_EVAL_CONFIG = {
+    'max_problems': 999,
+    'max_round': 15,
+    'dataset': 'humaneval',
+}
+
+SCICODE_EVAL_CONFIG = {
+    'max_problems': 999,
+    'max_round': 60,
+    'dataset': 'problems_all',
+    'with_background': False,
+    'problem_list': ['2'],
+}
+
 def _test_evaluator(main_role_fp=None,
     team_role_fp=None,
     evolve_mode="team",
     test_err=False,
     n_indv=1,
-    indv_id_seed=None,
+    indv_id_seed=1989,
     num_gen=1,
-    max_problems=999,
-    max_round=15,
-    dataset='problems_all',
+    eval_config=SCICODE_EVAL_CONFIG,
     llm_model='gpt-4o',
     scicode=True):
 
@@ -519,13 +534,9 @@ def _test_evaluator(main_role_fp=None,
     print(indv.main_role); print(indv.team_role)
     pprint.pprint(indv.llm_config)
 
-    eval_config = {'n_workers': n_indv,
+    eval_config.update({'n_workers': n_indv,
         'debug_mode': False,
-        'max_problems': max_problems,
-        'max_round': max_round,
-        'dataset': dataset,
-        'with_background': True,
-        'use_timestamp': False}
+        'use_timestamp': False})
 
     if scicode:
         evaluator = SciCodeEvaluator(eval_config, evaluator_dir='results/')
