@@ -83,7 +83,7 @@ When the task is complete and the result has been carefully verified, after obta
 **You have to keep believing that everyone else's answers are wrong until they provide clear enough evidence.**
 - Verifying with step-by-step backward reasoning.
 - Write test cases according to the general task.
-- Before calling a function, ensure that the function has been properly defined first. Make sure to prevent "NameError: name <function name> is not defined" exceptions from occurring.
+- Before calling a function, ensure that the function has been properly defined first. Make sure to prevent "NameError: name <function_name> is not defined" exceptions.
 
 ## How to use code?
 - Suggest python code (in a python coding block) or shell script (in a sh coding block) for the Computer_terminal to execute.
