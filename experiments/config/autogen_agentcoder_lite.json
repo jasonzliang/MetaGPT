@@ -7,7 +7,7 @@
                 "gpt-4o"
             ],
             "tags": [],
-            "system_message_file": "config/agentcoder_programmer_prompt_lite.txt",
+            "system_message_file": "config/agentcoder_programmer_lite.txt",
             "description": "Programmer_Expert is a skilled software programmer specializing in writing code."
         },
         {
@@ -16,7 +16,7 @@
                 "gpt-4o"
             ],
             "tags": [],
-            "system_message_file": "config/agentcoder_tester_prompt_lite.txt",
+            "system_message_file": "config/agentcoder_tester_lite.txt",
             "description": "Test_Designer_Expert is a skilled test designer writing test cases for code."
         }
     ],
