@@ -1,0 +1,34 @@
+{
+    "building_task": "Generate a team of agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities.",
+    "agent_configs": [
+        {
+            "name": "Programmer_Expert",
+            "model": [
+                "gpt-4o"
+            ],
+            "tags": [],
+            "system_message_file": "config/agentcoder_programmer_prompt_lite.txt",
+            "description": "Programmer_Expert is a skilled software programmer specializing in writing code."
+        },
+        {
+            "name": "Test_Designer_Expert",
+            "model": [
+                "gpt-4o"
+            ],
+            "tags": [],
+            "system_message_file": "config/agentcoder_tester_prompt_lite.txt",
+            "description": "Test_Designer_Expert is a skilled test designer writing test cases for code."
+        }
+    ],
+    "coding": true,
+    "default_llm_config": {
+        "temperature": 0.0,
+        "cache_seed": null
+    },
+    "code_execution_config": {
+        "last_n_messages": "auto",
+        "work_dir": "/tmp/eval_qDKel30jDTtF",
+        "use_docker": false,
+        "timeout": 10
+    }
+}
