@@ -318,7 +318,7 @@ With following description: {function_description}
             agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
         else:
             raise Exception("If agents have 'coding_instruction' entry, "
-                "set custom_coding_instruct to True'")
+                "set builder's custom_coding_instruct to True'")
 
         # Path to the customize **ConversableAgent** class.
         model_path = agent_config.get("model_path", None)

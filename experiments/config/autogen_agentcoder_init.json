@@ -17,7 +17,7 @@
             ],
             "tags": [],
             "system_message_file": "config/agentcoder_tester_prompt.txt",
-            "description": "Test_Designer_Expert is a skilled test designer writing test cases for code."
+            "description": "Test_Designer_Expert is a skilled test designer specializing in writing test cases."
         }
     ],
     "coding": true,
