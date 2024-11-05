@@ -181,9 +181,10 @@ def init_builder(building_task=None,
     # for any agent with sys msg file, open file and update sys msg from file
     for agent_config in builder_dict["agent_configs"]:
         if 'system_message_file' in agent_config:
-            assert os.path.exists(agent_config['system_message_file'])
-            with open(agent_config['system_message_file'], 'r') as f:
-                new_agent_sys_msg = f.read()
+            sys_msg_file = agent_config['system_message_file']
+            assert os.path.exists(sys_msg_file)
+            print("init_builder: loading agent sys msg file: %s" % sys_msg_file)
+            with open(sys_msg_file, 'r') as f: new_agent_sys_msg = f.read()
             agent_config['system_message'] = new_agent_sys_msg
             del agent_config['system_message_file']
     # overwrite working directory used by agents for code execution
