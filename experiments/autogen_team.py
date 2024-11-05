@@ -173,12 +173,21 @@ def init_builder(building_task=None,
             with open(builder_cfg, "r") as f:
                 builder_dict = json.load(f)
 
-    # overwrite model used by agents
+    # overwrite LLM model used by agents for code generation
     for agent_config in builder_dict["agent_configs"]:
         agent_config["model"] = [builder_llm_config['agent_model']]
-    # overwrite builder cfg with current work_dir
-    builder_dict["code_execution_config"]["work_dir"] = work_dir
+    # overwrite LLM config used by agents for code generation
     builder_dict["default_llm_config"].update(_builder_llm_config)
+    # for any agent with sys msg file, open file and update sys msg from file
+    for agent_config in builder_dict["agent_configs"]:
+        if 'system_message_file' in agent_config:
+            assert os.path.exists(agent_config['system_message_file'])
+            with open(agent_config['system_message_file'], 'r') as f:
+                new_agent_sys_msg = f.read()
+            agent_config['system_message'] = new_agent_sys_msg
+    # overwrite working directory used by agents for code execution
+    builder_dict["code_execution_config"]["work_dir"] = work_dir
+
     agent_list, agent_configs = builder.load(
         config_json=json.dumps(builder_dict, indent=4))
 

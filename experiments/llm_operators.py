@@ -392,8 +392,8 @@ def _test_mutation_crossover2(test_err=False):
 
 
 def _test_autogen_mutation_crossover(
-    team_role='config/autogen_builder_init.json',
-    other_team_role='config/autogen_builder_cfg.json',
+    team_role='config/autogen_team3_init.json',
+    other_team_role='config/autogen_team1_init.json',
     test_err=False):
 
     clear_autogen_cache()
