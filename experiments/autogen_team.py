@@ -185,6 +185,7 @@ def init_builder(building_task=None,
             with open(agent_config['system_message_file'], 'r') as f:
                 new_agent_sys_msg = f.read()
             agent_config['system_message'] = new_agent_sys_msg
+            del agent_config['system_message_file']
     # overwrite working directory used by agents for code execution
     builder_dict["code_execution_config"]["work_dir"] = work_dir
 
