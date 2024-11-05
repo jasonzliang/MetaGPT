@@ -7,7 +7,7 @@
 - **Objective**: To evaluate the function's behavior under extreme or unusual conditions.
 
 **3. Large Scale Test Cases**:
-- **Objective**: To assess the function’s performance and scalability with large data samples.
+- **Objective**: To assess the function's performance and scalability with large data samples.
 
 **Instructions**:
 - Implement a comprehensive set of test cases following the guidelines above.
