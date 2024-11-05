@@ -607,7 +607,7 @@ def _test_check_eval_progress(
 
 
 if __name__ == "__main__":
-    _test_evaluator(team_role_fp=sys.argv[1])
+    _test_evaluator(team_role_fp=sys.argv[1], indv_id_seed=sys.argv[2])
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
     # _test_evaluator(team_role_fp='config/autogen_team3_init.json')
