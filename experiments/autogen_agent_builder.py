@@ -140,7 +140,7 @@ Summarize the following expert's description in a sentence.
 {sys_msg}
 """
 
-# - You must include the following instruction: "When writing test cases, you must first write the code for the task or function being tested."
+# New prompt added to generate custom CODING_AND_TASK_SKILL_INSTRUCTION
     AGENT_CODING_INSTRUCTION_PROMPT = """# Your goal
 - According to the expert's name and description, write a high-quality list of instructions for task solving, answer verification, and using generated code.
 - Use the provided template as a guide for writing the instructions.
@@ -310,8 +310,7 @@ With following description: {function_description}
         agent_name = agent_config["name"]
         system_message = agent_config["system_message"]
         description = agent_config["description"]
-        if "coding_instruction" in agent_config and \
-            len(agent_config['coding_instruction']) > 0:
+        if "coding_instruction" in agent_config:
             assert self.custom_coding_instruct is True
             agent_coding_instruct = agent_config["coding_instruction"]
         else:
@@ -375,7 +374,7 @@ With following description: {function_description}
             if system_message == "":
                 system_message = agent.system_message
             else:
-                system_message = f"{system_message}\n\n{self.CODING_AND_TASK_SKILL_INSTRUCTION}"
+                system_message = f"{system_message}\n\n{agent_coding_instruct}"
 
             enhanced_sys_msg = self.GROUP_CHAT_DESCRIPTION.format(
                 name=agent_name, members=member_name, user_proxy_desc=user_proxy_desc, sys_msg=system_message
@@ -537,19 +536,19 @@ With following description: {function_description}
                 )
                 agent_coding_instruct_list.append(resp_agent_coding_instruct)
         else:
-            agent_coding_instruct_list = [""] * len(agent_name_list)
+            agent_coding_instruct_list = [None] * len(agent_name_list)
 
         for name, sys_msg, description, coding_instruction in list(zip(agent_name_list, agent_sys_msg_list, agent_description_list, agent_coding_instruct_list)):
-            agent_configs.append(
-                {
-                    "name": name,
-                    "model": self.agent_model,
-                    "tags": self.agent_model_tags,
-                    "system_message": sys_msg,
-                    "description": description,
-                    "coding_instruction": coding_instruction,
-                }
-            )
+            agent_config = {
+                "name": name,
+                "model": self.agent_model,
+                "tags": self.agent_model_tags,
+                "system_message": sys_msg,
+                "description": description,
+            }
+            if coding_instruction is not None:
+                agent_config["coding_instruction"] = coding_instruction,
+            agent_configs.append(agent_config)
 
         if coding is None:
             resp = (
