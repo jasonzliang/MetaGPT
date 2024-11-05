@@ -45,9 +45,9 @@ BUILDER_LLM_CONFIG = {"temperature": 0.1,
     "user_for_system_msg": False,
     "min_agents": 2,
     "max_agents": 4}
-MIN_CHAT_HIST_LEN = 35000
-MAX_CHAT_HIST_LEN = 105000
-MAX_MSG_LEN = 5000
+MIN_CHAT_HIST_LEN = 40000
+MAX_CHAT_HIST_LEN = 120000
+MAX_MSG_LEN = 10000
 CHAT_TIMEOUT = 120
 # TODO: FIX CACHING/CACHE SEED
 
