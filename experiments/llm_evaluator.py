@@ -495,7 +495,7 @@ EVALPLUS_EVAL_CONFIG = {
 }
 
 SCICODE_EVAL_CONFIG = {
-    'n_tries': 3,
+    'n_tries': 1,
     'max_problems': 999,
     'max_round': 50,
     'dataset': 'problems_all',
