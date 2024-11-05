@@ -314,6 +314,9 @@ With following description: {function_description}
         if self.custom_coding_instruct is True and \
             "coding_instruction" in agent_config:
             agent_coding_instruct = agent_config["coding_instruction"]
+            if len(agent_coding_instruct) == 0:
+                print(colored("empty coding instruction for %s" % agent_name,
+                    "red"), flush=True)
         elif "coding_instruction" not in agent_config:
             agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
         else:
