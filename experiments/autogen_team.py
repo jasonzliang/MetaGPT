@@ -121,9 +121,9 @@ def init_builder(building_task=None,
     work_dir='groupchat',
     builder_cfg=None,
     builder_dict=None,
+    use_builder_dict=False,
     builder_llm_config=BUILDER_LLM_CONFIG,
     clear_cache=False,
-    use_builder_dict=False,
     max_agents=None):
 
     os.makedirs(work_dir, exist_ok=True)
@@ -242,9 +242,9 @@ Build a new and improved version of the existing team that generates more effici
     if eval_mode:
         return init_builder(building_task=building_task,
             builder_dict=None,
+            use_builder_dict=True,
             builder_llm_config=builder_llm_config,
             work_dir=work_dir,
-            use_builder_dict=True,
             clear_cache=False)
     else:
         return init_builder(building_task=building_task,
