@@ -369,7 +369,8 @@ With following description: {function_description}
             additional_config = {
                 k: v
                 for k, v in agent_config.items()
-                if k not in ["model", "name", "system_message", "description", "model_path", "tags"]
+                if k not in ["model", "name", "system_message", "description",
+                    "model_path", "tags", "coding_instruction"]
             }
             agent = model_class(
                 name=agent_name, llm_config=current_config.copy(), description=description, **additional_config
