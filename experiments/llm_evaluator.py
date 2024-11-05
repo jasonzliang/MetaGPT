@@ -82,8 +82,6 @@ class EvalPlusEvaluator(object):
         self.pool = Pool(self.n_workers)
         # self.pool = ParallelPool(self.n_workers)
         os.makedirs(self.evaluator_dir, exist_ok=True)
-        with open(os.path.join(self.evaluator_dir, 'eval_config.yaml'), 'w') as f:
-            YAML().dump(self.config, f)
 
     def _check_eval_progress(self, n_indv):
         if self.dataset not in ['humaneval', 'mbpp']:
@@ -161,6 +159,10 @@ class EvalPlusEvaluator(object):
         if team_role is not None:
             with open(os.path.join(result_dir, "team_role.json"), "w") as f:
                 json.dump(team_role, f, indent=4)
+        with open(os.path.join(result_dir, "llm_config.yaml"), 'w') as f:
+            YAML().dump(indv.llm_config, f)
+        with open(os.path.join(result_dir, 'eval_config.yaml'), 'w') as f:
+            YAML().dump(self.config, f)
         return result_dir
 
     def _run_evalplus(self, result_dir, eval_func):
@@ -239,6 +241,9 @@ class EvalPlusEvaluator(object):
         result_dict['result_dir'] = result_dir
         # Needed for multirun_evalplus in analysis
         result_dict['evalplus_result'] = evalplus_result
+
+        with open(os.path.join(result_dir, "result_dict.yaml"), 'w') as f:
+            YAML().dump(result_dict, f)
         return result_dict
 
     def _eval_indv_team_role(self, indv):
@@ -476,6 +481,9 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         result_dict['result_dir'] = result_dir
         # Needed for multirun_evalplus in analysis
         result_dict['scicode_result'] = scicode_result
+
+        with open(os.path.join(result_dir, "result_dict.yaml"), 'w') as f:
+            YAML().dump(result_dict, f)
         return result_dict
 
 
@@ -552,12 +560,12 @@ def _test_evaluator(main_role_fp=None,
         'use_timestamp': False})
 
     if scicode:
-        evaluator = SciCodeEvaluator(eval_config, evaluator_dir='results/')
+        _eval = SciCodeEvaluator(eval_config, evaluator_dir='results/')
     else:
-        evaluator = EvalPlusEvaluator(eval_config, evaluator_dir='results/')
+        _eval = EvalPlusEvaluator(eval_config, evaluator_dir='results/')
 
     print(indv.main_role); print(indv.team_role)
-    pprint.pprint(indv.llm_config); pprint.pprint(evaluator.config)
+    pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
 
     counter = 0
     for i in range(num_gen):
@@ -568,7 +576,7 @@ def _test_evaluator(main_role_fp=None,
                 child._set_id(i, seed=indv_id_seed + counter)
             counter += 1; population.append(child)
 
-        result_dicts = evaluator.evaluate(population); evaluator.reset()
+        result_dicts = _eval.evaluate(population); _eval.reset()
         print("Evaluation results:"); pprint.pprint(result_dicts)
 
 
