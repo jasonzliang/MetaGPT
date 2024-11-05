@@ -310,12 +310,15 @@ With following description: {function_description}
         agent_name = agent_config["name"]
         system_message = agent_config["system_message"]
         description = agent_config["description"]
-        if "coding_instruction" in agent_config:
-            assert self.custom_coding_instruct is True
+        # if custom_coding_instruct, accept custom or default coding instructions
+        if self.custom_coding_instruct is True and \
+            "coding_instruction" in agent_config:
             agent_coding_instruct = agent_config["coding_instruction"]
-        else:
-            # assert self.custom_coding_instruct is False
+        elif "coding_instruction" not in agent_config:
             agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
+        else:
+            raise Exception("If agents have 'coding_instruction' entry, "
+                "set custom_coding_instruct to True'")
 
         # Path to the customize **ConversableAgent** class.
         model_path = agent_config.get("model_path", None)

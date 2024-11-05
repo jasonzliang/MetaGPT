@@ -494,6 +494,20 @@ SCICODE_EVAL_CONFIG = {
     'problem_list': [],
 }
 
+EVAL_LLM_CONFIG = {
+    'model': 'gpt-4o'
+}
+
+EVAL_BUILDER_LLM_CONFIG = {
+    'agent_model': 'gpt-4o',
+    'builder_model': 'gpt-4o',
+    'custom_coding_instruct': True,
+}
+
+EVAL_CHAT_LLM_CONFIG = {
+    'model': 'gpt-4o'
+}
+
 def _test_evaluator(main_role_fp=None,
     team_role_fp=None,
     evolve_mode="team",
@@ -502,7 +516,6 @@ def _test_evaluator(main_role_fp=None,
     indv_id_seed=1989,
     num_gen=1,
     eval_config=SCICODE_EVAL_CONFIG,
-    llm_model='gpt-4o',
     scicode=True):
 
     clear_autogen_cache()
@@ -526,17 +539,13 @@ def _test_evaluator(main_role_fp=None,
             indv.team_role = json.load(f)
 
     if test_err: llm_model = 'N/A'
-    builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
-    builder_llm_config['agent_model'] = llm_model
-    builder_llm_config['builder_model'] = llm_model
-    chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
-    chat_llm_config['model'] = llm_model
-    indv.llm_config = {'model': llm_model,
-        'builder_llm_config': builder_llm_config,
-        'chat_llm_config': chat_llm_config}
-    print(indv.main_role); print(indv.team_role)
-    pprint.pprint(indv.llm_config)
-
+    builder_llm_config = copy.deepcopy(BUILDER_LLM_CONFIG)
+    builder_llm_config.update(EVAL_BUILDER_LLM_CONFIG)
+    chat_llm_config = copy.deepcopy(CHAT_LLM_CONFIG)
+    chat_llm_config.update(EVAL_CHAT_LLM_CONFIG)
+    indv.llm_config = copy.deepcopy(EVAL_LLM_CONFIG)
+    indv.llm_config['builder_llm_config'] = builder_llm_config
+    indv.llm_config['chat_llm_config'] = chat_llm_config
     eval_config.update({'n_workers': n_indv,
         'debug_mode': False,
         'use_timestamp': False})
@@ -545,6 +554,9 @@ def _test_evaluator(main_role_fp=None,
         evaluator = SciCodeEvaluator(eval_config, evaluator_dir='results/')
     else:
         evaluator = EvalPlusEvaluator(eval_config, evaluator_dir='results/')
+
+    print(indv.main_role); print(indv.team_role)
+    pprint.pprint(indv.llm_config); pprint.pprint(evaluator.config)
 
     counter = 0
     for i in range(num_gen):
