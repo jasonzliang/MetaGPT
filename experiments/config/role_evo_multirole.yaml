@@ -25,6 +25,7 @@ role_ga_config:
                 user_for_system_msg: True
                 min_agents: 2
                 max_agents: 4
+                max_round: 15
                 builder_model: o1-preview
                 agent_model: o1-mini
                 temperature: 1.0
@@ -45,7 +46,6 @@ evalplus_evaluator_config:
     debug_mode: False
     use_timestamp: False
     n_workers: 20
-    max_round: 15
     max_problems: 999
     restart_interval: 1
     max_failures: 5

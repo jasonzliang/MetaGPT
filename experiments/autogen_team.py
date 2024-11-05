@@ -34,17 +34,18 @@ Return ```python your_code_here ``` with NO other texts,
 your code:
 """
 CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
-CHAT_LLM_CONFIG = {"temperature": 0.1,
+CHAT_LLM_CONFIG = {"temperature": 0.01,
     "model": "gpt-4o-mini",
     "cache_seed": None}
-BUILDER_LLM_CONFIG = {"temperature": 0.1,
+BUILDER_LLM_CONFIG = {"temperature": 0.01,
     "builder_model": "gpt-4o",
     "agent_model": "gpt-4o-mini",
     "cache_seed": None,
     "custom_coding_instruct": False,
     "user_for_system_msg": False,
     "min_agents": 2,
-    "max_agents": 4}
+    "max_agents": 4,
+    "max_round": 15}
 MIN_CHAT_HIST_LEN = 40000
 MAX_CHAT_HIST_LEN = 100000
 MAX_MSG_LEN = 8000
@@ -55,7 +56,7 @@ CHAT_TIMEOUT = 120
 @timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError,
     dec_allow_eval=False, dec_hard_timeout=False, dec_mp_reset_signals=True)
 def start_task(execution_task: str, agent_list: list,
-    coding=True, chat_llm_config=CHAT_LLM_CONFIG, max_round=20):
+    coding=True, chat_llm_config=CHAT_LLM_CONFIG):
     # last agent is user proxy, remove it and replace with new one
     # _agent_list = []; user_proxy = None
     # for agent in agent_list:
@@ -79,7 +80,7 @@ def start_task(execution_task: str, agent_list: list,
     group_chat = autogen.GroupChat(
         agents=agent_list,
         messages=[],
-        max_round=max_round,
+        max_round=builder_llm_config['max_round'],
         # allow_repeat_speaker=agent_list,
         allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list,
     )

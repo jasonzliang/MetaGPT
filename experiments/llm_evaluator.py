@@ -57,8 +57,8 @@ class EvalPlusEvaluator(object):
         self.debug_mode = self.config.get("debug_mode", False)
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
-        self.max_round = self.config.get("max_round", 15)
-        assert self.max_round > 0
+        # self.max_round = self.config.get("max_round", 15)
+        # assert self.max_round > 0
         self.max_problems = self.config.get("max_problems", sys.maxsize)
         assert self.max_problems > 0
 
@@ -277,8 +277,7 @@ class EvalPlusEvaluator(object):
                 execution_task=prompt,
                 agent_list=agent_list,
                 coding=agent_configs["coding"],
-                chat_llm_config=chat_llm_config,
-                max_round=self.max_round)
+                chat_llm_config=chat_llm_config)
             time_elapsed = time.time() - start_time
 
             output = extract_code_from_chat(chat_result); assert len(output) > 0
@@ -333,8 +332,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         assert self.max_problems > 0
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
-        self.max_round = self.config.get("max_round", 15)
-        assert self.max_round > 0
+        # self.max_round = self.config.get("max_round", 15)
+        # assert self.max_round > 0
         self.debug_mode = self.config.get("debug_mode", False)
 
         # Scicode specific stuff
@@ -389,8 +388,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                 execution_task=prompt,
                 agent_list=agent_list,
                 coding=agent_configs["coding"],
-                chat_llm_config=chat_llm_config,
-                max_round=self.max_round)
+                chat_llm_config=chat_llm_config)
             time_elapsed = time.time() - start_time
 
             # There is another extract code function in scicode_eval
@@ -490,14 +488,12 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 #### Unit tests ####
 EVALPLUS_EVAL_CONFIG = {
     'max_problems': 999,
-    'max_round': 15,
     'dataset': 'humaneval',
 }
 
 SCICODE_EVAL_CONFIG = {
     'n_tries': 1,
     'max_problems': 999,
-    'max_round': 50,
     'dataset': 'problems_all',
     'with_background': False,
     'problem_list': [],
@@ -511,6 +507,7 @@ EVAL_BUILDER_LLM_CONFIG = {
     'agent_model': 'gpt-4o',
     'builder_model': 'gpt-4o',
     'custom_coding_instruct': True,
+    'max_round': 50,
 }
 
 EVAL_CHAT_LLM_CONFIG = {
