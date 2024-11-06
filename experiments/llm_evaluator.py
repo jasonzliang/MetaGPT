@@ -487,6 +487,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
 
 #### Unit tests ####
+LLM_MODEL = "meta/llama-3.1-405b-instruct"
+
 EVALPLUS_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'humaneval',
@@ -501,18 +503,18 @@ SCICODE_EVAL_CONFIG = {
 }
 
 EVAL_LLM_CONFIG = {
-    'model': 'gpt-4o'
+    'model': LLM_MODEL
 }
 
 EVAL_BUILDER_LLM_CONFIG = {
-    'agent_model': 'gpt-4o',
-    'builder_model': 'gpt-4o',
+    'agent_model': LLM_MODEL,
+    'builder_model': LLM_MODEL,
     'custom_coding_instruct': True,
-    'max_round': 50,
 }
 
 EVAL_CHAT_LLM_CONFIG = {
-    'model': 'gpt-4o'
+    'model': LLM_MODEL,
+    'max_round': 50,
 }
 
 
@@ -520,32 +522,24 @@ def _setup_evaluator(
     n_workers,
     eval_dir,
     scicode,
-    eval_config=SCICODE_EVAL_CONFIG,
-    builder_llm_config=EVAL_BUILDER_LLM_CONFIG,
-    chat_llm_config=EVAL_CHAT_LLM_CONFIG,
-    indv_llm_config=EVAL_LLM_CONFIG):
+    eval_config=SCICODE_EVAL_CONFIG):
 
-    _builder_llm_config = copy.deepcopy(BUILDER_LLM_CONFIG)
-    _builder_llm_config.update(builder_llm_config)
-    _chat_llm_config = copy.deepcopy(CHAT_LLM_CONFIG)
-    _chat_llm_config.update(chat_llm_config)
-    indv.llm_config = copy.deepcopy(indv_llm_config)
-    indv.llm_config['builder_llm_config'] = _builder_llm_config
-    indv.llm_config['chat_llm_config'] = _chat_llm_config
     eval_config.update({'n_workers': n_workers,
         'debug_mode': False,
         'use_timestamp': False})
-
     if scicode:
-        _eval = SciCodeEvaluator(eval_config, evaluator_dir='results/')
+        _eval = SciCodeEvaluator(eval_config, evaluator_dir=eval_dir)
     else:
-        _eval = EvalPlusEvaluator(eval_config, evaluator_dir='results/')
+        _eval = EvalPlusEvaluator(eval_config, evaluator_dir=eval_dir)
     return _eval
 
 
 def _setup_indv(main_role_fp,
     team_role_fp,
-    evolve_mode):
+    evolve_mode,
+    builder_llm_config=EVAL_BUILDER_LLM_CONFIG,
+    chat_llm_config=EVAL_CHAT_LLM_CONFIG,
+    indv_llm_config=EVAL_LLM_CONFIG):
 
     clear_autogen_cache()
     from role_ga import Individual
@@ -566,6 +560,14 @@ def _setup_indv(main_role_fp,
         assert evolve_mode in ['both', 'team']
         with open(team_role_fp, "r") as f:
             indv.team_role = json.load(f)
+
+    _builder_llm_config = copy.deepcopy(BUILDER_LLM_CONFIG)
+    _builder_llm_config.update(builder_llm_config)
+    _chat_llm_config = copy.deepcopy(CHAT_LLM_CONFIG)
+    _chat_llm_config.update(chat_llm_config)
+    indv.llm_config = copy.deepcopy(indv_llm_config)
+    indv.llm_config['builder_llm_config'] = _builder_llm_config
+    indv.llm_config['chat_llm_config'] = _chat_llm_config
     return indv
 
 

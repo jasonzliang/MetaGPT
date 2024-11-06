@@ -34,9 +34,13 @@ Return ```python your_code_here ``` with NO other texts,
 your code:
 """
 CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
+if 'CONFIG_FILE_OR_ENV' in os.environ: # Overwrite stuff
+    CONFIG_FILE_OR_ENV = os.environ['CONFIG_FILE_OR_ENV']
 CHAT_LLM_CONFIG = {"temperature": 0.01,
     "model": "gpt-4o-mini",
-    "cache_seed": None}
+    "cache_seed": None,
+    "max_round": 15}
+CHAT_LLM_CFG_KEYS = ['temperature', 'model', 'cache_seed', 'base_url', 'api_key']
 BUILDER_LLM_CONFIG = {"temperature": 0.01,
     "builder_model": "gpt-4o",
     "agent_model": "gpt-4o-mini",
@@ -44,8 +48,7 @@ BUILDER_LLM_CONFIG = {"temperature": 0.01,
     "custom_coding_instruct": False,
     "user_for_system_msg": False,
     "min_agents": 2,
-    "max_agents": 4,
-    "max_round": 15}
+    "max_agents": 4}
 MIN_CHAT_HIST_LEN = 40000
 MAX_CHAT_HIST_LEN = 100000
 MAX_MSG_LEN = 8000
@@ -80,19 +83,25 @@ def start_task(execution_task: str, agent_list: list,
     group_chat = autogen.GroupChat(
         agents=agent_list,
         messages=[],
-        max_round=builder_llm_config['max_round'],
+        max_round=chat_llm_config['max_round'],
         # allow_repeat_speaker=agent_list,
         allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list,
     )
+
+    _chat_llm_config = {}
+    for key in chat_llm_config:
+        if key in CHAT_LLM_CFG_KEYS:
+            _chat_llm_config[key] = chat_llm_config[key]
+
     manager = autogen.GroupChatManager(
         groupchat=group_chat,
-        llm_config={"config_list": config_list, **chat_llm_config}
+        llm_config={"config_list": config_list, **_chat_llm_config}
     )
 
     society_of_mind_agent = SocietyOfMindAgent(
         "society_of_mind",
         chat_manager=manager,
-        llm_config={"config_list": config_list, **chat_llm_config}
+        llm_config={"config_list": config_list, **_chat_llm_config}
     )
     code_execution_config = {
         "last_n_messages": 1,
