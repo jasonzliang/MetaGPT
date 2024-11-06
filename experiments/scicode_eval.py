@@ -136,12 +136,6 @@ class Gencode:
             save (bool, optional): Save prompt and model response. Defaults to True.
         """
         prob_id = prob_data["problem_id"]
-        output_file_path = self._get_output_file_path(prob_id, num_steps)
-        if output_file_path.exists() and output_file_path.stat().st_size > 0:
-            print("Output exists, skipping file gen: %s" % output_file_path)
-            return
-
-        # write the response to a file if it doesn't exist
         if num_steps == 1:
             self.previous_llm_code = [None] * tot_steps
         else:
@@ -172,6 +166,11 @@ class Gencode:
         model_kwargs = {}
         if "claude" in self.model: model_kwargs["max_tokens"] = 4096
         model_kwargs["temperature"] = self.temperature
+
+        # write the response to a file if it doesn't exist
+        output_file_path = self._get_output_file_path(prob_id, num_steps)
+        if output_file_path.exists() and output_file_path.stat().st_size > 0:
+            print("Output file exists, skipping: %s" % output_file_path); return
 
         if self.llm_eval_func is None:
             model_fct = get_model_function(model, **model_kwargs)
@@ -376,7 +375,8 @@ from scicode.parse.parse import process_hdf5_to_tuple
     subproblem_acc = float(len(correct_step))/float(total_step_num)
 
     return {'problem_acc': problem_acc, 'subproblem_acc': subproblem_acc,
-        'correct_prob_num': correct_prob_num, "correct_subprob_num": correct_step}
+        'correct_prob_num': correct_prob_num, "correct_subprob_num": correct_step,
+        'correct_dict': correct_dict}
 
 
 def test_get_cli() -> argparse.ArgumentParser:

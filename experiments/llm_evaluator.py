@@ -342,6 +342,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         self.dev_set = self.dataset == "problems_dev"
         self.dataset_path = os.path.join("scicode_data",
             self.dataset + '.jsonl')
+        assert os.path.exists(self.dataset_path)
         self.with_background = self.config.get("with_background", False)
         self.objective = self.config.get("objective", "problem_acc")
         assert self.objective in SCICODE_OBJ
@@ -514,15 +515,37 @@ EVAL_CHAT_LLM_CONFIG = {
     'model': 'gpt-4o'
 }
 
-def _test_evaluator(main_role_fp=None,
-    team_role_fp=None,
-    evolve_mode="team",
-    test_err=False,
-    n_indv=1,
-    indv_id_seed=1111,
-    num_gen=1,
+
+def _setup_evaluator(
+    n_workers,
+    eval_dir,
+    scicode,
     eval_config=SCICODE_EVAL_CONFIG,
-    scicode=True):
+    builder_llm_config=EVAL_BUILDER_LLM_CONFIG,
+    chat_llm_config=EVAL_CHAT_LLM_CONFIG,
+    indv_llm_config=EVAL_LLM_CONFIG):
+
+    _builder_llm_config = copy.deepcopy(BUILDER_LLM_CONFIG)
+    _builder_llm_config.update(builder_llm_config)
+    _chat_llm_config = copy.deepcopy(CHAT_LLM_CONFIG)
+    _chat_llm_config.update(chat_llm_config)
+    indv.llm_config = copy.deepcopy(indv_llm_config)
+    indv.llm_config['builder_llm_config'] = _builder_llm_config
+    indv.llm_config['chat_llm_config'] = _chat_llm_config
+    eval_config.update({'n_workers': n_workers,
+        'debug_mode': False,
+        'use_timestamp': False})
+
+    if scicode:
+        _eval = SciCodeEvaluator(eval_config, evaluator_dir='results/')
+    else:
+        _eval = EvalPlusEvaluator(eval_config, evaluator_dir='results/')
+    return _eval
+
+
+def _setup_indv(main_role_fp,
+    team_role_fp,
+    evolve_mode):
 
     clear_autogen_cache()
     from role_ga import Individual
@@ -543,23 +566,19 @@ def _test_evaluator(main_role_fp=None,
         assert evolve_mode in ['both', 'team']
         with open(team_role_fp, "r") as f:
             indv.team_role = json.load(f)
+    return indv
 
-    if test_err: llm_model = 'N/A'
-    builder_llm_config = copy.deepcopy(BUILDER_LLM_CONFIG)
-    builder_llm_config.update(EVAL_BUILDER_LLM_CONFIG)
-    chat_llm_config = copy.deepcopy(CHAT_LLM_CONFIG)
-    chat_llm_config.update(EVAL_CHAT_LLM_CONFIG)
-    indv.llm_config = copy.deepcopy(EVAL_LLM_CONFIG)
-    indv.llm_config['builder_llm_config'] = builder_llm_config
-    indv.llm_config['chat_llm_config'] = chat_llm_config
-    eval_config.update({'n_workers': n_indv,
-        'debug_mode': False,
-        'use_timestamp': False})
 
-    if scicode:
-        _eval = SciCodeEvaluator(eval_config, evaluator_dir='results/')
-    else:
-        _eval = EvalPlusEvaluator(eval_config, evaluator_dir='results/')
+def test_evaluator(main_role_fp=None,
+    team_role_fp=None,
+    evolve_mode="team",
+    n_indv=1,
+    indv_id_seed=1111,
+    num_gen=1,
+    scicode=True):
+
+    _eval = _setup_evaluator(n_indv, "results/", scicode)
+    indv = _setup_indv(main_role_fp, team_role_fp, evolve_mode)
 
     print(indv.main_role); print(indv.team_role)
     pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
@@ -613,7 +632,7 @@ def _test_check_eval_progress(
 
 
 if __name__ == "__main__":
-    _test_evaluator(team_role_fp=sys.argv[1], indv_id_seed=int(sys.argv[2]))
+    test_evaluator(team_role_fp=sys.argv[1], indv_id_seed=int(sys.argv[2]))
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
     # _test_evaluator(team_role_fp='config/autogen_team3_init.json')
