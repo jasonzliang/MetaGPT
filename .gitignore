@@ -192,10 +192,6 @@ cov.xml
 metagpt/ext/sela/results/*
 
 # Added by Jason
-experiments/results
-experiments/groupchat
-experiments/*.json
-
 *.jpg
 *.jpeg
 *.png
@@ -203,4 +199,6 @@ experiments/*.json
 *.h5
 .tags
 .tags_*
-
+experiments/results
+experiments/groupchat
+experiments/*.json
