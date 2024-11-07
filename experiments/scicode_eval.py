@@ -120,18 +120,20 @@ class Gencode:
             dependencies=dependencies,
         ), f'{dependencies}\n{previous_code_str}\n'
 
-    def generate_response_with_steps(
-        self, prob_data: dict, num_steps: int, tot_steps: int,
-            prompt_template=DEFAULT_PROMPT_TEMPLATE,
-            result_dict: dict = None,
-            save: bool = True) -> None:
+    def generate_response_with_steps(self,
+        prob_data: dict,
+        num_steps: int,
+        tot_steps: int,
+        prompt_template=DEFAULT_PROMPT_TEMPLATE,
+        result_dict: dict = None,
+        save: bool = True) -> None:
         """
 
         Args:
             prob_data (dict): Dict of the problem
             num_steps (int): Current generating step
             tot_steps (int): Total step of the problem
-            prompt_template (str)
+            prompt_template (str): template for prompt
             result_dict (dict): Evaluation dict
             save (bool, optional): Save prompt and model response. Defaults to True.
         """
@@ -147,21 +149,26 @@ class Gencode:
                     #         or (prob_id == "76" and prev_step == 2):
                     #     prev_file_path = Path("scicode_data", f"{prob_id}.{prev_step+1}.txt")
                     # else:
-                    prev_file_path = Path(
-                        self.output_dir,
-                        self.model,
-                        f"{prob_id}.{prev_step + 1}.py")
-                    if prev_file_path.is_file():
+                    prev_file_path = self._get_output_file_path(prob_id, prev_step + 1)
+                    if prev_file_path.is_file() and prev_file_path.stat().st_size > 0:
                         prev_file_content = prev_file_path.read_text(encoding='utf-8')
                         func_name = extract_function_name(prob_data["sub_steps"][prev_step]["function_header"])
                         function_code = get_function_from_code(prev_file_content, func_name)
                         self.previous_llm_code[prev_step] = function_code
                     else:
-                        raise Exception(f'Generating {prob_id} step {num_steps} ahead of step {prev_step + 1}.')
+                        try:
+                            self.generate_response_with_steps(prob_data,
+                                prev_step,
+                                tot_steps,
+                                prompt_template,
+                                result_dict,
+                                save)
+                        except:
+                            raise Exception(f'Generating {prob_id} step {num_steps} ahead of step {prev_step + 1}.')
+
         prompt, previous_code = self._generate_prompt_with_steps(
             prob_data, num_steps, prompt_template)
-        if save:
-            self._save_prompt_with_steps(prob_data, prompt, num_steps)
+        if save: self._save_prompt_with_steps(prob_data, prompt, num_steps)
 
         model_kwargs = {}
         if "claude" in self.model: model_kwargs["max_tokens"] = 4096
@@ -169,7 +176,7 @@ class Gencode:
 
         # write the response to a file if it doesn't exist
         output_file_path = self._get_output_file_path(prob_id, num_steps)
-        if output_file_path.exists() and output_file_path.stat().st_size > 0:
+        if output_file_path.is_file() and output_file_path.stat().st_size > 0:
             print("Output file exists, skipping: %s" % output_file_path); return
 
         if self.llm_eval_func is None:
