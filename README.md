@@ -27,6 +27,8 @@
 </p>
 
 ## News
+🚀 Oct. 29, 2024: We introduced three papers: [AFLOW](https://arxiv.org/abs/2410.10762), [FACT](https://arxiv.org/abs/2410.21012), and [SELA](https://arxiv.org/abs/2410.17238), check the [code](examples)!
+
 🚀 Mar. 29, 2024: [v0.8.0](https://github.com/geekan/MetaGPT/releases/tag/v0.8.0) released. Now you can use Data Interpreter ([arxiv](https://arxiv.org/abs/2402.18679), [example](https://docs.deepwisdom.ai/main/en/DataInterpreter/), [code](https://github.com/geekan/MetaGPT/tree/main/examples/di)) via pypi package import. Meanwhile, we integrated the RAG module and supported multiple new LLMs.
 
 🚀 Feb. 08, 2024: [v0.7.0](https://github.com/geekan/MetaGPT/releases/tag/v0.7.0) released, supporting assigning different LLMs to different Roles. We also introduced [Data Interpreter](https://github.com/geekan/MetaGPT/blob/main/examples/di/README.md), a powerful agent capable of solving a wide range of real-world problems.
@@ -184,5 +186,14 @@ To cite [MetaGPT](https://openreview.net/forum?id=VtmBAGCN7o) or [Data Interpret
       eprint={2402.18679},
       archivePrefix={arXiv},
       primaryClass={cs.AI}
+}
+@misc{zhang2024aflow,
+      title={AFlow: Automating Agentic Workflow Generation}, 
+      author={Jiayi Zhang and Jinyu Xiang and Zhaoyang Yu and Fengwei Teng and Xionghui Chen and Jiaqi Chen and Mingchen Zhuge and Xin Cheng and Sirui Hong and Jinlin Wang and Bingnan Zheng and Bang Liu and Yuyu Luo and Chenglin Wu},
+      year={2024},
+      eprint={2410.10762},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2410.10762}, 
 }
 ```

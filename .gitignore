@@ -188,9 +188,10 @@ cov.xml
 *-structure.json
 *.dot
 .python-version
-.tags
-.tags_*
+*.csv
+metagpt/ext/sela/results/*
 
+# Added by Jason
 experiments/results
 experiments/groupchat
 experiments/*.json
@@ -200,4 +201,3 @@ experiments/*.json
 *.png
 *.pdf
 *.h5
-

@@ -10,6 +10,7 @@ ref3: https://github.com/Significant-Gravitas/Auto-GPT/blob/master/autogpt/llm/t
 ref4: https://github.com/hwchase17/langchain/blob/master/langchain/chat_models/openai.py
 ref5: https://ai.google.dev/models/gemini
 """
+import anthropic
 import tiktoken
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionChunk
@@ -51,6 +52,8 @@ TOKEN_COSTS = {
     "text-embedding-ada-002": {"prompt": 0.0004, "completion": 0.0},
     "glm-3-turbo": {"prompt": 0.0007, "completion": 0.0007},  # 128k version, prompt + completion tokens=0.005￥/k-tokens
     "glm-4": {"prompt": 0.014, "completion": 0.014},  # 128k version, prompt + completion tokens=0.1￥/k-tokens
+    "glm-4-flash": {"prompt": 0, "completion": 0},
+    "glm-4-plus": {"prompt": 0.007, "completion": 0.007},
     "gemini-1.5-flash": {"prompt": 0.000075, "completion": 0.0003},
     "gemini-1.5-pro": {"prompt": 0.0035, "completion": 0.0105},
     "gemini-1.0-pro": {"prompt": 0.0005, "completion": 0.0015},
@@ -66,6 +69,8 @@ TOKEN_COSTS = {
     "claude-2.0": {"prompt": 0.008, "completion": 0.024},
     "claude-2.1": {"prompt": 0.008, "completion": 0.024},
     "claude-3-sonnet-20240229": {"prompt": 0.003, "completion": 0.015},
+    "claude-3-5-sonnet": {"prompt": 0.003, "completion": 0.015},
+    "claude-3-5-sonnet-v2": {"prompt": 0.003, "completion": 0.015},  # alias of newer 3.5 sonnet
     "claude-3-5-sonnet-20240620": {"prompt": 0.003, "completion": 0.015},
     "claude-3-opus-20240229": {"prompt": 0.015, "completion": 0.075},
     "claude-3-haiku-20240307": {"prompt": 0.00025, "completion": 0.00125},
@@ -377,6 +382,14 @@ SPARK_TOKENS = {
 
 def count_input_tokens(messages, model="gpt-3.5-turbo-0125"):
     """Return the number of tokens used by a list of messages."""
+    if "claude" in model:
+        # rough estimation for models newer than claude-2.1
+        vo = anthropic.Client()
+        num_tokens = 0
+        for message in messages:
+            for key, value in message.items():
+                num_tokens += vo.count_tokens(str(value))
+        return num_tokens
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
@@ -463,6 +476,10 @@ def count_output_tokens(string: str, model: str) -> int:
     Returns:
         int: The number of tokens in the text string.
     """
+    if "claude" in model:
+        vo = anthropic.Client()
+        num_tokens = vo.count_tokens(string)
+        return num_tokens
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:

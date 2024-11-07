@@ -51,13 +51,15 @@ qianfan
 dashscope
 rank-bm25 # for tool recommendation
 jieba # for tool recommendation
-volcengine-python-sdk[ark]
+volcengine-python-sdk[ark] # Solution for installation error in Windows: https://github.com/volcengine/volcengine-python-sdk/issues/5
 # llama-index-vector-stores-elasticsearch # Used by `metagpt/memory/longterm_memory.py`
 # llama-index-vector-stores-chroma # Used by `metagpt/memory/longterm_memory.py`
 gymnasium
 boto3
 spark_ai_python
 agentops
+tree_sitter
+tree_sitter_python
 
 ### Packages added by Jason ###
 jsonpickle
@@ -72,5 +74,5 @@ pathos
 retry
 wrapt_timeout_decorator
 gdown
-# git+https://github.com/evalplus/evalplus.git
 # git+https://github.com/jasonzliang/autogen.git
+# git+https://github.com/evalplus/evalplus.git
