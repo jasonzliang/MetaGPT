@@ -201,3 +201,6 @@ experiments/*.json
 *.png
 *.pdf
 *.h5
+.tags
+.tags_*
+
