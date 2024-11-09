@@ -75,8 +75,7 @@ def _get_code(prob_id,
     sub_dir = _get_subdir(is_code=True)
     code_file = os.path.join(result_dir, sub_dir, f"{prob_id}.{num_steps}.py")
     assert os.path.exists(code_file)
-    with open(code_file, 'r') as f:
-        return f.read()
+    with open(code_file, 'r') as f: return f.read()
 
 
 def _get_prompt(prob_id,
@@ -85,8 +84,7 @@ def _get_prompt(prob_id,
     sub_dir = _get_subdir(is_code=False)
     prompt_file = os.path.join(result_dir, sub_dir, f"{prob_id}.{num_steps}.py")
     assert os.path.exists(code_file)
-    with open(prompt_file, 'r') as f:
-        return f.read()
+    with open(prompt_file, 'r') as f: return f.read()
 
 
 def self_improve_loop(main_role_fp=None,
@@ -117,7 +115,7 @@ def self_improve_loop(main_role_fp=None,
         subprob_counts, prob_tests = _load_jsonl(_eval.dataset)
         prob_id = _eval.problem_list[0]; n_steps = subprob_counts[prob_id]
         subprob_acc = len(correct_dict[prob_id])/float(n_steps)
-        prob_solved = subprob_acc == 1.0
+        fullprob_acc = 1.0 if subprob_acc == 1.0 else 0.0
 
         prompt = _get_prompt(prob_id, n_steps, result_dict['result_dir'])
         code = _get_code(prob_id, n_steps, result_dict['result_dir'])

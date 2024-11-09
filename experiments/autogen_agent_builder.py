@@ -2,6 +2,7 @@ import hashlib
 import importlib
 import json
 import logging
+import random
 import re
 import socket
 import subprocess as sp
@@ -420,6 +421,7 @@ With following description: {function_description}
             self.clear_agent(agent_name, recycle_endpoint)
         print(colored("All agents have been cleared.", "yellow"), flush=True)
 
+
     def build(
         self,
         building_task: str,
@@ -579,6 +581,198 @@ With following description: {function_description}
 
         _config_check(self.cached_configs)
         return self._build_agents(use_oai_assistant, list_of_functions, user_proxy=user_proxy, **kwargs)
+
+    UPDATE_AGENT_PROMPT = """
+-The code generated using the agent's system message is evaluated on the test cases to create a code performance score.
+-The more correct and accurate the code on the test cases, the higher the code performance score.
+-Improve and update the existing agent system message to maximize the code performance score.
+-Analyze and identity problems with the existing agent system message.
+-Use a Chain-of-Thought approach to think step by step and fix the problems.
+-Limit the updated agent system message length to be short and concise.
+
+### Agent name
+{agent_name}
+
+### Agent system message
+{agent_sys_msg}
+
+### Code generated
+{code_generated}
+
+### Test Cases
+{test_cases}
+
+### Code performance
+{code_performance}
+"""
+
+    UPDATE_CODE_INSTRUCT_PROMPT = """
+-The code generated using the agent's code instruction is evaluated on the test cases to create a code performance score.
+-The more correct and accurate the code on the test cases, the higher the code performance score.
+-Improve and update the existing agent code instruction to maximize the code performance score.
+-Analyze and identity problems with the existing agent code instruction.
+-Use a Chain-of-Thought approach to think step by step and fix the problems.
+-Limit the updated agent code instruction length to be short and concise.
+
+### Agent name
+{agent_name}
+
+### Agent code instruction
+{agent_coding_instruct}
+
+### Code generated
+{code_generated}
+
+### Test Cases
+{test_cases}
+
+### Code performance
+{code_performance}
+"""
+
+    UPDATE_AGENT_TEAMWORK_PROMPT = """
+-This agent is a part of a team that works together to generate code.
+-The roles and responsibilities of this agent should not overlap with that of other agents.
+-The roles and responsibilities of this agent should have synergy with that of other agents.
+-Analyze the system messages of other agents and update the this agent's system message to have better fitting roles and responsibilities.
+-Use a Chain-of-Thought approach to think step by step and fix the problems.
+-Limit the updated agent system message length to be short and concise.
+
+### Agent name
+{agent_name}
+
+### Agent system message
+{agent_sys_msg}
+
+### Other agent names and system messages
+{other_sys_msg}
+"""
+
+    def update_agents(
+        self,
+        code_generated,
+        test_cases,
+        code_performance,
+        n_agents: Optional[int] = None,
+        update_teamwork: Optional[bool] = False,
+        **kwargs,
+    ) -> None:
+
+        if code_execution_config is None:
+            code_execution_config = {
+                "last_n_messages": 1,
+                "work_dir": "groupchat",
+                "use_docker": False,
+                "timeout": 10,
+            }
+
+        agent_configs = self.cached_configs['agent_configs']
+        random.shuffle(agent_configs); tot_agents = len(agent_configs)
+
+        if n_agents is None: n_agents = tot_agents
+        else: n_agents = max(min(n_agents, tot_agents), 1)
+
+        print(colored("==> Updating agents...", "green"), flush=True)
+        for i, agent_config in enumerate(agent_configs):
+            if i >= n_agents: break
+
+            agent_name = agent_config['name']
+            other_sys_msg = "\n".join(["%s\n%s" % (x['name'], x['system_message']) for x in agent_configs if x['name'] != agent_name])
+            print(f"Preparing updated system message for {agent_name}", flush=True)
+            resp_agent_sys_msg = (
+                self.builder_model.create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": self.UPDATE_AGENT_TEAMWORK_PROMPT.format(
+                                agent_name=agent_name,
+                                agent_sys_msg=agent_config['system_message'],
+                                other_sys_msg=other_sys_msg,
+                            ),
+                        }
+                    ]
+                )
+                .choices[0]
+                .message.content
+            )
+            agent_config['system_message'] = resp_agent_sys_msg
+
+            print(f"Preparing updated description for {agent_name}", flush=True)
+            resp_agent_description = (
+                self.builder_model.create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": self.AGENT_DESCRIPTION_PROMPT.format(
+                                position=agent_name,
+                                sys_msg=sys_msg),
+                        }
+                    ]
+                )
+                .choices[0]
+                .message.content
+            )
+            agent_config['description'] = resp_agent_description
+
+        if update_teamwork:
+            print(colored("==> Updating teamwork...", "green"), flush=True)
+            for i, agent_config in enumerate(agent_configs):
+                if i >= n_agents: break
+
+                agent_name = agent_config['name']
+                print(f"Preparing updated teamwork for {agent_name}", flush=True)
+                resp_agent_sys_msg = (
+                self.builder_model.create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": self.UPDATE_AGENT_PROMPT.format(
+                                agent_name=agent_name,
+                                agent_sys_msg=agent_config['system_message'],
+                                code_generated=code_generated,
+                                test_cases=test_cases,
+                                code_performance=code_performance
+                            ),
+                        }
+                    ]
+                )
+                .choices[0]
+                .message.content
+            )
+            agent_config['system_message'] = resp_agent_sys_msg
+
+
+        if self.custom_coding_instruct:
+            print(colored("==> Generating coding instructions...", "green"), flush=True)
+            for i, agent_config in enumerate(agent_configs):
+                if i >= n_agents: break
+
+                agent_name = agent_config['name']
+                print(f"Preparing updated system message for {agent_name}", flush=True)
+                if 'coding_instruction' in agent_config:
+                    agent_coding_instruct = agent_config['coding_instruction']
+                else: agent_coding_instruct = AGENT_CODING_INSTRUCTION_PROMPT
+                resp_agent_code_instruct = (
+                    self.builder_model.create(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": self.UPDATE_CODE_INSTRUCT_PROMPT.format(
+                                    agent_name=agent_name,
+                                    agent_coding_instruct=agent_coding_instruct,
+                                    code_generated=code_generated,
+                                    test_cases=test_cases,
+                                    code_performance=code_performance
+                                ),
+                            }
+                        ]
+                    )
+                    .choices[0]
+                    .message.content
+                )
+                agent_config['coding_instruction'] = resp_agent_code_instruct
+
+        _config_check(self.cached_configs)
 
     def build_from_library(
         self,
@@ -745,8 +939,8 @@ With following description: {function_description}
                 "code_execution_config": code_execution_config,
             }
         )
-        _config_check(self.cached_configs)
 
+        _config_check(self.cached_configs)
         return self._build_agents(use_oai_assistant, user_proxy=user_proxy, **kwargs)
 
     def _build_agents(

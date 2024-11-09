@@ -34,7 +34,7 @@ Return ```python your_code_here ``` with NO other texts,
 your code:
 """
 CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
-if 'CONFIG_FILE_OR_ENV' in os.environ: # Overwrite stuff
+if 'CONFIG_FILE_OR_ENV' in os.environ: # Overwrite config list from env
     CONFIG_FILE_OR_ENV = os.environ['CONFIG_FILE_OR_ENV']
 CHAT_LLM_CONFIG = {"temperature": 0.01,
     "model": "gpt-4o-mini",
