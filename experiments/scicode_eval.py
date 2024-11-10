@@ -381,8 +381,10 @@ from scicode.parse.parse import process_hdf5_to_tuple
     problem_acc = float(correct_prob_num)/float(total_prob_num)
     subproblem_acc = float(len(correct_step))/float(total_step_num)
 
-    return {'problem_acc': problem_acc, 'subproblem_acc': subproblem_acc,
-        'correct_prob_num': correct_prob_num, "correct_subprob_num": len(correct_step),
+    return {'problem_acc': problem_acc,
+        'subproblem_acc': subproblem_acc,
+        'correct_prob_num': correct_prob_num,
+        'correct_subprob_num': len(correct_step),
         'correct_dict': correct_dict}
 
 

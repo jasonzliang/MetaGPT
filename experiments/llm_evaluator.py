@@ -62,6 +62,7 @@ class EvalPlusEvaluator(object):
         # assert self.max_round > 0
         self.max_problems = self.config.get("max_problems", sys.maxsize)
         assert self.max_problems > 0
+        self.problem_list = self.config.get("problem_list", [])
 
         # Evalplus specific configuration
         self.dataset = self.config.get("dataset", "humaneval")
@@ -179,7 +180,10 @@ class EvalPlusEvaluator(object):
             task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
             os.makedirs(task_id_dir, exist_ok=True)
             result_file = os.path.join(task_id_dir, "0.py")
+
             if os.path.exists(result_file) and os.path.getsize(result_file) > 0:
+                continue
+            if len(self.problem_list) > 0 and task_id not in self.problem_list:
                 continue
 
             if i < self.max_problems and n_failures < self.max_failures:
@@ -338,6 +342,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         # self.max_round = self.config.get("max_round", 15)
         # assert self.max_round > 0
         self.debug_mode = self.config.get("debug_mode", False)
+        self.problem_list = self.config.get("problem_list", [])
 
         # Scicode specific stuff
         self.dataset = self.config.get("dataset", "problems_all")
@@ -349,7 +354,6 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         self.with_background = self.config.get("with_background", False)
         self.objective = self.config.get("objective", "problem_acc")
         assert self.objective in SCICODE_OBJ
-        self.problem_list = self.config.get("problem_list", [])
         # self.shuffle_seed = self.config.get("shuffle_seed", None)
 
         self._download_testdata()
