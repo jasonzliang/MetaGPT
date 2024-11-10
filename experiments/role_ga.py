@@ -57,9 +57,10 @@ class Individual(object):
             self.logger.info("Initial Team Role:\n%s" % \
                 self.initial_team_role)
 
-    def _set_id(self, gen_created, seed=None):
+    def _set_id(self, gen_created, seed=None, suffix=None):
         self.gen_created = gen_created
         self.id = "G-%s_ID-%s" % (self.gen_created, randomword(ID_LENGTH, seed))
+        if suffix is not None: self.id = "%s_%s" % (self.id, suffix)
         return self.id
 
     def _get_sort_fitness(self):

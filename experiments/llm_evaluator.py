@@ -63,6 +63,7 @@ class EvalPlusEvaluator(object):
         self.max_problems = self.config.get("max_problems", sys.maxsize)
         assert self.max_problems > 0
         self.problem_list = self.config.get("problem_list", [])
+        if len(self.problem_list) > 0: self.max_problems = sys.maxsize
 
         # Evalplus specific configuration
         self.dataset = self.config.get("dataset", "humaneval")
@@ -343,6 +344,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         # assert self.max_round > 0
         self.debug_mode = self.config.get("debug_mode", False)
         self.problem_list = self.config.get("problem_list", [])
+        if len(self.problem_list) > 0: self.max_problems = sys.maxsize
 
         # Scicode specific stuff
         self.dataset = self.config.get("dataset", "problems_all")
