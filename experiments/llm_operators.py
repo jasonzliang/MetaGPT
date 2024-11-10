@@ -43,6 +43,8 @@ the Google Python style guide. Consider efficiency, accuracy, and maintainabilit
 in your solution.\n\nReturn:\n```python\nyour_code_here\n```
 """
 
+DEFAULT_MAIN_ROLE_MIN = "{instruction}"
+
 
 class MutateAction(Action):
     PROMPT_TEMPLATE: str = \

@@ -14,6 +14,9 @@ import traceback
 import time
 import tqdm
 
+from autogen_agent_builder import AgentBuilder
+
+from autogen_team import CONFIG_FILE_OR_ENV
 from llm_evaluator import _setup_indv, _setup_evaluator
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
 from util import format_prompt, clear_autogen_cache, collect_stats_from_chat
@@ -95,20 +98,28 @@ def self_improve_loop(main_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
     scicode=True):
 
-    indv = _setup_indv(main_role_fp, team_role_fp, evolve_mode)
+    if scicode: main_role_fp = DEFAULT_MAIN_ROLE_MIN
     _eval = _setup_evaluator(n_indv, result_dir, scicode)
-    assert len(_eval.problem_list) == 1
-
-    print(indv.main_role); print(indv.team_role)
     pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
+    assert len(_eval.problem_list) == 1
+    indv = _setup_indv(main_role_fp=main_role_fp,
+        team_role_fp=team_role_fp,
+        evolve_mode=evolve_mode,
+        builder_llm_config=EVAL_BUILDER_LLM_CONFIG,
+        chat_llm_config=EVAL_CHAT_LLM_CONFIG,
+        indv_llm_config=EVAL_LLM_CONFIG)
 
-    counter = init_seed
+    counter = init_seed; curr_team_role = None; #curr_main_role = None
     for i in range(num_gen):
-        child = indv.create_child(i)
-        child._set_id(i, seed=counter)
+        # if curr_main_role is not None: indv.main_role = curr_main_role
+        if curr_team_role is not None: indv.team_role = curr_team_role
+        indv._set_id(i, seed=counter)
+        print(child.main_role); print(child.team_role)
+
         counter += 1; population = [child]
         result_dicts = _eval.evaluate(population); _eval.reset()
         assert len(result_dicts) == 0; result_dict = result_dicts[0]
+        result_dir = result_dict['result_dir']
         print("Evaluation results:"); pprint.pprint(result_dict)
 
         correct_dict = result_dict['scicode_result']['correct_dict']
@@ -117,11 +128,28 @@ def self_improve_loop(main_role_fp=None,
         subprob_acc = len(correct_dict[prob_id])/float(n_steps)
         fullprob_acc = 1.0 if subprob_acc == 1.0 else 0.0
 
-        prompt = _get_prompt(prob_id, n_steps, result_dict['result_dir'])
-        code = _get_code(prob_id, n_steps, result_dict['result_dir'])
-        tests = prob_tests[prob_id]
+        if fullprob_acc == 1.0:
+            print("Problem solved, exiting self improve loop"); break
 
+        prompt = _get_prompt(prob_id, n_steps, result_dir)
+        code_generated = _get_code(prob_id, n_steps, result_dir)
+        test_cases = prob_tests[prob_id]
+        code_performance = """
+Note: overall accuracy score is more important, focus on maximizing it
+Subproblem accuracy score: %s\nOverall accuracy score: %s"""
+        code_performance = code_performance % (subprob_acc, fullprob_acc)
+
+        builder_llm_config = indv.llm_config['builder_llm_config']
+        builder = _eval.autogen_builder; assert builder is not None
+        builder.update_agents(
+            code_generated=code_generated,
+            test_cases=test_cases,
+            code_performance=code_performance,
+            n_agents=None,
+            update_teamwork=True)
+        updated_team_fp = os.path.join(result_dir, "updated_team_role.json")
+        builder.save(updated_team_fp); curr_team_role = builder.cached_configs
 
 
 if __name__ == "__main__":
-    pass
+    self_improve_loop(team_role_fp=sys.argv[1], init_seed=0)

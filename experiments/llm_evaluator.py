@@ -33,7 +33,8 @@ from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from autogen_team import init_builder, start_task
 from autogen_team import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
 from llm_operators import create_new_team
-from llm_operators import DEFAULT_MAIN_ROLE, DEFAULT_MAIN_ROLE_V2
+from llm_operators import DEFAULT_MAIN_ROLE, DEFAULT_MAIN_ROLE_V2, \
+    DEFAULT_MAIN_ROLE_MIN
 from scicode_eval import Gencode, test_code
 from scicode_eval import DEFAULT_PROMPT_TEMPLATE, BACKGOUND_PROMPT_TEMPLATE
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
@@ -82,6 +83,7 @@ class EvalPlusEvaluator(object):
         self.pool = Pool(self.n_workers)
         # self.pool = ParallelPool(self.n_workers)
         os.makedirs(self.evaluator_dir, exist_ok=True)
+        self.autogen_builder = None
 
     def _check_eval_progress(self, n_indv):
         if self.dataset not in ['humaneval', 'mbpp']:
@@ -265,6 +267,7 @@ class EvalPlusEvaluator(object):
                 builder_llm_config=builder_llm_config,
                 use_builder_dict=True,
                 clear_cache=True)
+        self.autogen_builder = builder
         # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
@@ -380,6 +383,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                 builder_llm_config=builder_llm_config,
                 use_builder_dict=True,
                 clear_cache=True)
+        self.autogen_builder = builder
         # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
@@ -579,6 +583,7 @@ def test_evaluator(main_role_fp=None,
     num_gen=1,
     scicode=True):
 
+    if scicode: main_role_fp = DEFAULT_MAIN_ROLE_MIN
     _eval = _setup_evaluator(n_indv, "results/", scicode)
     indv = _setup_indv(main_role_fp, team_role_fp, evolve_mode)
 
