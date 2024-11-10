@@ -667,7 +667,8 @@ With following description: {function_description}
             }
 
         agent_configs = self.cached_configs['agent_configs']
-        random.shuffle(agent_configs); tot_agents = len(agent_configs)
+        tot_agents = len(agent_configs)
+        agent_configs = random.sample(agent_configs, tot_agents)
 
         if n_agents is None: n_agents = tot_agents
         else: n_agents = max(min(n_agents, tot_agents), 1)
