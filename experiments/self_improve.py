@@ -119,10 +119,17 @@ def _load_checkpoint(result_dir):
             return dict(YAML().load(f))
     else: return None
 
+
+def _is_stuck(prob_id, history, threshold):
+    if threshold is None or len(history) < threshold: return False
+    prev_prob_ids = set(history[-threshold:])
+    return len(prev_prob_ids) == 1 and prob_id in prev_prob_ids
+
+
 # Todo:
 # -Get error messages from failed test and use them to update agents
-# -If stuck on problem, move onto next one and come back later
-# -Reset team role to initial one if stuck on problem
+# -If stuck on problem, move onto next one and come back later (Done)
+# -Reset team role to initial one if stuck on problem (Done)
 # -Give ground truth code to agent if stuck on problem
 # -Move self_improve_loop arguments/configuration into a dictionary
 
@@ -137,6 +144,7 @@ def self_improve_loop(team_role_fp=None,
     coding_instruct=True,
     solve_all=True,
     reset_team_role=False,
+    stuck_threshold=10,
     scicode=True):
 
     if not scicode: raise Exception("Evalplus self-improve not implemented!")
@@ -152,20 +160,20 @@ def self_improve_loop(team_role_fp=None,
     init_team_role = indv.team_role
     pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
 
-    curr_team_role = None; start_gen = 0; solved_problems = []
+    curr_team_role = None; start_gen = 0; solved_problems = []; history = []
     checkpoint_dict = _load_checkpoint(result_dir)
     if checkpoint_dict is not None:
         curr_team_role = checkpoint_dict['curr_team_role']
         start_gen = checkpoint_dict['gen'] + 1
         init_seed = checkpoint_dict['init_seed']
         solved_problems = checkpoint_dict['solved_problems']
+        history = checkpoint_dict['history']
         problem_list = [x for x in problem_list if x not in solved_problems]
+    if len(problem_list) == 0:
+        print("All problems solved, exiting self improve loop"); return
 
     _eval.problem_list = [problem_list.pop(0)]
     for i in range(start_gen, num_gen):
-        if len(problem_list) == 0:
-            print("All problems solved, exiting self improve loop"); break
-
         prob_id = _eval.problem_list[0]
         indv._set_id(i, seed=i + init_seed, suffix='PROB-%s' % prob_id)
         if curr_team_role is not None: indv.team_role = curr_team_role
@@ -205,24 +213,34 @@ def self_improve_loop(team_role_fp=None,
         updated_team_fp = os.path.join(eval_result_dir, "team_role_update.json")
         builder.save(updated_team_fp); curr_team_role = builder.cached_configs
 
+        history.append(prob_id); new_problem = False
         if overall_acc == 1.0:
-            solved_problems.append(_eval.problem_list[0])
+            solved_problems.append(prob_id)
             _eval.problem_list = [problem_list.pop(0)]
-            if reset_team_role: curr_team_role = init_team_role
+            new_problem = True
+        elif _is_stuck(prob_id, history, stuck_threshold):
+            problem_list.append(prob_id)
+            _eval.problem_list = [problem_list.pop(0)]
+            new_problem = True
+        if new_problem and reset_team_role: curr_team_role = init_team_role
 
         checkpoint_dict = {
             'curr_team_role': curr_team_role,
             'gen': i,
             'init_seed': init_seed,
             'solved_problems': solved_problems,
-            'update_teamwork': update_teamwork,
-            'update_n_agents': str(update_n_agents),
-            'custom_coding_instruct': coding_instruct,
-            'current_problem': _eval.problem_list[0],
-            'solve_all': solve_all,
-            'reset_team_role': reset_team_role
+            'history': history,
+            'cfg_update_teamwork': update_teamwork,
+            'cfg_update_n_agents': str(update_n_agents),
+            'cfg_coding_instruct': coding_instruct,
+            'cfg_current_problem': _eval.problem_list[0],
+            'cfg_solve_all': solve_all,
+            'cfg_reset_team_role': reset_team_role,
+            'cfg_stuck_threshold': stuck_threshold,
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
+        if len(problem_list) == 0:
+            print("All problems solved, exiting self improve loop"); break
 
 
 if __name__ == "__main__":
