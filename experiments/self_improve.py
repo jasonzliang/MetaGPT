@@ -152,12 +152,12 @@ def self_improve_loop(team_role_fp=None,
         solved_problems = checkpoint_dict['solved_problems']
         problem_list = [x for x in problem_list if x not in solved_problems]
 
+    _eval.problem_list = [problem_list.pop(0)]
     for i in range(start_gen, num_gen):
         if len(problem_list) == 0:
             print("All problems solved, exiting self improve loop"); break
 
         prob_id = _eval.problem_list[0]
-
         indv._set_id(i, seed=i + init_seed, suffix='PROB-%s' % prob_id)
         if curr_team_role is not None: indv.team_role = curr_team_role
         print(indv.main_role); print(indv.team_role)
