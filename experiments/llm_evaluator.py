@@ -49,13 +49,13 @@ class EvalPlusEvaluator(object):
         self.evaluator_dir = evaluator_dir
         # self.logger maybe not necessary with mlogger?
         self.logger = logging.getLogger('evolve_role')
+        self.log_to_file = self.config.get("log_to_file", True)
         self.restart_interval = self.config.get("restart_interval", sys.maxsize)
         self.use_timestamp = self.config.get("use_timestamp", False)
         self.n_tries = self.config.get("n_tries", 2)
         assert self.n_tries > 0
         self.max_failures = self.config.get("max_failures", 10)
         assert self.max_failures > 0
-        self.debug_mode = self.config.get("debug_mode", False)
         self.n_workers = self.config.get("n_workers", 1)
         assert self.n_workers > 0
         # self.max_round = self.config.get("max_round", 15)
@@ -64,7 +64,13 @@ class EvalPlusEvaluator(object):
         assert self.max_problems > 0
         self.problem_list = self.config.get("problem_list", [])
         if len(self.problem_list) > 0: self.max_problems = sys.maxsize
+        self.debug_mode = self.config.get("debug_mode", False)
 
+        if type(self).__name__ == "EvalPlusEvaluator":
+            self._init_evalplus()
+            self.reset()
+
+    def _init_evalplus(self):
         # Evalplus specific configuration
         self.dataset = self.config.get("dataset", "humaneval")
         assert self.dataset in ['humaneval', 'mbpp']
@@ -75,8 +81,6 @@ class EvalPlusEvaluator(object):
             assert os.path.exists(self.evalplus_weights)
         assert self.restart_interval > 0
         self.sanitize = self.config.get("sanitize", True)
-
-        self.reset()
 
     def reset(self):
         self.gen = None
@@ -158,15 +162,16 @@ class EvalPlusEvaluator(object):
                 "evalG-%s_%s_%s" % (int(self.gen), self.dataset, eval_id))
 
         os.makedirs(result_dir, exist_ok=True)
-        with open(os.path.join(result_dir, "main_role.txt"), "w") as f:
-            f.write(main_role)
-        if team_role is not None:
-            with open(os.path.join(result_dir, "team_role.json"), "w") as f:
-                json.dump(team_role, f, indent=4)
-        with open(os.path.join(result_dir, "llm_config.yaml"), 'w') as f:
-            YAML().dump(indv.llm_config, f)
-        with open(os.path.join(result_dir, 'eval_config.yaml'), 'w') as f:
-            YAML().dump(self.config, f)
+        if self.log_to_file:
+            with open(os.path.join(result_dir, "main_role.txt"), "w") as f:
+                f.write(main_role)
+            if team_role is not None:
+                with open(os.path.join(result_dir, "team_role.json"), "w") as f:
+                    json.dump(team_role, f, indent=4)
+            with open(os.path.join(result_dir, "llm_config.yaml"), 'w') as f:
+                YAML().dump(indv.llm_config, f)
+            with open(os.path.join(result_dir, 'eval_config.yaml'), 'w') as f:
+                YAML().dump(self.config, f)
         return result_dir
 
     def _run_evalplus(self, result_dir, eval_func):
@@ -175,7 +180,8 @@ class EvalPlusEvaluator(object):
         else: # self.dataset == 'mbpp'
             problems = get_mbpp_plus()
 
-        result_dict = {}; fail_flag = os.path.join(result_dir, "max_failures")
+        result_dict = {'result_dir': result_dir}
+        fail_flag = os.path.join(result_dir, "max_failures")
         n_failures = 0 if not os.path.exists(fail_flag) else self.max_failures
         for i, (task_id, problem) in enumerate(problems.items()):
             task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
@@ -224,7 +230,9 @@ class EvalPlusEvaluator(object):
             (result_dir, result_dir))
         os.system("rm -rf %s-sanitized" % result_dir)
 
-    def _get_evalplus_results(self, result_dir):
+    def _get_evalplus_results(self, result_dict):
+        result_dir = result_dict['result_dir']
+        self._sanitize(result_dir)
         flag = "-v" if platform.system() == 'Linux' else '-l' # Flag for MacOS
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         os.system("/usr/bin/time %s evalplus.evaluate " \
@@ -245,7 +253,6 @@ class EvalPlusEvaluator(object):
         result_dict = {}; scaling_fn = EVALPLUS_OBJ[self.objective]
         result_dict['fitness'] = scaling_fn(evalplus_result[self.objective])
         result_dict['true_fitness'] = evalplus_result['base_score']
-        result_dict['result_dir'] = result_dir
         # Needed for multirun_evalplus in analysis
         result_dict['evalplus_result'] = evalplus_result
 
@@ -281,11 +288,14 @@ class EvalPlusEvaluator(object):
                 instruction=problem['prompt'])
 
             start_time = time.time()
+            log_file = os.path.join(result_dict['result_dir'], "chat_logs",
+                "%s_chat.yaml" % problem['task_id']) if self.log_to_file else None
             chat_result, groupchat_messages = start_task(
                 execution_task=prompt,
                 agent_list=agent_list,
                 coding=agent_configs["coding"],
-                chat_llm_config=chat_llm_config)
+                chat_llm_config=chat_llm_config,
+                log_file=log_file)
             time_elapsed = time.time() - start_time
 
             output = extract_code_from_chat(chat_result); assert len(output) > 0
@@ -297,8 +307,7 @@ class EvalPlusEvaluator(object):
 
         result_dir = self._setup_result_dir(indv)
         result_dict = self._run_evalplus(result_dir, eval_func)
-        self._sanitize(result_dir)
-        result_dict.update(self._get_evalplus_results(result_dir))
+        result_dict = self._get_evalplus_results(result_dict)
         return result_dict
 
     def _eval_indv_main_role(self, indv):
@@ -319,33 +328,18 @@ class EvalPlusEvaluator(object):
             return _eval_prompt(main_role, problem['prompt'])
 
         result_dir = self._setup_result_dir(indv)
-        self._run_evalplus(result_dir, eval_func)
-        self._sanitize(result_dir)
-        return self._get_evalplus_results(result_dir)
+        result_dict = self._run_evalplus(result_dir, eval_func)
+        return self._get_evalplus_results(result_dict)
 
 
 class SciCodeEvaluator(EvalPlusEvaluator):
     def __init__(self, config, evaluator_dir):
-        self.config = config
-        self.evaluator_dir = evaluator_dir
-        self.logger = logging.getLogger('evolve_role')
+        super().__init__(config, evaluator_dir)
+        self._init_scicode()
+        self._download_testdata()
+        super().reset()
 
-        self.restart_interval = self.config.get("restart_interval", sys.maxsize)
-        self.use_timestamp = self.config.get("use_timestamp", False)
-        self.n_tries = self.config.get("n_tries", 1)
-        assert self.n_tries > 0
-        self.max_failures = self.config.get("max_failures", sys.maxsize)
-        assert self.max_failures > 0
-        self.max_problems = self.config.get("max_problems", sys.maxsize)
-        assert self.max_problems > 0
-        self.n_workers = self.config.get("n_workers", 1)
-        assert self.n_workers > 0
-        # self.max_round = self.config.get("max_round", 15)
-        # assert self.max_round > 0
-        self.debug_mode = self.config.get("debug_mode", False)
-        self.problem_list = self.config.get("problem_list", [])
-        if len(self.problem_list) > 0: self.max_problems = sys.maxsize
-
+    def _init_scicode(self):
         # Scicode specific stuff
         self.dataset = self.config.get("dataset", "problems_all")
         assert self.dataset in ['problems_all', 'problems_dev', 'example']
@@ -357,9 +351,6 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         self.objective = self.config.get("objective", "problem_acc")
         assert self.objective in SCICODE_OBJ
         # self.shuffle_seed = self.config.get("shuffle_seed", None)
-
-        self._download_testdata()
-        super().reset()
 
     def _download_testdata(self):
         url = 'https://drive.google.com/uc?id=17G_k65N_6yFFZ2O-jQH00Lh6iaw3z-AW'
@@ -393,13 +384,16 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
-        def eval_func(prompt, result_dict):
+        def eval_func(prob_id, prompt, result_dict):
             start_time = time.time()
+            log_file = os.path.join(result_dict['result_dir'], "chat_logs",
+                "%s_chat.yaml" % prob_id) if self.log_to_file else None
             chat_result, groupchat_messages = start_task(
                 execution_task=prompt,
                 agent_list=agent_list,
+                chat_llm_config=chat_llm_config,
                 coding=agent_configs["coding"],
-                chat_llm_config=chat_llm_config)
+                log_file=log_file)
             time_elapsed = time.time() - start_time
 
             # There is another extract code function in scicode_eval
@@ -409,11 +403,12 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                 groupchat_messages=groupchat_messages,
                 time_elapsed=time_elapsed)
             builder.clear_all_agents(recycle_endpoint=False)
+
             return output
 
         result_dir = self._setup_result_dir(indv)
         result_dict = self._run_scicode(result_dir, eval_func)
-        result_dict.update(self._get_scicode_results(result_dir))
+        result_dict = self._get_scicode_results(result_dict)
         return result_dict
 
     def _run_scicode(self, result_dir, eval_func):
@@ -431,7 +426,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         # if self.shuffle_seed is None:
         # else: random.Random(self.shuffle_seed).shuffle(problems)
 
-        result_dict = {}; fail_flag = os.path.join(result_dir, "max_failures")
+        result_dict = {'result_dir': result_dir}
+        fail_flag = os.path.join(result_dir, "max_failures")
         n_failures = 0 if not os.path.exists(fail_flag) else self.max_failures
         for i, problem in enumerate(problems):
             task_id = problem['problem_id']; steps = len(problem['sub_steps'])
@@ -474,7 +470,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         if n_failures >= self.max_failures: os.system("touch %s" % fail_flag)
         return result_dict
 
-    def _get_scicode_results(self, result_dir):
+    def _get_scicode_results(self, result_dict):
+        result_dir = result_dict['result_dir']
         scicode_result = test_code(
             model_name="scicode_eval",
             code_dir=os.path.join(result_dir, "generated_code"),
@@ -487,7 +484,6 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         result_dict = {}; scaling_fn = SCICODE_OBJ[self.objective]
         result_dict['fitness'] = scaling_fn(scicode_result[self.objective])
         result_dict['true_fitness'] = scicode_result['problem_acc']
-        result_dict['result_dir'] = result_dir
         # Needed for multirun_evalplus in analysis
         result_dict['scicode_result'] = scicode_result
 
@@ -532,14 +528,16 @@ def _setup_evaluator(
     n_workers,
     eval_dir,
     scicode,
-    eval_config=SCICODE_EVAL_CONFIG):
+    eval_config=None):
 
     eval_config.update({'n_workers': n_workers,
         'debug_mode': False,
         'use_timestamp': False})
     if scicode:
+        if eval_config is None: eval_config = SCICODE_EVAL_CONFIG
         _eval = SciCodeEvaluator(eval_config, evaluator_dir=eval_dir)
     else:
+        if eval_config is None: eval_config = EVALPLUS_EVAL_CONFIG
         _eval = EvalPlusEvaluator(eval_config, evaluator_dir=eval_dir)
     return _eval
 

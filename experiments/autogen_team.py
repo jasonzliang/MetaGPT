@@ -19,6 +19,7 @@ from autogen.agentchat.contrib.society_of_mind_agent import SocietyOfMindAgent
 
 from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
+from ruamel.yaml import YAML
 from wrapt_timeout_decorator import *
 # import timeout_decorator
 
@@ -49,17 +50,20 @@ BUILDER_LLM_CONFIG = {"temperature": 0.01,
     "user_for_system_msg": False,
     "min_agents": 2,
     "max_agents": 4}
-MIN_CHAT_HIST_LEN = 40000
+MIN_CHAT_HIST_LEN = 50000
 MAX_CHAT_HIST_LEN = 100000
-MAX_MSG_LEN = 8000
+MAX_MSG_LEN = 10000
 CHAT_TIMEOUT = 120
 # TODO: FIX CACHING/CACHE SEED
 
 # @timeout_decorator.timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError)
 @timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError,
     dec_allow_eval=False, dec_hard_timeout=False, dec_mp_reset_signals=True)
-def start_task(execution_task: str, agent_list: list,
-    coding=True, chat_llm_config=CHAT_LLM_CONFIG):
+def start_task(execution_task: str,
+    agent_list: list,
+    chat_llm_config: dict = CHAT_LLM_CONFIG,
+    coding: bool = True,
+    log_file: bool = None):
     # last agent is user proxy, remove it and replace with new one
     # _agent_list = []; user_proxy = None
     # for agent in agent_list:
@@ -123,7 +127,12 @@ def start_task(execution_task: str, agent_list: list,
             message=execution_task,
             cache=cache)
 
-    return chat_result, manager._groupchat.messages
+    chat_messages = manager._groupchat.messages
+    if log_file is not None:
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        with open(log_file, 'w') as f: YAML().dump(chat_messages, f)
+
+    return chat_result, chat_messages
     # return agent_list[0].initiate_chat(manager, message=execution_task)
 
 

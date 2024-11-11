@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import asyncio
 import copy
 import glob
@@ -19,6 +20,7 @@ from scicode.parse.parse import read_from_jsonl
 
 from autogen_team import CONFIG_FILE_OR_ENV
 from llm_evaluator import _setup_indv, _setup_evaluator
+from llm_operators import DEFAULT_MAIN_ROLE_MIN
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
 from util import format_prompt, clear_autogen_cache, collect_stats_from_chat
 from util import calc_weighted_evalplus_score
@@ -114,15 +116,15 @@ def self_improve_loop(main_role_fp=None,
     scicode=True):
 
     if scicode: main_role_fp = DEFAULT_MAIN_ROLE_MIN
-    _eval = _setup_evaluator(n_indv, result_dir, scicode)
-    _eval.problem_list = [prob_list.pop()]
-    pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
+    _eval = _setup_evaluator(1, result_dir, scicode, SCICODE_EVAL_CONFIG)
+    _eval.problem_list = [prob_list.pop(0)]
     indv = _setup_indv(main_role_fp=main_role_fp,
         team_role_fp=team_role_fp,
         evolve_mode=evolve_mode,
         builder_llm_config=EVAL_BUILDER_LLM_CONFIG,
         chat_llm_config=EVAL_CHAT_LLM_CONFIG,
         indv_llm_config=EVAL_LLM_CONFIG)
+    pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
 
     counter = init_seed; curr_team_role = None
     for i in range(num_gen):
@@ -143,11 +145,10 @@ def self_improve_loop(main_role_fp=None,
         subprob_acc = len(correct_dict[prob_id])/float(n_steps)
         fullprob_acc = 1.0 if subprob_acc == 1.0 else 0.0
 
-        if fullprob_acc == 1.0 and len(prob_list) == 0;
+        if fullprob_acc == 1.0 and len(prob_list) == 0:
             print("All problems solved, exiting self improve loop"); break
         elif fullprob_acc == 1.0 and len(prob_list) > 0:
             _eval.problem_list = [prob_list.pop()]
-            fullprob_acc == 1.0 and len(prob_list) == 0;
             print("Problem %s solved, moving to next one" % prob_id); continue
 
         prompt = _get_prompt(prob_id, n_steps, result_dir)
