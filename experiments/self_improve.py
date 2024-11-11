@@ -121,11 +121,11 @@ def _load_checkpoint(result_dir):
 
 
 def self_improve_loop(team_role_fp=None,
+    result_dir='results/self_improve_%s' % get_time(space=False),
     num_gen=300,
     init_seed=0,
     problem_list=_get_scicode_problem_list(),
     # problem_list=['1'],
-    result_dir='results/self_improve_%s' % get_time(space=False),
     update_n_agents=None,
     update_teamwork=True,
     coding_instruct=True,
@@ -163,7 +163,7 @@ def self_improve_loop(team_role_fp=None,
         if curr_team_role is not None: indv.team_role = curr_team_role
         print(indv.main_role); print(indv.team_role)
 
-        result_dicts = _eval.evaluate([indv])
+        result_dicts = _eval.evaluate([indv], gen=i)
         assert len(result_dicts) > 0; result_dict = result_dicts[0]
         eval_result_dir = result_dict['result_dir']
         print("Evaluation results:"); pprint.pprint(result_dict)
