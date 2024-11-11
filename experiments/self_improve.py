@@ -121,8 +121,9 @@ def _load_checkpoint(result_dir):
 
 # Todo:
 # -Get error messages from failed test and use them to update agents
-# -If stuck on problem, move on to next one and come back later
-# -Reset team role if stuck on problem
+# -If stuck on problem, move onto next one and come back later
+# -Reset team role to initial one if stuck on problem
+# -Give ground truth code to agent if stuck on problem
 # -Move self_improve_loop arguments/configuration into a dictionary
 
 def self_improve_loop(team_role_fp=None,
