@@ -163,11 +163,11 @@ def self_improve_loop(team_role_fp=None,
     curr_team_role = None; start_gen = 0; solved_problems = []; history = []
     checkpoint_dict = _load_checkpoint(result_dir)
     if checkpoint_dict is not None:
-        curr_team_role = checkpoint_dict['curr_team_role']
-        start_gen = checkpoint_dict['gen'] + 1
-        init_seed = checkpoint_dict['init_seed']
-        solved_problems = checkpoint_dict['solved_problems']
-        history = checkpoint_dict['history']
+        curr_team_role = checkpoint_dict.get('curr_team_role', curr_team_role)
+        start_gen = checkpoint_dict.get('gen', start_gen)
+        init_seed = checkpoint_dict.get('init_seed', init_seed)
+        solved_problems = checkpoint_dict.get('solved_problems', solved_problems)
+        history = checkpoint_dict.get('history', history)
         problem_list = [x for x in problem_list if x not in solved_problems]
     if len(problem_list) == 0:
         print("All problems solved, exiting self improve loop"); return
@@ -226,7 +226,7 @@ def self_improve_loop(team_role_fp=None,
 
         checkpoint_dict = {
             'curr_team_role': curr_team_role,
-            'gen': i,
+            'gen': i + 1,
             'init_seed': init_seed,
             'solved_problems': solved_problems,
             'history': history,
