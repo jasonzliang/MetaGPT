@@ -130,6 +130,7 @@ def self_improve_loop(team_role_fp=None,
     update_teamwork=True,
     coding_instruct=True,
     solve_all=True,
+    reset_team_role=False,
     scicode=True):
 
     if not scicode: raise Exception("Evalplus self-improve not implemented!")
@@ -142,6 +143,7 @@ def self_improve_loop(team_role_fp=None,
         builder_llm_config=EVAL_BUILDER_LLM_CONFIG,
         chat_llm_config=EVAL_CHAT_LLM_CONFIG,
         indv_llm_config=EVAL_LLM_CONFIG)
+    init_team_role = indv.team_role
     pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
 
     curr_team_role = None; start_gen = 0; solved_problems = []
@@ -161,6 +163,7 @@ def self_improve_loop(team_role_fp=None,
         prob_id = _eval.problem_list[0]
         indv._set_id(i, seed=i + init_seed, suffix='PROB-%s' % prob_id)
         if curr_team_role is not None: indv.team_role = curr_team_role
+
         print(indv.main_role); print(indv.team_role)
 
         result_dicts = _eval.evaluate([indv], gen=i)
@@ -168,21 +171,18 @@ def self_improve_loop(team_role_fp=None,
         eval_result_dir = result_dict['result_dir']
         print("Evaluation results:"); pprint.pprint(result_dict)
 
-        solved_steps = result_dict['eval_result']['correct_dict'][prob_id]
         sub_steps_dict, test_cases_dict = _load_jsonl(_eval.dataset)
         n_steps = sub_steps_dict[prob_id]
-        subprob_acc = len(solved_steps)/float(n_steps)
-        final_step = "%s.%s" % (prob_id, n_steps)
-
-        if solve_all: overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
-        else: overall_acc = 1.0 if final_step in solved_steps else 0.0
-        if overall_acc == 1.0:
-            solved_problems.append(_eval.problem_list[0])
-            _eval.problem_list = [problem_list.pop(0)]
-
         # prompt = _get_output(prob_id, n_steps, eval_result_dir, is_code=False)
         code_generated = _get_output(prob_id, n_steps, eval_result_dir, is_code=True)
         test_cases = test_cases_dict[prob_id]
+
+        solved_steps = result_dict['eval_result']['correct_dict'][prob_id]
+        subprob_acc = len(solved_steps)/float(n_steps)
+        final_step = "%s.%s" % (prob_id, n_steps)
+        if solve_all: overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
+        else: overall_acc = 1.0 if final_step in solved_steps else 0.0
+
         code_performance = """Note: overall accuracy score is more important, focus on maximizing it.\nSubproblem accuracy score: %s\nOverall accuracy score: %s"""
         code_performance = code_performance % (subprob_acc, overall_acc)
         with open(os.path.join(eval_result_dir, "code_perf.txt"), 'w') as f:
@@ -199,6 +199,11 @@ def self_improve_loop(team_role_fp=None,
         updated_team_fp = os.path.join(eval_result_dir, "team_role_update.json")
         builder.save(updated_team_fp); curr_team_role = builder.cached_configs
 
+        if overall_acc == 1.0:
+            solved_problems.append(_eval.problem_list[0])
+            _eval.problem_list = [problem_list.pop(0)]
+            if reset_team_role: curr_team_role = init_team_role
+
         checkpoint_dict = {
             'curr_team_role': curr_team_role,
             'gen': i,
@@ -208,7 +213,8 @@ def self_improve_loop(team_role_fp=None,
             'update_n_agents': str(update_n_agents),
             'custom_coding_instruct': coding_instruct,
             'current_problem': _eval.problem_list[0],
-            'solve_all': solve_all
+            'solve_all': solve_all,
+            'reset_team_role': reset_team_role
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
 
