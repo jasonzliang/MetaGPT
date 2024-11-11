@@ -232,7 +232,8 @@ With following description: {function_description}
         agent_model_tags: Optional[list] = [],
         max_agents: Optional[int] = 5,
         custom_coding_instruct: Optional[bool] = False,
-        user_for_system_msg=False,
+        user_for_system_msg: Optional[bool] = False,
+        use_cache: Optional[bool] = False,
     ):
         """
         (These APIs are experimental and may change in the future.)
@@ -255,7 +256,9 @@ With following description: {function_description}
                 f"Fail to initialize build manager: {builder_model}{builder_model_tags} does not exist in {config_file_or_env}. "
                 f'If you want to change this model, please specify the "builder_model" in the constructor.'
             )
-        self.builder_model = autogen.OpenAIWrapper(config_list=builder_config_list)
+        self.builder_model = autogen.OpenAIWrapper(
+            config_list=builder_config_list,
+            use_cache=use_cache)
 
         self.agent_model = agent_model if isinstance(agent_model, list) else [agent_model]
         self.agent_model_tags = agent_model_tags

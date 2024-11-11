@@ -163,7 +163,8 @@ def init_builder(building_task=None,
         agent_model=builder_llm_config['agent_model'],
         max_agents=max_agents,
         custom_coding_instruct=builder_llm_config['custom_coding_instruct'],
-        user_for_system_msg=builder_llm_config['user_for_system_msg'])
+        user_for_system_msg=builder_llm_config['user_for_system_msg'],
+        use_cache=False)
 
     # hack to prevent "builder_model" error msg when running start_task
     _builder_llm_config = {'temperature': builder_llm_config['temperature'],
