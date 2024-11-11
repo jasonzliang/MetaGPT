@@ -205,7 +205,7 @@ Subproblem accuracy score: %s\nOverall accuracy score: %s"""
             'solved_problems': solved_problems,
             'update_teamwork': update_teamwork,
             'update_n_agents': update_n_agents,
-            'custom_coding_instruct': custom_coding_instruct
+            'custom_coding_instruct': coding_instruct
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
 
