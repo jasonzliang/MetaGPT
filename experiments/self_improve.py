@@ -55,19 +55,23 @@ EVAL_CHAT_LLM_CONFIG = {
 }
 
 
-def _get_scicode_problem_list(dataset=None, shuffle=False, whitelist=None):
+def _get_scicode_problem_list(dataset=None, problem_order='complexity', whitelist=None):
     if dataset is None: dataset = SCICODE_EVAL_CONFIG['dataset']
     dataset_path = os.path.join("scicode_data", dataset + ".jsonl")
     data = read_from_jsonl(dataset_path); problem_list = []
     for problem in data:
         prob_id = problem['problem_id']
         if whitelist is None or prob_id in whitelist:
-            problem_list.append(problem['problem_id'])
-    if shuffle:
-        random.shuffle(problem_list); return problem_list
-    else:
-        return sorted(problem_list, key=lambda x: int(x))
+            problem_list.append(problem)
 
+    if problem_order == 'random':
+        random.shuffle(problem_list)
+    elif problem_order == 'numeric':
+        problem_list = sorted(problem_list, key=lambda x: int(x['problem_id']))
+    else:
+        assert problem_order == 'complexity'
+        problem_list = sorted(problem_list, key=lambda x: len(x['sub_steps']))
+    return [problem['problem_id'] for problem in problem_list]
 
 def _get_subdir(is_code):
     if is_code: first_dir = "generated_code"
@@ -203,7 +207,7 @@ Subproblem accuracy score: %s\nOverall accuracy score: %s"""
 
 
 if __name__ == "__main__":
-    # print(_get_scicode_problem_list())
+    print(_get_scicode_problem_list())
     self_improve_loop(team_role_fp=sys.argv[1],
         result_dir=sys.argv[2],
         update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False)

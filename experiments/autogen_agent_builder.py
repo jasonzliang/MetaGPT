@@ -694,8 +694,8 @@ With following description: {function_description}
         for i, agent_config in enumerate(agent_configs):
             if i >= n_agents: break
 
-            print(f"Preparing updated description for {agent_name}", flush=True)
             agent_name = agent_config['name']
+            print(f"Preparing updated description for {agent_name}", flush=True)
             resp_agent_sys_msg = (
                 self.builder_model.create(
                     messages=[
