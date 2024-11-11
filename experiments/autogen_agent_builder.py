@@ -318,7 +318,7 @@ With following description: {function_description}
             "coding_instruction" in agent_config:
             agent_coding_instruct = agent_config["coding_instruction"]
             if len(agent_coding_instruct) == 0:
-                print(colored("empty coding instruction for %s" % agent_name,
+                print(colored("Empty coding instruction for %s" % agent_name,
                     "red"), flush=True)
         elif "coding_instruction" not in agent_config:
             agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
@@ -694,20 +694,20 @@ With following description: {function_description}
         for i, agent_config in enumerate(agent_configs):
             if i >= n_agents: break
 
+            print(f"Preparing updated description for {agent_name}", flush=True)
             agent_name = agent_config['name']
-            agent_sys_msg = agent_config['system_message']
-            other_sys_msg = "\n".join(["%s\n%s" % (x['name'], x['system_message']) for x in agent_configs if x['name'] != agent_name])
-            print(f"Preparing updated system message for {agent_name}", flush=True)
             resp_agent_sys_msg = (
                 self.builder_model.create(
                     messages=[
                         {
                             "role": "user",
-                            "content": self.UPDATE_AGENT_TEAMWORK_PROMPT.format(
+                            "content": self.UPDATE_AGENT_PROMPT.format(
                                 agent_name=agent_name,
-                                agent_sys_msg=agent_sys_msg,
-                                other_sys_msg=other_sys_msg,
-                                default_sys_msg=self.DEFAULT_DESCRIPTION
+                                agent_sys_msg=agent_config['system_message'],
+                                default_sys_msg=self.DEFAULT_DESCRIPTION,
+                                code_generated=code_generated,
+                                test_cases=test_cases,
+                                code_performance=code_performance
                             ),
                         }
                     ]
@@ -740,28 +740,27 @@ With following description: {function_description}
                 if i >= n_agents: break
 
                 agent_name = agent_config['name']
+                agent_sys_msg = agent_config['system_message']
+                other_sys_msg = "\n".join(["%s\n%s" % (x['name'], x['system_message']) for x in agent_configs if x['name'] != agent_name])
                 print(f"Preparing updated teamwork for {agent_name}", flush=True)
                 resp_agent_sys_msg = (
-                self.builder_model.create(
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": self.UPDATE_AGENT_PROMPT.format(
-                                agent_name=agent_name,
-                                agent_sys_msg=agent_config['system_message'],
-                                default_sys_msg=self.DEFAULT_DESCRIPTION,
-                                code_generated=code_generated,
-                                test_cases=test_cases,
-                                code_performance=code_performance
-                            ),
-                        }
-                    ]
+                    self.builder_model.create(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": self.UPDATE_AGENT_TEAMWORK_PROMPT.format(
+                                    agent_name=agent_name,
+                                    agent_sys_msg=agent_sys_msg,
+                                    default_sys_msg=self.DEFAULT_DESCRIPTION,
+                                    other_sys_msg=other_sys_msg
+                                ),
+                            }
+                        ]
+                    )
+                    .choices[0]
+                    .message.content
                 )
-                .choices[0]
-                .message.content
-            )
-            agent_config['system_message'] = cleanup_output(resp_agent_sys_msg)
-
+                agent_config['system_message'] = cleanup_output(resp_agent_sys_msg)
 
         if self.custom_coding_instruct:
             print(colored("==> Generating coding instructions...", "green"), flush=True)
@@ -772,7 +771,7 @@ With following description: {function_description}
                 print(f"Preparing updated system message for {agent_name}", flush=True)
                 if 'coding_instruction' in agent_config:
                     agent_coding_instruct = agent_config['coding_instruction']
-                else: agent_coding_instruct = self.AGENT_CODING_INSTRUCTION_PROMPT
+                else: agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
                 resp_agent_code_instruct = (
                     self.builder_model.create(
                         messages=[

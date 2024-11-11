@@ -117,9 +117,9 @@ def _load_checkpoint(result_dir):
 
 
 def self_improve_loop(team_role_fp=None,
-    num_gen=50,
+    num_gen=300,
     init_seed=0,
-    problem_list=['1'],
+    problem_list=['1', '10'],
     result_dir='results/self_improve_%s' % get_time(space=False),
     update_n_agents=None,
     update_teamwork=True,
@@ -128,7 +128,6 @@ def self_improve_loop(team_role_fp=None,
     if not scicode: raise Exception("Evalplus self-improve not implemented!")
 
     _eval = _setup_evaluator(1, result_dir, scicode, SCICODE_EVAL_CONFIG)
-    _eval.problem_list = [problem_list.pop(0)]
     indv = _setup_indv(main_role_fp=DEFAULT_MAIN_ROLE_MIN,
         team_role_fp=team_role_fp,
         evolve_mode="team",
@@ -143,19 +142,24 @@ def self_improve_loop(team_role_fp=None,
         curr_team_role = checkpoint_dict['curr_team_role']
         start_gen = checkpoint_dict['gen'] + 1
         init_seed = checkpoint_dict['init_seed']
-        problem_list = checkpoint_dict['problem_list']
+        # problem_list = checkpoint_dict['problem_list']
         solved_problems = checkpoint_dict['solved_problems']
+        problem_list = [x for x in problem_list if x not in solved_problems]
 
     for i in range(start_gen, num_gen):
-        if curr_team_role is not None: indv.team_role = curr_team_role
+        if len(problem_list) == 0:
+            print("All problems solved, exiting self improve loop"); break
+
+        _eval.problem_list = [problem_list.pop(0)]
         prob_id = _eval.problem_list[0]
+
         indv._set_id(i, seed=i + init_seed, suffix='PROB-%s' % prob_id)
+        if curr_team_role is not None: indv.team_role = curr_team_role
         print(indv.main_role); print(indv.team_role)
 
-        assert len(_eval.problem_list) == 1
         result_dicts = _eval.evaluate([indv])
         assert len(result_dicts) > 0; result_dict = result_dicts[0]
-        result_dir = result_dict['result_dir']
+        eval_result_dir = result_dict['result_dir']
         print("Evaluation results:"); pprint.pprint(result_dict)
 
         correct_dict = result_dict['eval_result']['correct_dict']
@@ -164,8 +168,8 @@ def self_improve_loop(team_role_fp=None,
         subprob_acc = len(correct_dict[prob_id])/float(n_steps)
         fullprob_acc = 1.0 if subprob_acc == 1.0 else 0.0
 
-        # prompt = _get_output(prob_id, n_steps, result_dir, is_code=False)
-        code_generated = _get_output(prob_id, n_steps, result_dir, is_code=True)
+        # prompt = _get_output(prob_id, n_steps, eval_result_dir, is_code=False)
+        code_generated = _get_output(prob_id, n_steps, eval_result_dir, is_code=True)
         test_cases = test_cases_dict[prob_id]
         code_performance = """
 Note: overall accuracy score is more important, focus on maximizing it
@@ -180,24 +184,20 @@ Subproblem accuracy score: %s\nOverall accuracy score: %s"""
             code_performance=code_performance,
             n_agents=update_n_agents,
             update_teamwork=update_teamwork)
-        updated_team_fp = os.path.join(result_dir, "team_role_update.json")
+        updated_team_fp = os.path.join(eval_result_dir, "team_role_update.json")
         builder.save(updated_team_fp); curr_team_role = builder.cached_configs
+
+        if fullprob_acc == 1.0:
+            solved_problems.append(_eval.problem_list[0])
 
         checkpoint_dict = {
             'curr_team_role': curr_team_role,
             'gen': i,
             'init_seed': init_seed,
-            'problem_list': problem_list,
+            # 'problem_list': problem_list,
             'solved_problems': solved_problems,
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
-
-        if fullprob_acc == 1.0 and len(problem_list) == 0:
-            print("All problems solved, exiting self improve loop"); break
-        elif fullprob_acc == 1.0 and len(problem_list) > 0:
-            solved_problems.append(_eval.problem_list[0])
-            _eval.problem_list = [problem_list.pop()]
-            print("Problem %s solved, moving to next one" % prob_id); continue
 
 
 if __name__ == "__main__":
