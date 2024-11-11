@@ -40,12 +40,14 @@ if 'CONFIG_FILE_OR_ENV' in os.environ: # Overwrite config list from env
 CHAT_LLM_CONFIG = {"temperature": 0.01,
     "model": "gpt-4o-mini",
     "cache_seed": None,
+    "cache": None,
     "max_round": 15}
 CHAT_LLM_CFG_KEYS = ['temperature', 'model', 'cache_seed', 'base_url', 'api_key']
 BUILDER_LLM_CONFIG = {"temperature": 0.01,
     "builder_model": "gpt-4o",
     "agent_model": "gpt-4o-mini",
     "cache_seed": None,
+    "cache": None,
     "custom_coding_instruct": False,
     "user_for_system_msg": False,
     "min_agents": 2,
