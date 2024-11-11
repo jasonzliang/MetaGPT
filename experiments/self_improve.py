@@ -129,6 +129,7 @@ def self_improve_loop(team_role_fp=None,
     update_n_agents=None,
     update_teamwork=True,
     coding_instruct=True,
+    solve_all=True,
     scicode=True):
 
     if not scicode: raise Exception("Evalplus self-improve not implemented!")
@@ -167,12 +168,14 @@ def self_improve_loop(team_role_fp=None,
         eval_result_dir = result_dict['result_dir']
         print("Evaluation results:"); pprint.pprint(result_dict)
 
-        correct_dict = result_dict['eval_result']['correct_dict']
+        solved_steps = result_dict['eval_result']['correct_dict'][prob_id]
         sub_steps_dict, test_cases_dict = _load_jsonl(_eval.dataset)
         n_steps = sub_steps_dict[prob_id]
-        subprob_acc = len(correct_dict[prob_id])/float(n_steps)
-        final_prob = "%s.%s" % (prob_id, n_steps)
-        overall_acc = 1.0 if final_prob in correct_dict[prob_id] else 0.0
+        subprob_acc = len(solved_steps)/float(n_steps)
+        final_step = "%s.%s" % (prob_id, n_steps)
+
+        if solve_all: overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
+        else: overall_acc = 1.0 if final_step in solved_steps else 0.0
         if overall_acc == 1.0:
             solved_problems.append(_eval.problem_list[0])
             _eval.problem_list = [problem_list.pop(0)]
@@ -204,7 +207,8 @@ def self_improve_loop(team_role_fp=None,
             'update_teamwork': update_teamwork,
             'update_n_agents': str(update_n_agents),
             'custom_coding_instruct': coding_instruct,
-            'current_problem': _eval.problem_list[0]
+            'current_problem': _eval.problem_list[0],
+            'solve_all': solve_all
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
 
