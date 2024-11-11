@@ -658,26 +658,19 @@ With following description: {function_description}
         **kwargs,
     ) -> None:
 
-        if code_execution_config is None:
-            code_execution_config = {
-                "last_n_messages": 1,
-                "work_dir": "groupchat",
-                "use_docker": False,
-                "timeout": 10,
-            }
-
         agent_configs = self.cached_configs['agent_configs']
-        tot_agents = len(agent_configs)
-        agent_configs = random.sample(agent_configs, tot_agents)
+        total_agents = len(agent_configs)
+        agent_configs = random.sample(agent_configs, total_agents)
 
-        if n_agents is None: n_agents = tot_agents
-        else: n_agents = max(min(n_agents, tot_agents), 1)
+        if n_agents is None: n_agents = total_agents
+        else: n_agents = max(min(n_agents, total_agents), 1)
 
         print(colored("==> Updating agents...", "green"), flush=True)
         for i, agent_config in enumerate(agent_configs):
             if i >= n_agents: break
 
             agent_name = agent_config['name']
+            agent_sys_msg = agent_config['system_message']
             other_sys_msg = "\n".join(["%s\n%s" % (x['name'], x['system_message']) for x in agent_configs if x['name'] != agent_name])
             print(f"Preparing updated system message for {agent_name}", flush=True)
             resp_agent_sys_msg = (
@@ -687,7 +680,7 @@ With following description: {function_description}
                             "role": "user",
                             "content": self.UPDATE_AGENT_TEAMWORK_PROMPT.format(
                                 agent_name=agent_name,
-                                agent_sys_msg=agent_config['system_message'],
+                                agent_sys_msg=agent_sys_msg,
                                 other_sys_msg=other_sys_msg,
                             ),
                         }
@@ -706,7 +699,7 @@ With following description: {function_description}
                             "role": "user",
                             "content": self.AGENT_DESCRIPTION_PROMPT.format(
                                 position=agent_name,
-                                sys_msg=sys_msg),
+                                sys_msg=agent_sys_msg),
                         }
                     ]
                 )
@@ -752,7 +745,7 @@ With following description: {function_description}
                 print(f"Preparing updated system message for {agent_name}", flush=True)
                 if 'coding_instruction' in agent_config:
                     agent_coding_instruct = agent_config['coding_instruction']
-                else: agent_coding_instruct = AGENT_CODING_INSTRUCTION_PROMPT
+                else: agent_coding_instruct = self.AGENT_CODING_INSTRUCTION_PROMPT
                 resp_agent_code_instruct = (
                     self.builder_model.create(
                         messages=[

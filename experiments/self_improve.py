@@ -71,9 +71,9 @@ def _get_scicode_problem_list(dataset=None, shuffle=False, whitelist=None):
 def _get_subdir(is_code):
     if is_code: first_dir = "generated_code"
     else: first_dir = "prompt"
-    without_background = SCICODE_EVAL_CONFIG['without_background']
-    if without_background: third_dir = "without_background"
-    else: third_dir = "with_background"
+    with_background = SCICODE_EVAL_CONFIG['with_background']
+    if with_background: third_dir = "with_background"
+    else: third_dir = "without_background"
     return '%s/scicode_eval/%s' % (first_dir, third_dir)
 
 
@@ -81,40 +81,33 @@ def _load_jsonl(dataset):
     dataset_path = os.path.join("scicode_data", dataset + ".jsonl")
     assert os.path.exists(dataset_path)
     problems = read_from_jsonl(dataset_path)
-    subprob_counts = {}; prob_tests = {}
-    for prob_id in problems:
-        subprob_counts[prob_id] = problems[prob_id]['subprob_count']
-        prob_tests[prob_id] = problems[prob_id]['general_tests']
-    return subprob_counts, prob_tests
+    sub_steps = {}; general_tests = {}
+    for problem in problems:
+        prob_id = problem['problem_id']
+        sub_steps[prob_id] = len(problem['sub_steps'])
+        general_tests[prob_id] = problem['general_tests']
+    return sub_steps, general_tests
 
 
-def _get_code(prob_id,
+def _get_output(prob_id,
     num_steps,
-    result_dir):
-    sub_dir = _get_subdir(is_code=True)
-    code_file = os.path.join(result_dir, sub_dir, f"{prob_id}.{num_steps}.py")
-    assert os.path.exists(code_file)
-    with open(code_file, 'r') as f: return f.read()
-
-
-def _get_prompt(prob_id,
-    num_steps,
-    result_dir):
-    sub_dir = _get_subdir(is_code=False)
-    prompt_file = os.path.join(result_dir, sub_dir, f"{prob_id}.{num_steps}.py")
-    assert os.path.exists(code_file)
-    with open(prompt_file, 'r') as f: return f.read()
+    result_dir,
+    is_code=True):
+    sub_dir = _get_subdir(is_code=is_code)
+    output_file = os.path.join(result_dir, sub_dir, f"{prob_id}.{num_steps}.py")
+    assert os.path.exists(output_file)
+    with open(output_file, 'r') as f: return f.read()
 
 
 def _save_checkpoint(result_dir, checkpoint_dict):
-    checkpoint_file = os.path.join("result_dir", "checkpoint.yaml")
+    checkpoint_file = os.path.join(result_dir, "checkpoint.yaml")
     print("Saving checkpoint: %s" % checkpoint_file)
-    with open(checkpoint_file, "r") as f:
+    with open(checkpoint_file, "w") as f:
         YAML().dump(checkpoint_dict, f)
 
 
 def _load_checkpoint(result_dir):
-    checkpoint_file = os.path.join("result_dir", "checkpoint.yaml")
+    checkpoint_file = os.path.join(result_dir, "checkpoint.yaml")
     if os.path.exists(checkpoint_file):
         print("Loading checkpoint: %s" % checkpoint_file)
         with open(checkpoint_file, "r") as f:
@@ -127,6 +120,8 @@ def self_improve_loop(team_role_fp=None,
     init_seed=0,
     problem_list=['1'],
     result_dir='results/self_improve_%s' % get_time(space=False),
+    update_n_agents=None,
+    update_teamwork=True,
     scicode=True):
 
     if not scicode: raise Exception("Evalplus self-improve not implemented!")
@@ -156,26 +151,20 @@ def self_improve_loop(team_role_fp=None,
         print(indv.main_role); print(indv.team_role)
 
         population = [indv]
-        result_dicts = _eval.evaluate(population); _eval.reset()
+        result_dicts = _eval.evaluate(population)
         assert len(result_dicts) > 0; result_dict = result_dicts[0]
         result_dir = result_dict['result_dir']
         print("Evaluation results:"); pprint.pprint(result_dict)
 
         correct_dict = result_dict['eval_result']['correct_dict']
-        subprob_counts, prob_tests = _load_jsonl(_eval.dataset)
-        n_steps = subprob_counts[prob_id]
+        sub_steps_dict, test_cases_dict = _load_jsonl(_eval.dataset)
+        n_steps = sub_steps_dict[prob_id]
         subprob_acc = len(correct_dict[prob_id])/float(n_steps)
         fullprob_acc = 1.0 if subprob_acc == 1.0 else 0.0
 
-        if fullprob_acc == 1.0 and len(problem_list) == 0:
-            print("All problems solved, exiting self improve loop"); break
-        elif fullprob_acc == 1.0 and len(problem_list) > 0:
-            _eval.problem_list = [problem_list.pop()]
-            print("Problem %s solved, moving to next one" % prob_id); continue
-
-        prompt = _get_prompt(prob_id, n_steps, result_dir)
-        code_generated = _get_code(prob_id, n_steps, result_dir)
-        test_cases = prob_tests[prob_id]
+        # prompt = _get_output(prob_id, n_steps, result_dir, is_code=False)
+        code_generated = _get_output(prob_id, n_steps, result_dir, is_code=True)
+        test_cases = test_cases_dict[prob_id]
         code_performance = """
 Note: overall accuracy score is more important, focus on maximizing it
 Subproblem accuracy score: %s\nOverall accuracy score: %s"""
@@ -187,8 +176,8 @@ Subproblem accuracy score: %s\nOverall accuracy score: %s"""
             code_generated=code_generated,
             test_cases=test_cases,
             code_performance=code_performance,
-            n_agents=None,
-            update_teamwork=True)
+            n_agents=update_n_agents,
+            update_teamwork=update_teamwork)
         updated_team_fp = os.path.join(result_dir, "updated_team_role.json")
         builder.save(updated_team_fp); curr_team_role = builder.cached_configs
 
@@ -198,7 +187,14 @@ Subproblem accuracy score: %s\nOverall accuracy score: %s"""
             'init_seed': init_seed,
             'problem_list': problem_list,
         }
-        _save_checkpoint(checkpoint_dict, result_dir)
+        _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
+
+        if fullprob_acc == 1.0 and len(problem_list) == 0:
+            print("All problems solved, exiting self improve loop"); break
+        elif fullprob_acc == 1.0 and len(problem_list) > 0:
+            _eval.problem_list = [problem_list.pop()]
+            print("Problem %s solved, moving to next one" % prob_id); continue
+
 
 if __name__ == "__main__":
     self_improve_loop(team_role_fp=sys.argv[1], result_dir=sys.argv[2])
