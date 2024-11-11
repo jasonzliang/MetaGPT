@@ -172,7 +172,7 @@ def self_improve_loop(team_role_fp=None,
         n_steps = sub_steps_dict[prob_id]
         subprob_acc = len(correct_dict[prob_id])/float(n_steps)
         fullprob_acc = 1.0 if subprob_acc == 1.0 else 0.0
-         if fullprob_acc == 1.0:
+        if fullprob_acc == 1.0:
             solved_problems.append(_eval.problem_list[0])
             _eval.problem_list = [problem_list.pop(0)]
 
