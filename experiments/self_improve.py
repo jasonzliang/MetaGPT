@@ -122,7 +122,7 @@ def _load_checkpoint(result_dir):
 
 def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
-    num_gen=300,
+    num_gen=100,
     init_seed=0,
     problem_list=_get_scicode_problem_list(),
     # problem_list=['1'],
@@ -183,7 +183,7 @@ def self_improve_loop(team_role_fp=None,
         if solve_all: overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
         else: overall_acc = 1.0 if final_step in solved_steps else 0.0
 
-        code_performance = """Note: overall accuracy score is more important, focus on maximizing it.\nSubproblem accuracy score: %s\nOverall accuracy score: %s"""
+        code_performance = """Note: overall accuracy score is more important, focus on maximizing it.\nSub-problem accuracy score: %s\nOverall accuracy score: %s"""
         code_performance = code_performance % (subprob_acc, overall_acc)
         with open(os.path.join(eval_result_dir, "code_perf.txt"), 'w') as f:
             f.write(code_performance)
