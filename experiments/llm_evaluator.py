@@ -475,7 +475,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         scicode_result = test_code(
             model_name="scicode_eval",
             code_dir=os.path.join(result_dir, "generated_code"),
-            log_dir=os.path.join(result_dir, "logs"),
+            log_dir=os.path.join(result_dir, "test_logs"),
             output_dir=result_dir,
             jsonl_path=self.dataset_path,
             dev_set=self.dev_set,

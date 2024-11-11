@@ -58,7 +58,7 @@ EVAL_CHAT_LLM_CONFIG = {
 def _get_scicode_problem_list(dataset=None, shuffle=False, whitelist=None):
     if dataset is None: dataset = SCICODE_EVAL_CONFIG['dataset']
     dataset_path = os.path.join("scicode_data", dataset + ".jsonl")
-    data = read_from_jsonl(input_path); problem_list = []
+    data = read_from_jsonl(dataset_path); problem_list = []
     for problem in data:
         prob_id = problem['problem_id']
         if whitelist is None or prob_id in whitelist:
@@ -119,7 +119,8 @@ def _load_checkpoint(result_dir):
 def self_improve_loop(team_role_fp=None,
     num_gen=300,
     init_seed=0,
-    problem_list=['1', '10'],
+    problem_list=_get_scicode_problem_list(),
+    # problem_list=['1', '10'],
     result_dir='results/self_improve_%s' % get_time(space=False),
     update_n_agents=None,
     update_teamwork=True,
@@ -196,9 +197,13 @@ Subproblem accuracy score: %s\nOverall accuracy score: %s"""
             'init_seed': init_seed,
             # 'problem_list': problem_list,
             'solved_problems': solved_problems,
+            'arguments': locals(),
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
 
 
 if __name__ == "__main__":
-    self_improve_loop(team_role_fp=sys.argv[1], result_dir=sys.argv[2])
+    # print(_get_scicode_problem_list())
+    self_improve_loop(team_role_fp=sys.argv[1],
+        result_dir=sys.argv[2],
+        update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False)

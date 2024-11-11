@@ -688,7 +688,7 @@ With following description: {function_description}
         agent_configs = random.sample(agent_configs, total_agents)
 
         if n_agents is None: n_agents = total_agents
-        else: n_agents = max(min(n_agents, total_agents), 1)
+        else: assert 0 < n_agents <= total_agents
 
         print(colored("==> Updating agents...", "green"), flush=True)
         for i, agent_config in enumerate(agent_configs):
