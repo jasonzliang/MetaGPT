@@ -171,18 +171,19 @@ def self_improve_loop(team_role_fp=None,
         sub_steps_dict, test_cases_dict = _load_jsonl(_eval.dataset)
         n_steps = sub_steps_dict[prob_id]
         subprob_acc = len(correct_dict[prob_id])/float(n_steps)
-        fullprob_acc = 1.0 if subprob_acc == 1.0 else 0.0
-        if fullprob_acc == 1.0:
+        final_prob = "%s.%s" % (prob_id, n_steps)
+        overall_acc = 1.0 if final_prob in correct_dict[prob_id] else 0.0
+        if overall_acc == 1.0:
             solved_problems.append(_eval.problem_list[0])
             _eval.problem_list = [problem_list.pop(0)]
 
         # prompt = _get_output(prob_id, n_steps, eval_result_dir, is_code=False)
         code_generated = _get_output(prob_id, n_steps, eval_result_dir, is_code=True)
         test_cases = test_cases_dict[prob_id]
-        code_performance = """
-Note: overall accuracy score is more important, focus on maximizing it
-Subproblem accuracy score: %s\nOverall accuracy score: %s"""
-        code_performance = code_performance % (subprob_acc, fullprob_acc)
+        code_performance = """Note: overall accuracy score is more important, focus on maximizing it.\nSubproblem accuracy score: %s\nOverall accuracy score: %s"""
+        code_performance = code_performance % (subprob_acc, overall_acc)
+        with open(os.path.join(eval_result_dir, "code_perf.txt"), 'w') as f:
+            f.write(code_performance)
 
         builder_llm_config = indv.llm_config['builder_llm_config']
         builder = _eval.autogen_builder; assert builder is not None
