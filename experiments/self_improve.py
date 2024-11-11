@@ -149,7 +149,6 @@ def self_improve_loop(team_role_fp=None,
         curr_team_role = checkpoint_dict['curr_team_role']
         start_gen = checkpoint_dict['gen'] + 1
         init_seed = checkpoint_dict['init_seed']
-        # problem_list = checkpoint_dict['problem_list']
         solved_problems = checkpoint_dict['solved_problems']
         problem_list = [x for x in problem_list if x not in solved_problems]
 
@@ -157,7 +156,6 @@ def self_improve_loop(team_role_fp=None,
         if len(problem_list) == 0:
             print("All problems solved, exiting self improve loop"); break
 
-        _eval.problem_list = [problem_list.pop(0)]
         prob_id = _eval.problem_list[0]
 
         indv._set_id(i, seed=i + init_seed, suffix='PROB-%s' % prob_id)
@@ -174,6 +172,9 @@ def self_improve_loop(team_role_fp=None,
         n_steps = sub_steps_dict[prob_id]
         subprob_acc = len(correct_dict[prob_id])/float(n_steps)
         fullprob_acc = 1.0 if subprob_acc == 1.0 else 0.0
+         if fullprob_acc == 1.0:
+            solved_problems.append(_eval.problem_list[0])
+            _eval.problem_list = [problem_list.pop(0)]
 
         # prompt = _get_output(prob_id, n_steps, eval_result_dir, is_code=False)
         code_generated = _get_output(prob_id, n_steps, eval_result_dir, is_code=True)
@@ -194,14 +195,10 @@ Subproblem accuracy score: %s\nOverall accuracy score: %s"""
         updated_team_fp = os.path.join(eval_result_dir, "team_role_update.json")
         builder.save(updated_team_fp); curr_team_role = builder.cached_configs
 
-        if fullprob_acc == 1.0:
-            solved_problems.append(_eval.problem_list[0])
-
         checkpoint_dict = {
             'curr_team_role': curr_team_role,
             'gen': i,
             'init_seed': init_seed,
-            # 'problem_list': problem_list,
             'solved_problems': solved_problems,
             'update_teamwork': update_teamwork,
             'update_n_agents': update_n_agents,
