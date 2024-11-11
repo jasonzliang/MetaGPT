@@ -254,7 +254,7 @@ class EvalPlusEvaluator(object):
         result_dict['fitness'] = scaling_fn(evalplus_result[self.objective])
         result_dict['true_fitness'] = evalplus_result['base_score']
         # Needed for multirun_evalplus in analysis
-        result_dict['evalplus_result'] = evalplus_result
+        result_dict['eval_result'] = evalplus_result
 
         with open(os.path.join(result_dir, "result_dict.yaml"), 'w') as f:
             YAML().dump(result_dict, f)
@@ -485,7 +485,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         result_dict['fitness'] = scaling_fn(scicode_result[self.objective])
         result_dict['true_fitness'] = scicode_result['problem_acc']
         # Needed for multirun_evalplus in analysis
-        result_dict['scicode_result'] = scicode_result
+        result_dict['eval_result'] = scicode_result
 
         with open(os.path.join(result_dir, "result_dict.yaml"), 'w') as f:
             YAML().dump(result_dict, f)
