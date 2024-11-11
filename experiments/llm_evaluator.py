@@ -250,7 +250,7 @@ class EvalPlusEvaluator(object):
         assert self.objective in evalplus_result, str(evalplus_result)
         assert "base_score" in evalplus_result, str(evalplus_result)
 
-        result_dict = {}; scaling_fn = EVALPLUS_OBJ[self.objective]
+        scaling_fn = EVALPLUS_OBJ[self.objective]
         result_dict['fitness'] = scaling_fn(evalplus_result[self.objective])
         result_dict['true_fitness'] = evalplus_result['base_score']
         # Needed for multirun_evalplus in analysis
@@ -481,7 +481,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
             dev_set=self.dev_set,
             with_background=self.with_background)
 
-        result_dict = {}; scaling_fn = SCICODE_OBJ[self.objective]
+        scaling_fn = SCICODE_OBJ[self.objective]
         result_dict['fitness'] = scaling_fn(scicode_result[self.objective])
         result_dict['true_fitness'] = scicode_result['problem_acc']
         # Needed for multirun_evalplus in analysis
