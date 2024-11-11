@@ -202,8 +202,9 @@ def self_improve_loop(team_role_fp=None,
             'init_seed': init_seed,
             'solved_problems': solved_problems,
             'update_teamwork': update_teamwork,
-            'update_n_agents': update_n_agents,
-            'custom_coding_instruct': coding_instruct
+            'update_n_agents': str(update_n_agents),
+            'custom_coding_instruct': coding_instruct,
+            'current_problem': _eval.problem_list[0]
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
 
