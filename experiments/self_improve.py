@@ -123,16 +123,18 @@ def _load_checkpoint(result_dir):
 def self_improve_loop(team_role_fp=None,
     num_gen=300,
     init_seed=0,
-    problem_list=_get_scicode_problem_list(),
-    # problem_list=['1', '10'],
+    # problem_list=_get_scicode_problem_list(),
+    problem_list=['1', '10'],
     result_dir='results/self_improve_%s' % get_time(space=False),
     update_n_agents=None,
     update_teamwork=True,
+    custom_coding_instruct=True,
     scicode=True):
 
     if not scicode: raise Exception("Evalplus self-improve not implemented!")
 
     _eval = _setup_evaluator(1, result_dir, scicode, SCICODE_EVAL_CONFIG)
+    EVAL_BUILDER_LLM_CONFIG['custom_coding_instruct'] = custom_coding_instruct
     indv = _setup_indv(main_role_fp=DEFAULT_MAIN_ROLE_MIN,
         team_role_fp=team_role_fp,
         evolve_mode="team",
@@ -201,13 +203,15 @@ Subproblem accuracy score: %s\nOverall accuracy score: %s"""
             'init_seed': init_seed,
             # 'problem_list': problem_list,
             'solved_problems': solved_problems,
-            'arguments': locals(),
+            'update_teamwork': update_teamwork,
+            'update_n_agents': update_n_agents,
+            'custom_coding_instruct': custom_coding_instruct
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
 
 
 if __name__ == "__main__":
-    print(_get_scicode_problem_list())
+    # print(_get_scicode_problem_list())
     self_improve_loop(team_role_fp=sys.argv[1],
         result_dir=sys.argv[2],
         update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False)

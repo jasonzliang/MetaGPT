@@ -695,6 +695,7 @@ With following description: {function_description}
             if i >= n_agents: break
 
             agent_name = agent_config['name']
+            agent_sys_msg = agent_config['system_message']
             print(f"Preparing updated description for {agent_name}", flush=True)
             resp_agent_sys_msg = (
                 self.builder_model.create(
@@ -703,7 +704,7 @@ With following description: {function_description}
                             "role": "user",
                             "content": self.UPDATE_AGENT_PROMPT.format(
                                 agent_name=agent_name,
-                                agent_sys_msg=agent_config['system_message'],
+                                agent_sys_msg=agent_sys_msg,
                                 default_sys_msg=self.DEFAULT_DESCRIPTION,
                                 code_generated=code_generated,
                                 test_cases=test_cases,
