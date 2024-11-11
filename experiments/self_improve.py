@@ -16,6 +16,7 @@ import time
 import tqdm
 
 from autogen_agent_builder import AgentBuilder
+from ruamel.yaml import YAML
 from scicode.parse.parse import read_from_jsonl
 
 from autogen_team import CONFIG_FILE_OR_ENV
@@ -99,7 +100,7 @@ def _get_output(prob_id,
     with open(output_file, 'r') as f: return f.read()
 
 
-def _save_checkpoint(result_dir, checkpoint_dict):
+def _save_checkpoint(checkpoint_dict, result_dir):
     checkpoint_file = os.path.join(result_dir, "checkpoint.yaml")
     print("Saving checkpoint: %s" % checkpoint_file)
     with open(checkpoint_file, "w") as f:
@@ -136,13 +137,14 @@ def self_improve_loop(team_role_fp=None,
         indv_llm_config=EVAL_LLM_CONFIG)
     pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
 
-    curr_team_role = None; start_gen = 0
+    curr_team_role = None; start_gen = 0; solved_problems = []
     checkpoint_dict = _load_checkpoint(result_dir)
     if checkpoint_dict is not None:
         curr_team_role = checkpoint_dict['curr_team_role']
         start_gen = checkpoint_dict['gen'] + 1
         init_seed = checkpoint_dict['init_seed']
         problem_list = checkpoint_dict['problem_list']
+        solved_problems = checkpoint_dict['solved_problems']
 
     for i in range(start_gen, num_gen):
         if curr_team_role is not None: indv.team_role = curr_team_role
@@ -150,8 +152,8 @@ def self_improve_loop(team_role_fp=None,
         indv._set_id(i, seed=i + init_seed, suffix='PROB-%s' % prob_id)
         print(indv.main_role); print(indv.team_role)
 
-        population = [indv]
-        result_dicts = _eval.evaluate(population)
+        assert len(_eval.problem_list) == 1
+        result_dicts = _eval.evaluate([indv])
         assert len(result_dicts) > 0; result_dict = result_dicts[0]
         result_dir = result_dict['result_dir']
         print("Evaluation results:"); pprint.pprint(result_dict)
@@ -178,7 +180,7 @@ Subproblem accuracy score: %s\nOverall accuracy score: %s"""
             code_performance=code_performance,
             n_agents=update_n_agents,
             update_teamwork=update_teamwork)
-        updated_team_fp = os.path.join(result_dir, "updated_team_role.json")
+        updated_team_fp = os.path.join(result_dir, "team_role_update.json")
         builder.save(updated_team_fp); curr_team_role = builder.cached_configs
 
         checkpoint_dict = {
@@ -186,12 +188,14 @@ Subproblem accuracy score: %s\nOverall accuracy score: %s"""
             'gen': i,
             'init_seed': init_seed,
             'problem_list': problem_list,
+            'solved_problems': solved_problems,
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
 
         if fullprob_acc == 1.0 and len(problem_list) == 0:
             print("All problems solved, exiting self improve loop"); break
         elif fullprob_acc == 1.0 and len(problem_list) > 0:
+            solved_problems.append(_eval.problem_list[0])
             _eval.problem_list = [problem_list.pop()]
             print("Problem %s solved, moving to next one" % prob_id); continue
 

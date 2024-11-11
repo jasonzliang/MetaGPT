@@ -73,6 +73,15 @@ When the task is complete and the result has been carefully verified, after obta
 - [(Optional) Complete this part with other information]
 """
 
+    DEFAULT_CODING_INSTRUCTION = """## Useful instructions for task-solving
+    - [Complete this part with useful instructions for task solving]
+    ## How to verify?
+    - [Complete this part with useful instructions for task verification]
+    ## How to use code?
+    - [Complete this part with useful instructions for using the code]
+    - [(Optional) Complete this part with other information]
+"""
+
 # - If missing python packages, you can install the package by suggesting a `pip install` code in the ```sh ... ``` block.
 # - Very important: Before writing test cases, first write the code for the task or function being tested.
     CODING_AND_TASK_SKILL_INSTRUCTION = """## Useful instructions for task-solving
@@ -157,13 +166,6 @@ Summarize the following expert's description in a sentence.
 # Template
 {instruct_template}
 """
-# ## Useful instructions for task-solving
-# - [Complete this part with useful instructions for task solving]
-# ## How to verify?
-# - [Complete this part with useful instructions for task verification]
-# ## How to use code?
-# - [Complete this part with useful instructions for using the code]
-# """
 
     AGENT_SEARCHING_PROMPT = """# Your goal
 Considering the following task, what experts should be involved to the task?
@@ -582,70 +584,82 @@ With following description: {function_description}
         _config_check(self.cached_configs)
         return self._build_agents(use_oai_assistant, list_of_functions, user_proxy=user_proxy, **kwargs)
 
-    UPDATE_AGENT_PROMPT = """
--The code generated using the agent's system message is evaluated on the test cases to create a code performance score.
+    UPDATE_AGENT_PROMPT = """# Your goal
+-Write an updated high-quality description for the agent by filling the given template.
+-The code generated using the agent's current description is evaluated on the test cases to create a code performance score.
 -The more correct and accurate the code on the test cases, the higher the code performance score.
--Improve and update the existing agent system message to maximize the code performance score.
--Analyze and identity problems with the existing agent system message.
+-Improve and update the current agent description to maximize the code performance score.
+-Analyze and identity problems with the current agent description.
 -Use a Chain-of-Thought approach to think step by step and fix the problems.
--Limit the updated agent system message length to be short and concise.
+-Ensure the updated agent description is concise and strictly follows the template.
 
-### Agent name
+# Agent name
 {agent_name}
 
-### Agent system message
+# Current agent description
 {agent_sys_msg}
 
-### Code generated
+# Template
+{default_sys_msg}
+
+# Code generated
 {code_generated}
 
-### Test Cases
+# Test Cases
 {test_cases}
 
-### Code performance
+# Code performance
 {code_performance}
 """
 
-    UPDATE_CODE_INSTRUCT_PROMPT = """
--The code generated using the agent's code instruction is evaluated on the test cases to create a code performance score.
--The more correct and accurate the code on the test cases, the higher the code performance score.
--Improve and update the existing agent code instruction to maximize the code performance score.
--Analyze and identity problems with the existing agent code instruction.
--Use a Chain-of-Thought approach to think step by step and fix the problems.
--Limit the updated agent code instruction length to be short and concise.
-
-### Agent name
-{agent_name}
-
-### Agent code instruction
-{agent_coding_instruct}
-
-### Code generated
-{code_generated}
-
-### Test Cases
-{test_cases}
-
-### Code performance
-{code_performance}
-"""
-
-    UPDATE_AGENT_TEAMWORK_PROMPT = """
+    UPDATE_AGENT_TEAMWORK_PROMPT = """# Your goal
+-Write an updated high-quality code description for the agent by filling the given template.
 -This agent is a part of a team that works together to generate code.
 -The roles and responsibilities of this agent should not overlap with that of other agents.
 -The roles and responsibilities of this agent should have synergy with that of other agents.
--Analyze the system messages of other agents and update the this agent's system message to have better fitting roles and responsibilities.
+-Analyze the descriptions of other agents and update the agent's current description to have better fitting roles and responsibilities.
 -Use a Chain-of-Thought approach to think step by step and fix the problems.
--Limit the updated agent system message length to be short and concise.
+-Ensure the updated agent description is concise and strictly follows the template.
 
-### Agent name
+# Agent name
 {agent_name}
 
-### Agent system message
+# Current agent description
 {agent_sys_msg}
 
-### Other agent names and system messages
+# Template
+{default_sys_msg}
+
+# Other agent names and descriptions
 {other_sys_msg}
+"""
+
+    UPDATE_CODE_INSTRUCT_PROMPT = """# Your goal
+-Write an updated high-quality code instruction for the agent by filling the given template.
+-The code generated using the agent's current code instruction is evaluated on the test cases to create a code performance score.
+-The more correct and accurate the code on the test cases, the higher the code performance score.
+-Improve and update the current agent code instruction to maximize the code performance score.
+-Analyze and identity problems with the current agent code instruction.
+-Use a Chain-of-Thought approach to think step by step and fix the problems.
+-Ensure the updated agent code instruction is concise and strictly follows the template.
+
+# Agent name
+{agent_name}
+
+# Current agent code instruction
+{agent_coding_instruct}
+
+# Template
+{default_sys_msg}
+
+# Code generated
+{code_generated}
+
+# Test Cases
+{test_cases}
+
+# Code performance
+{code_performance}
 """
 
     def update_agents(
@@ -657,6 +671,17 @@ With following description: {function_description}
         update_teamwork: Optional[bool] = False, # Improve agent synergy
         **kwargs,
     ) -> None:
+
+        # Make sure it starts with ## Your role or ## Useful instructions for task-solving
+        def cleanup_output(output):
+            key_line1 = "## Your role"
+            key_line2 = "## Useful instructions for task-solving"
+            lines = output.splitlines(); new_lines = []; flag = False
+            for line in lines:
+                if line.startswith(key_line1) or line.startswith(key_line2):
+                    flag = True
+                if flag is True: new_lines.append(line)
+            return "\n".join(new_lines)
 
         agent_configs = self.cached_configs['agent_configs']
         total_agents = len(agent_configs)
@@ -682,6 +707,7 @@ With following description: {function_description}
                                 agent_name=agent_name,
                                 agent_sys_msg=agent_sys_msg,
                                 other_sys_msg=other_sys_msg,
+                                default_sys_msg=self.DEFAULT_DESCRIPTION
                             ),
                         }
                     ]
@@ -689,7 +715,7 @@ With following description: {function_description}
                 .choices[0]
                 .message.content
             )
-            agent_config['system_message'] = resp_agent_sys_msg
+            agent_config['system_message'] = cleanup_output(resp_agent_sys_msg)
 
             print(f"Preparing updated description for {agent_name}", flush=True)
             resp_agent_description = (
@@ -723,6 +749,7 @@ With following description: {function_description}
                             "content": self.UPDATE_AGENT_PROMPT.format(
                                 agent_name=agent_name,
                                 agent_sys_msg=agent_config['system_message'],
+                                default_sys_msg=self.DEFAULT_DESCRIPTION,
                                 code_generated=code_generated,
                                 test_cases=test_cases,
                                 code_performance=code_performance
@@ -733,7 +760,7 @@ With following description: {function_description}
                 .choices[0]
                 .message.content
             )
-            agent_config['system_message'] = resp_agent_sys_msg
+            agent_config['system_message'] = cleanup_output(resp_agent_sys_msg)
 
 
         if self.custom_coding_instruct:
@@ -754,6 +781,7 @@ With following description: {function_description}
                                 "content": self.UPDATE_CODE_INSTRUCT_PROMPT.format(
                                     agent_name=agent_name,
                                     agent_coding_instruct=agent_coding_instruct,
+                                    default_sys_msg=self.DEFAULT_CODING_INSTRUCTION,
                                     code_generated=code_generated,
                                     test_cases=test_cases,
                                     code_performance=code_performance
@@ -764,7 +792,7 @@ With following description: {function_description}
                     .choices[0]
                     .message.content
                 )
-                agent_config['coding_instruction'] = resp_agent_code_instruct
+                agent_config['coding_instruction'] = cleanup_output(resp_agent_code_instruct)
 
         _config_check(self.cached_configs)
 
