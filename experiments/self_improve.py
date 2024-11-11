@@ -141,7 +141,8 @@ def self_improve_loop(team_role_fp=None,
         indv_llm_config=EVAL_LLM_CONFIG)
     pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
 
-    curr_team_role = None; start_gen = 0; checkpoint_dict = _load_checkpoint()
+    curr_team_role = None; start_gen = 0
+    checkpoint_dict = _load_checkpoint(result_dir)
     if checkpoint_dict is not None:
         curr_team_role = checkpoint_dict['curr_team_role']
         start_gen = checkpoint_dict['gen'] + 1
