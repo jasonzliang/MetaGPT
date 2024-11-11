@@ -119,6 +119,11 @@ def _load_checkpoint(result_dir):
             return dict(YAML().load(f))
     else: return None
 
+# Todo:
+# -Get error messages from failed test and use them to update agents
+# -If stuck on problem, move on to next one and come back later
+# -Reset team role if stuck on problem
+# -Move self_improve_loop arguments/configuration into a dictionary
 
 def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
