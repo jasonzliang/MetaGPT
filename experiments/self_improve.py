@@ -170,7 +170,7 @@ def self_improve_loop(team_role_fp=None,
         history = checkpoint_dict.get('history', history)
         problem_list = [x for x in problem_list if x not in solved_problems]
     if len(problem_list) == 0:
-        print("All problems solved, exiting self improve loop"); return
+        print("All problems solved, not starting self-improve loop"); return
 
     _eval.problem_list = [problem_list.pop(0)]
     for i in range(start_gen, num_gen):
@@ -240,7 +240,7 @@ def self_improve_loop(team_role_fp=None,
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
         if len(problem_list) == 0:
-            print("All problems solved, exiting self improve loop"); break
+            print("All problems solved, exiting self-improve loop"); break
 
 
 if __name__ == "__main__":
