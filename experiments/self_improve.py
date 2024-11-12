@@ -198,7 +198,8 @@ def self_improve_loop(team_role_fp=None,
             overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
         else:
             final_step = "%s.%s" % (prob_id, n_steps)
-            assert final_step == max(solved_steps, key=lambda x: float(x))
+            if final_step in solved_steps:
+                assert final_step == max(solved_steps, key=lambda x: float(x))
             overall_acc = 1.0 if final_step in solved_steps else 0.0
 
         code_performance = """Note: overall accuracy score is more important, focus on maximizing it.\nSub-problem accuracy score: %s\nOverall accuracy score: %s"""
