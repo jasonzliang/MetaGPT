@@ -256,6 +256,57 @@ def _get_background_dir(with_background):
     return "with_background" if with_background else "without_background"
 
 
+def _run_script(script_path): # Original run_script
+    try:
+        subprocess.run(['python', script_path],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=TEST_TIMEOUT)
+        return 0
+    except subprocess.CalledProcessError as e:
+        print(f"Error running script {script_path}: {e}")
+        print(e.output)
+        return 1
+    except subprocess.TimeoutExpired as e:
+        print(f"Runtime error while running script {script_path}: {e}")
+        return 2
+
+
+def _run_script2(script_path): # New version that returns output text
+    """
+    Run a Python script and return both its exit status and output.
+
+    Args:
+        script_path (str): Path to the Python script to run
+
+    Returns:
+        tuple: (exit_code, output_text)
+            - exit_code: 0 for success, 1 for script error, 2 for timeout
+            - output_text: String containing stdout/stderr from the script
+    """
+    try:
+        result = subprocess.run(
+            ['python', script_path],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=TEST_TIMEOUT
+        )
+        # Return success, error (0, 1) and the output
+        return result.returncode, result.stdout + result.stderr
+
+    except subprocess.TimeoutExpired as e:
+        # Handle timeout case
+        output = f"Timeout error after {TEST_TIMEOUT} seconds while running "
+            "script {script_path}: {e}\n"
+        if e.stdout:
+            output += f"Stdout: {e.stdout}\n"
+        if e.stderr:
+            output += f"Stderr: {e.stderr}\n"
+        print(output); return 2, output
+
+
 def test_code(model_name, code_dir, log_dir, output_dir,
               jsonl_path, dev_set=False, with_background=False):
 
@@ -297,22 +348,6 @@ from scicode.parse.parse import process_hdf5_to_tuple
                     for line in test_lst[idx].split('\n'):
                         f.write(line + '\n')
 
-    def run_script(script_path):
-        try:
-            subprocess.run(['python', script_path],
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=TEST_TIMEOUT)
-            return 0
-        except subprocess.CalledProcessError as e:
-            print(f"Error running script {script_path}: {e}")
-            print(e.output)
-            return 1
-        except subprocess.TimeoutExpired as e:
-            print(f"Runtime error while running script {script_path}: {e}")
-            return 2
-
     correct_prob = np.zeros(ALL_PROB_NUM)
     tot_prob = np.zeros(ALL_PROB_NUM)
     correct_step = []
@@ -339,7 +374,8 @@ from scicode.parse.parse import process_hdf5_to_tuple
                         correct_step.append(func_id)
                         correct_dict[prob_id].append(func_id)
                 continue
-            ret = run_script(file_path)
+
+            ret, script_output = _run_script2(file_path)
             if ret == 0:
                 correct_prob[int(prob_id) - 1] += 1
                 correct_step.append(func_id)
@@ -352,6 +388,11 @@ from scicode.parse.parse import process_hdf5_to_tuple
             else:
                 with open(logs_file, 'w') as f:
                     f.write('time out')
+
+            script_out_file = Path(logs_dir_, f'{file_path.stem}_output.txt')
+            with open(script_out_file, 'w') as f: f.write(script_output)
+            script_file = Path(logs_dir_, f'{file_path.stem}_test.py')
+            shutil.copy(file_path, script_file)
 
     test_time = time.time() - start_time
 
