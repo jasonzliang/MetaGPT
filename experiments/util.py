@@ -373,17 +373,15 @@ def get_eval_config(experiment_dir, config_name="config.yaml"):
 
 
 def yaml_dump(data, output_file, width=80):
-    # Initialize YAML with round-trip capabilities
-    yaml = YAML()
-    yaml.preserve_quotes = True
-    yaml.width = width  # Set line width for wrapping
-    yaml.default_flow_style = True
-    # yaml.indent(mapping=2, sequence=4, offset=2)
-    # yaml.allow_unicode = True
-
-    if type(data) is str:
-        assert os.path.exists(data)
-        with open(data, 'r') as f: data = yaml.load(f)
+    """Dumps data in a human-readable format"""
+    def should_use_flow_style(node):
+        """Determine if a node should use flow style based on its content"""
+        if isinstance(node, list):
+            # Use flow style for simple lists (strings, numbers, etc)
+            if all(isinstance(item, (str, int, float, bool)) for item in node):
+                return True
+            return False
+        return None  # Let ruamel.yaml decide for other types
 
     # Format long strings using literal block style
     def format_content(item):
@@ -399,6 +397,18 @@ def yaml_dump(data, output_file, width=80):
                 if isinstance(value, dict):
                     format_content(value)
 
+    # Initialize YAML with round-trip capabilities
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    yaml.width = width  # Set line width for wrapping
+    yaml.default_flow_style = None
+    yaml.allow_unicode = True
+    # yaml.indent(mapping=2, sequence=4, offset=2)
+
+    if type(data) is str:
+        assert os.path.exists(data)
+        with open(data, 'r') as f: data = dict(yaml.load(f))
+
     # Apply formatting
     format_content(data)
 
@@ -406,5 +416,5 @@ def yaml_dump(data, output_file, width=80):
     with open(output_file, 'w') as f: yaml.dump(data, f)
 
 if __name__ == "__main__":
-    yaml_dump("/Users/jason1/Desktop/result_dict.yaml",
-        "/Users/jason1/Desktop/result_dict2.yaml")
+    yaml_dump("/Users/jason1/Desktop/checkpoint.yaml",
+        "/Users/jason1/Desktop/checkpoint2.yaml")

@@ -28,19 +28,19 @@ from evalplus.data.mbpp import get_mbpp_plus
 from evalplus.data import write_jsonl
 from scicode.parse.parse import read_from_jsonl
 
-from alg_util import randomword
 from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
-from autogen_team import init_builder, start_task
+from alg_util import randomword
 from autogen_team import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
+from autogen_team import init_builder, start_task
+from llm_operators import DEFAULT_MAIN_ROLE, DEFAULT_MAIN_ROLE_V2
+from llm_operators import DEFAULT_MAIN_ROLE_MIN
 from llm_operators import create_new_team
-from llm_operators import DEFAULT_MAIN_ROLE, DEFAULT_MAIN_ROLE_V2, \
-    DEFAULT_MAIN_ROLE_MIN
-from scicode_eval import Gencode, test_code
 from scicode_eval import DEFAULT_PROMPT_TEMPLATE, BACKGOUND_PROMPT_TEMPLATE
+from scicode_eval import Gencode, test_code
+from util import EVALPLUS_OBJ, SCICODE_OBJ, SLEEP_TIME
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
 from util import format_prompt, clear_autogen_cache, collect_stats_from_chat
 from util import calc_weighted_evalplus_score, yaml_dump
-from util import EVALPLUS_OBJ, SCICODE_OBJ, SLEEP_TIME
 
 
 class EvalPlusEvaluator(object):

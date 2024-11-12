@@ -27,6 +27,7 @@ from autogen_agent_builder import AgentBuilder
 from alg_util import ID_LENGTH
 from alg_util import randomword
 from util import get_time, killtree, extract_code_from_chat, format_prompt
+from util import yaml_dump
 
 DEFAULT_MAIN_ROLE = \
 """Write a python function that can {instruction}.
@@ -132,7 +133,7 @@ def start_task(execution_task: str,
     chat_messages = manager._groupchat.messages
     if log_file is not None:
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
-        with open(log_file, 'w') as f: YAML().dump(chat_messages, f)
+        yaml_dump(chat_messages, log_file)
 
     return chat_result, chat_messages
     # return agent_list[0].initiate_chat(manager, message=execution_task)
