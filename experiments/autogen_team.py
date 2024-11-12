@@ -37,13 +37,13 @@ your code:
 CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
 if 'CONFIG_FILE_OR_ENV' in os.environ: # Overwrite config list from env
     CONFIG_FILE_OR_ENV = os.environ['CONFIG_FILE_OR_ENV']
-CHAT_LLM_CONFIG = {"temperature": 0.01,
+CHAT_LLM_CONFIG = {"temperature": 0.1,
     "model": "gpt-4o-mini",
     "cache_seed": None,
     "cache": None,
     "max_round": 15}
 CHAT_LLM_CFG_KEYS = ['temperature', 'model', 'cache_seed', 'base_url', 'api_key']
-BUILDER_LLM_CONFIG = {"temperature": 0.01,
+BUILDER_LLM_CONFIG = {"temperature": 0.1,
     "builder_model": "gpt-4o",
     "agent_model": "gpt-4o-mini",
     "cache_seed": None,

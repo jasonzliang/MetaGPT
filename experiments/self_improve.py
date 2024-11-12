@@ -108,7 +108,8 @@ def _save_checkpoint(checkpoint_dict, result_dir):
     checkpoint_file = os.path.join(result_dir, "checkpoint.yaml")
     print("Saving checkpoint: %s" % checkpoint_file)
     with open(checkpoint_file, "w") as f:
-        YAML().dump(checkpoint_dict, f)
+        yaml = YAML(); yaml.default_flow_style = True
+        yaml.dump(checkpoint_dict, f, default_flow_style=True)
 
 
 def _load_checkpoint(result_dir):
@@ -229,11 +230,11 @@ def self_improve_loop(team_role_fp=None,
             'gen': i + 1,
             'init_seed': init_seed,
             'solved_problems': solved_problems,
+            'unsolved_problems': _eval.problem_list + problem_list
             'history': history,
             'cfg_update_teamwork': update_teamwork,
             'cfg_update_n_agents': str(update_n_agents),
             'cfg_coding_instruct': coding_instruct,
-            'cfg_current_problem': _eval.problem_list[0],
             'cfg_solve_all': solve_all,
             'cfg_reset_team_role': reset_team_role,
             'cfg_stuck_threshold': stuck_threshold,

@@ -257,7 +257,8 @@ class EvalPlusEvaluator(object):
         result_dict['eval_result'] = evalplus_result
 
         with open(os.path.join(result_dir, "result_dict.yaml"), 'w') as f:
-            YAML().dump(result_dict, f)
+            yaml = YAML(); yaml.default_flow_style = True
+            yaml.dump(result_dict, f)
         return result_dict
 
     def _eval_indv_team_role(self, indv):
