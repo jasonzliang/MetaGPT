@@ -16,7 +16,7 @@ import time
 import tqdm
 
 from autogen_agent_builder import AgentBuilder
-# from ruamel.yaml import YAML
+from ruamel.yaml import YAML
 from scicode.parse.parse import read_from_jsonl
 
 from autogen_team import CONFIG_FILE_OR_ENV
@@ -139,7 +139,7 @@ def self_improve_loop(team_role_fp=None,
     num_gen=150,
     init_seed=0,
     # problem_list=_get_scicode_problem_list(),
-    problem_list=['1'],
+    problem_list=['19'],
     update_n_agents=None,
     update_teamwork=True,
     coding_instruct=True,
@@ -194,10 +194,12 @@ def self_improve_loop(team_role_fp=None,
 
         solved_steps = result_dict['eval_result']['correct_dict'][prob_id]
         subprob_acc = len(solved_steps)/float(n_steps)
-        final_step = "%s.%s" % (prob_id, n_steps)
-        print(final_step); exit()
-        if solve_all_subprob: overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
-        else: overall_acc = 1.0 if final_step in solved_steps else 0.0
+        if solve_all_subprob:
+            overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
+        else:
+            final_step = "%s.%s" % (prob_id, n_steps)
+            assert final_step == max(solved_steps, key=lambda x: float(x))
+            overall_acc = 1.0 if final_step in solved_steps else 0.0
 
         code_performance = """Note: overall accuracy score is more important, focus on maximizing it.\nSub-problem accuracy score: %s\nOverall accuracy score: %s"""
         code_performance = code_performance % (subprob_acc, overall_acc)
