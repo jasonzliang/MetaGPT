@@ -136,15 +136,15 @@ def _is_stuck(prob_id, history, threshold):
 
 def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
-    num_gen=150,
+    num_gen=200,
     init_seed=0,
-    # problem_list=_get_scicode_problem_list(),
-    problem_list=['19'],
+    problem_list=_get_scicode_problem_list(),
+    # problem_list=['19'],
     update_n_agents=None,
     update_teamwork=True,
     coding_instruct=True,
     solve_all_subprob=False,
-    reset_team_role=False,
+    reset_team_role=True,
     stuck_threshold=10,
     scicode=True):
 
