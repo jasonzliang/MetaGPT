@@ -143,7 +143,7 @@ def self_improve_loop(team_role_fp=None,
     update_n_agents=None,
     update_teamwork=True,
     coding_instruct=True,
-    solve_all=False,
+    solve_all_subprob=False,
     reset_team_role=False,
     stuck_threshold=10,
     scicode=True):
@@ -195,7 +195,7 @@ def self_improve_loop(team_role_fp=None,
         solved_steps = result_dict['eval_result']['correct_dict'][prob_id]
         subprob_acc = len(solved_steps)/float(n_steps)
         final_step = "%s.%s" % (prob_id, n_steps)
-        if solve_all: overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
+        if solve_all_subprob: overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
         else: overall_acc = 1.0 if final_step in solved_steps else 0.0
 
         code_performance = """Note: overall accuracy score is more important, focus on maximizing it.\nSub-problem accuracy score: %s\nOverall accuracy score: %s"""
@@ -230,14 +230,14 @@ def self_improve_loop(team_role_fp=None,
             'gen': i + 1,
             'init_seed': init_seed,
             'solved_problems': solved_problems,
-            'unsolved_problems': _eval.problem_list + problem_list
+            'unsolved_problems': _eval.problem_list + problem_list,
             'history': history,
             'cfg_update_teamwork': update_teamwork,
             'cfg_update_n_agents': str(update_n_agents),
             'cfg_coding_instruct': coding_instruct,
-            'cfg_solve_all': solve_all,
+            'cfg_solve_all_subprob': solve_all_subprob,
             'cfg_reset_team_role': reset_team_role,
-            'cfg_stuck_threshold': stuck_threshold,
+            'cfg_stuck_threshold': stuck_threshold
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
         if len(problem_list) == 0:

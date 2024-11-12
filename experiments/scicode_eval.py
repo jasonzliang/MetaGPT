@@ -298,8 +298,7 @@ def _run_script2(script_path): # New version that returns output text
 
     except subprocess.TimeoutExpired as e:
         # Handle timeout case
-        output = f"Timeout error after {TEST_TIMEOUT} seconds while running "
-            "script {script_path}: {e}\n"
+        output = f"Timeout ({TEST_TIMEOUT}s) while running script {script_path}: {e}\n"
         if e.stdout:
             output += f"Stdout: {e.stdout}\n"
         if e.stderr:
