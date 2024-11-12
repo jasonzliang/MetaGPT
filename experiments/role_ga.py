@@ -18,7 +18,7 @@ from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from llm_operators import llm_mutate, llm_crossover, parse_prompt_template, \
     llm_mutate_team, llm_crossover_team
 from llm_operators import DEFAULT_MAIN_ROLE
-from util import get_time, sanitize_result_dict
+from util import get_time, sanitize_result_dict, yaml_dump
 
 
 @total_ordering
@@ -314,8 +314,7 @@ class RoleEvolutionGA(object):
             'individuals': [x.serialize() for x in sorted_individuals]}
         self.logger.info("Saving gen %s population to %s" % (self.gen,
             file_path))
-        with open(file_path, 'w') as f:
-            YAML().dump(sanitize_result_dict(pop_dict), f)
+        yaml_dump(sanitize_result_dict(pop_dict), file_path)
 
     def _deserialize(self, file_path=None):
         if file_path is None or not os.path.exists(file_path): return False

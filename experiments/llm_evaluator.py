@@ -39,7 +39,7 @@ from scicode_eval import Gencode, test_code
 from scicode_eval import DEFAULT_PROMPT_TEMPLATE, BACKGOUND_PROMPT_TEMPLATE
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
 from util import format_prompt, clear_autogen_cache, collect_stats_from_chat
-from util import calc_weighted_evalplus_score
+from util import calc_weighted_evalplus_score, yaml_dump
 from util import EVALPLUS_OBJ, SCICODE_OBJ, SLEEP_TIME
 
 
@@ -256,9 +256,7 @@ class EvalPlusEvaluator(object):
         # Needed for multirun_evalplus in analysis
         result_dict['eval_result'] = evalplus_result
 
-        with open(os.path.join(result_dir, "result_dict.yaml"), 'w') as f:
-            yaml = YAML(); yaml.default_flow_style = True
-            yaml.dump(result_dict, f)
+        yaml_dump(result_dict, os.path.join(result_dir, "result_dict.yaml"))
         return result_dict
 
     def _eval_indv_team_role(self, indv):

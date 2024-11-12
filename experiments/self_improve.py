@@ -24,7 +24,7 @@ from llm_evaluator import _setup_indv, _setup_evaluator
 from llm_operators import DEFAULT_MAIN_ROLE_MIN
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
 from util import format_prompt, clear_autogen_cache, collect_stats_from_chat
-from util import calc_weighted_evalplus_score
+from util import calc_weighted_evalplus_score, yaml_dump
 from util import EVALPLUS_OBJ, SCICODE_OBJ, SLEEP_TIME
 
 EVALPLUS_EVAL_CONFIG = {
@@ -107,9 +107,7 @@ def _get_output(prob_id,
 def _save_checkpoint(checkpoint_dict, result_dir):
     checkpoint_file = os.path.join(result_dir, "checkpoint.yaml")
     print("Saving checkpoint: %s" % checkpoint_file)
-    with open(checkpoint_file, "w") as f:
-        yaml = YAML(); yaml.default_flow_style = True
-        yaml.dump(checkpoint_dict, f, default_flow_style=True)
+    yaml_dump(checkpoint_dict, checkpoint_file)
 
 
 def _load_checkpoint(result_dir):
@@ -128,11 +126,13 @@ def _is_stuck(prob_id, history, threshold):
 
 
 # Todo:
-# -Get error messages from failed test and use them to update agents
 # -If stuck on problem, move onto next one and come back later (Done)
 # -Reset team role to initial one if stuck on problem (Done)
 # -Give ground truth code to agent if stuck on problem
 # -Move self_improve_loop arguments/configuration into a dictionary
+# -Get error messages from failed test and use them to update agents
+# -Learn from solved problems and create shared knowledge pool
+# -Analyze agent descriptions for solved problems and merge them together
 
 def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
