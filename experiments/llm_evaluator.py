@@ -529,16 +529,17 @@ def _setup_evaluator(
     scicode,
     eval_config=None):
 
+    if scicode:
+        if eval_config is None: eval_config = SCICODE_EVAL_CONFIG
+        Evaluator = SciCodeEvaluator
+    else:
+        if eval_config is None: eval_config = EVALPLUS_EVAL_CONFIG
+        Evaluator = EvalPlusEvaluator
+
     eval_config.update({'n_workers': n_workers,
         'debug_mode': False,
         'use_timestamp': False})
-    if scicode:
-        if eval_config is None: eval_config = SCICODE_EVAL_CONFIG
-        _eval = SciCodeEvaluator(eval_config, evaluator_dir=eval_dir)
-    else:
-        if eval_config is None: eval_config = EVALPLUS_EVAL_CONFIG
-        _eval = EvalPlusEvaluator(eval_config, evaluator_dir=eval_dir)
-    return _eval
+    return Evaluator(eval_config, evaluator_dir=eval_dir)
 
 
 def _setup_indv(main_role_fp,
