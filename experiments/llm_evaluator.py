@@ -547,9 +547,10 @@ def _setup_indv(main_role_fp,
     evolve_mode,
     builder_llm_config=EVAL_BUILDER_LLM_CONFIG,
     chat_llm_config=EVAL_CHAT_LLM_CONFIG,
-    indv_llm_config=EVAL_LLM_CONFIG):
+    indv_llm_config=EVAL_LLM_CONFIG,
+    clear_cache=False):
 
-    clear_autogen_cache()
+    if clear_cache: clear_autogen_cache()
     from role_ga import Individual
     indv = Individual({}, gen_created=0)
     assert indv.team_role is None
