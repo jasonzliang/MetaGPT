@@ -600,10 +600,11 @@ def test_evaluator(main_role_fp=None,
         for j in range(n_indv):
             child = indv.create_child(i)
             if indv_id_seed is not None:
-                child._set_id(i, seed=indv_id_seed + counter)
+                child._set_id(i, seed=indv_id_seed + counter,
+                    suffix=os.path.splitext(os.path.basename(team_role_fp))[0])
             counter += 1; population.append(child)
 
-        result_dicts = _eval.evaluate(population); _eval.reset()
+        result_dicts = _eval.evaluate(population, gen=i); _eval.reset()
         print("Evaluation results:"); pprint.pprint(result_dicts)
 
 
