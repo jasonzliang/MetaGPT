@@ -492,7 +492,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
 
 #### Unit tests ####
-LLM_MODEL = "meta/llama-3.1-405b-instruct"
+LLM_MODEL = "gpt-4o"
 
 EVALPLUS_EVAL_CONFIG = {
     'max_problems': 999,
@@ -502,7 +502,7 @@ EVALPLUS_EVAL_CONFIG = {
 SCICODE_EVAL_CONFIG = {
     'n_tries': 1,
     'max_problems': 999,
-    'dataset': 'problems_all',
+    'dataset': 'problems_dev',
     'with_background': False,
     'problem_list': [],
 }
@@ -514,7 +514,7 @@ EVAL_LLM_CONFIG = {
 EVAL_BUILDER_LLM_CONFIG = {
     'agent_model': LLM_MODEL,
     'builder_model': LLM_MODEL,
-    'custom_coding_instruct': True,
+    'custom_coding_instruct': False,
 }
 
 EVAL_CHAT_LLM_CONFIG = {
