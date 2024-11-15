@@ -548,7 +548,7 @@ def _setup_indv(main_role_fp,
     builder_llm_config=EVAL_BUILDER_LLM_CONFIG,
     chat_llm_config=EVAL_CHAT_LLM_CONFIG,
     indv_llm_config=EVAL_LLM_CONFIG,
-    clear_cache=False):
+    clear_cache=True):
 
     if clear_cache: clear_autogen_cache()
     from role_ga import Individual
