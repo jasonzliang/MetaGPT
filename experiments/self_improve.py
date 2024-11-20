@@ -73,13 +73,14 @@ def _get_scicode_problem_list(dataset=None, problem_order='complexity', whitelis
         problem_list = sorted(problem_list, key=lambda x: len(x['sub_steps']))
     return [problem['problem_id'] for problem in problem_list]
 
+
 def _get_subdir(is_code):
     if is_code: first_dir = "generated_code"
     else: first_dir = "prompt"
     with_background = SCICODE_EVAL_CONFIG['with_background']
     if with_background: third_dir = "with_background"
     else: third_dir = "without_background"
-    return '%s/scicode_eval/%s' % (first_dir, third_dir)
+    return os.path.join(first_dir, 'scicode_eval', third_dir)
 
 
 def _load_jsonl(dataset):
@@ -94,12 +95,21 @@ def _load_jsonl(dataset):
     return sub_steps, general_tests
 
 
-def _get_output(prob_id,
+def _get_code(prob_id,
     num_steps,
     result_dir,
     is_code=True):
     sub_dir = _get_subdir(is_code=is_code)
     output_file = os.path.join(result_dir, sub_dir, f"{prob_id}.{num_steps}.py")
+    assert os.path.exists(output_file)
+    with open(output_file, 'r') as f: return f.read()
+
+
+def _get_test_output(prob_id,
+    num_steps,
+    result_dir):
+    sub_dir = os.path.join("test_logs", "scicode_eval", SCICODE_EVAL_CONFIG['with_background'])
+    output_file = os.path.join(result_dir, sub_dir, f"{prob_id}.{num_steps}_output.txt")
     assert os.path.exists(output_file)
     with open(output_file, 'r') as f: return f.read()
 
@@ -125,14 +135,42 @@ def _is_stuck(prob_id, history, threshold):
     return len(prev_prob_ids) == 1 and prob_id in prev_prob_ids
 
 
+def _get_perf_feedback(prob_id, n_steps, solved_steps, eval_result_dir):
+    # if use_subprob_perf:
+    #     overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
+    # else:
+    #     final_step = "%s.%s" % (prob_id, n_steps)
+    #     if final_step in solved_steps:
+    #         assert final_step == max(solved_steps, key=lambda x: float(x))
+    #         overall_acc = 1.0
+    #     else:
+    #         overall_acc = 0.0
+    subprob_acc = len(solved_steps)/float(n_steps)
+    final_step = "%s.%s" % (prob_id, n_steps)
+    prob_solved = True if subprob_acc == 1.0
+
+    if prob_solved:
+        code_performance = "Code generated is correct, all test cases passed!"
+    else:
+        code_performance = "Code generated is not correct, accuracy: %s\n" % \
+            subprob_acc
+        code_performance += "Stack trace/exception for test cases:\n%s" % \
+            _get_test_output(prob_id, num_steps, eval_result_dir)
+
+    with open(os.path.join(eval_result_dir, "code_perf.txt"), 'w') as f:
+        f.write(code_performance)
+    return prob_solved, code_performance
+
+
 # Todo:
 # -If stuck on problem, move onto next one and come back later (Done)
 # -Reset team role to initial one if stuck on problem (Done)
-# -Give ground truth code to agent if stuck on problem (WIP)
-# -Change self_improve_loop and arguments/configuration into object and dict
-# -Get error messages from failed test and use them to update agents
-# -Learn from solved problems and create shared knowledge pool
+# -Get error messages from failed test and use them to update agents (Done)
+# -Learn from solved problems and create agent knowledge pool (Done)
+# -Collect stats regarding how long it takes to solve problem
 # -Analyze agent descriptions for solved problems and merge them together
+# -Give ground truth code to agent if stuck on problem
+# -Change self_improve_loop and arguments/configuration into object and dict
 
 def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
@@ -143,7 +181,7 @@ def self_improve_loop(team_role_fp=None,
     update_n_agents=None,
     update_teamwork=True,
     coding_instruct=True,
-    solve_all_subprob=False,
+    use_subprob_perf=True,
     reset_team_role=True,
     stuck_threshold=10,
     scicode=True):
@@ -188,32 +226,20 @@ def self_improve_loop(team_role_fp=None,
 
         sub_steps_dict, test_cases_dict = _load_jsonl(_eval.dataset)
         n_steps = sub_steps_dict[prob_id]
+        solved_steps = result_dict['eval_result']['correct_dict'][prob_id]
         # prompt = _get_output(prob_id, n_steps, eval_result_dir, is_code=False)
-        code_generated = _get_output(prob_id, n_steps, eval_result_dir, is_code=True)
+        code_generated = _get_code(prob_id, n_steps, eval_result_dir, is_code=True)
         test_cases = test_cases_dict[prob_id]
 
-        solved_steps = result_dict['eval_result']['correct_dict'][prob_id]
-        subprob_acc = len(solved_steps)/float(n_steps)
-        if solve_all_subprob:
-            overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
-        else:
-            final_step = "%s.%s" % (prob_id, n_steps)
-            if final_step in solved_steps:
-                assert final_step == max(solved_steps, key=lambda x: float(x))
-                overall_acc = 1.0
-            else:
-                overall_acc = 0.0
-
-        code_performance = """Note: overall accuracy score is more important, focus on maximizing it.\nSub-problem accuracy score: %s\nOverall accuracy score: %s"""
-        code_performance = code_performance % (subprob_acc, overall_acc)
-        with open(os.path.join(eval_result_dir, "code_perf.txt"), 'w') as f:
-            f.write(code_performance)
+        problem_solved, code_performance = _get_perf_feedback(prob_id,
+            n_steps, solved_steps, eval_result_dir)
 
         builder_llm_config = indv.llm_config['builder_llm_config']
         builder = _eval.autogen_builder; assert builder is not None
         builder.update_agents(
             code_generated=code_generated,
             test_cases=test_cases,
+            problem_solved=problem_solved,
             code_performance=code_performance,
             n_agents=update_n_agents,
             update_teamwork=update_teamwork)

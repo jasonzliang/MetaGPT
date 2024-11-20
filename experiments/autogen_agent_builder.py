@@ -379,7 +379,7 @@ With following description: {function_description}
                 k: v
                 for k, v in agent_config.items()
                 if k not in ["model", "name", "system_message", "description",
-                    "model_path", "tags", "coding_instruction"]
+                    "model_path", "tags", "coding_instruction", "insights"]
             }
             agent = model_class(
                 name=agent_name, llm_config=current_config.copy(), description=description, **additional_config
@@ -388,6 +388,9 @@ With following description: {function_description}
                 system_message = agent.system_message
             else:
                 system_message = f"{system_message}\n\n{agent_coding_instruct}"
+                if 'insights' in agent_config:
+                    system_message += "\n\n## Useful insights and experience\n" + \
+                        agent_config['insights']
 
             enhanced_sys_msg = self.GROUP_CHAT_DESCRIPTION.format(
                 name=agent_name, members=member_name, user_proxy_desc=user_proxy_desc, sys_msg=system_message
@@ -589,21 +592,15 @@ With following description: {function_description}
 
     UPDATE_AGENT_PROMPT = """# Your goal
 -Write an updated high-quality description for the agent by filling the given template.
--The code generated using the agent's current description is evaluated on the test cases to create a code performance score.
--The more correct and accurate the code on the test cases, the higher the code performance score.
--Improve and update the current agent description to maximize the code performance score.
--Analyze and identity problems with the current agent description.
--Use a Chain-of-Thought approach to think step by step and fix the problems.
--Ensure the updated agent description is concise and strictly follows the template.
+-The code generated using the agent's current description is evaluated on the test cases.
+-The code generated is not correct and accuracy on the test cases can be improved.
+-Use chain of thought to analyze problems with the current agent description.
 
 # Agent name
 {agent_name}
 
-# Current agent description
+# Agent's current description
 {agent_sys_msg}
-
-# Template
-{default_sys_msg}
 
 # Code generated
 {code_generated}
@@ -611,49 +608,81 @@ With following description: {function_description}
 # Test Cases
 {test_cases}
 
-# Code performance
+# Code accuracy
 {code_performance}
+
+# Your answer
+-Let's think step by step about how to improve code accuracy by updating the agent description.
+-Ensure the updated agent description is concise and strictly follows the template.
+
+# Template
+{default_sys_msg}
+"""
+
+    AGENT_INSIGHT_PROMPT = """# Your goal
+-The code generated using the agent's current description is evaluated on the test cases.
+-The code generated is correct and passes all the test cases.
+-Use chain of thought to analyze why the current agent description is effective.
+
+# Agent name
+{agent_name}
+
+# Agent's current description
+{agent_sys_msg}
+
+# Code generated
+{code_generated}
+
+# Test Cases
+{test_cases}
+
+# Agent's current insights
+{agent_insights}
+
+# Your answer
+-Let's think step by step about what makes the current agent description useful.
+-Write a single sentence summarizing any insight discovered and be sure that it follows the template below.
+-Make sure the insight is not a copy or restatement of any of agent's current insights.
+
+# Template
+## Insight discovered
+- [Complete this part with single sentence about any insight discovered]
 """
 
     UPDATE_AGENT_TEAMWORK_PROMPT = """# Your goal
 -Write an updated high-quality code description for the agent by filling the given template.
 -This agent is a part of a team that works together to generate code.
 -The roles and responsibilities of this agent should not overlap with that of other agents.
--The roles and responsibilities of this agent should have synergy with that of other agents.
--Analyze the descriptions of other agents and update the agent's current description to have better fitting roles and responsibilities.
--Use a Chain-of-Thought approach to think step by step and fix the problems.
--Ensure the updated agent description is concise and strictly follows the template.
+-Use chain of thought to analyze how to improve synergy between current agent and rest of the team.
 
 # Agent name
 {agent_name}
 
-# Current agent description
+# Agent's current description
 {agent_sys_msg}
-
-# Template
-{default_sys_msg}
 
 # Other agent names and descriptions
 {other_sys_msg}
+
+# Your answer
+-Let's think step by step about how to improve and update the agent description.
+-Ensure the updated agent description is concise and strictly follows the template.
+
+# Template
+{default_sys_msg}
 """
 
     UPDATE_CODE_INSTRUCT_PROMPT = """# Your goal
 -Write an updated high-quality code instruction for the agent by filling the given template.
--The code generated using the agent's current code instruction is evaluated on the test cases to create a code performance score.
--The more correct and accurate the code on the test cases, the higher the code performance score.
--Improve and update the current agent code instruction to maximize the code performance score.
--Analyze and identity problems with the current agent code instruction.
--Use a Chain-of-Thought approach to think step by step and fix the problems.
--Ensure the updated agent code instruction is concise and strictly follows the template.
+-The code generated using the agent's current code instruction is evaluated on the test cases.
+-The code generated is not correct and accuracy on the test cases can be improved.
+-Use chain of thought to analyze problems with the current agent code instruction.
 
 # Agent name
 {agent_name}
 
-# Current agent code instruction
-{agent_coding_instruct}
-
-# Template
-{default_sys_msg}
+# Current code instruction
+{agent_sys_msg}
 
 # Code generated
 {code_generated}
@@ -661,14 +690,22 @@ With following description: {function_description}
 # Test Cases
 {test_cases}
 
-# Code performance
+# Code accuracy
 {code_performance}
+
+# Your answer
+-Let's think step by step about how to improve code accuracy by updating the agent code instruction.
+-Ensure the updated agent code instruction is concise and strictly follows the template.
+
+# Template
+{default_sys_msg}
 """
 
     def update_agents(
         self,
         code_generated, # Code generated by agents
         test_cases, # Test cases ran on the code
+        problem_solved, # Whether code completely correct
         code_performance, # Performance metrics for code
         n_agents: Optional[int] = None, # Num agents to update
         update_teamwork: Optional[bool] = False, # Improve agent synergy
@@ -676,13 +713,16 @@ With following description: {function_description}
     ) -> None:
 
         # Make sure it starts with ## Your role or ## Useful instructions for task-solving
-        def cleanup_output(output):
+        def cleanup_output(output, include_key=True):
             key_line1 = "## Your role"
             key_line2 = "## Useful instructions for task-solving"
+            key_line3 = "## Insight discovered"
             lines = output.splitlines(); new_lines = []; flag = False
             for line in lines:
-                if line.startswith(key_line1) or line.startswith(key_line2):
+                if line.startswith(key_line1) or line.startswith(key_line2) or \
+                    line.startswith(key_line3):
                     flag = True
+                    if not include_key: continue
                 if flag is True: new_lines.append(line)
             return "\n".join(new_lines)
 
@@ -692,6 +732,40 @@ With following description: {function_description}
 
         if n_agents is None: n_agents = total_agents
         else: assert 0 < n_agents <= total_agents
+
+        if problem_solved:
+            if 'insights' not in agent_config: agent_config['insights'] = ''
+
+            print(colored("==> Discovering agent insights...", "green"), flush=True)
+            for i, agent_config in enumerate(agent_configs):
+                if i >= n_agents: break
+
+                agent_name = agent_config['name']
+                agent_sys_msg = agent_config['system_message']
+                print(f"Preparing new insight for {agent_name}", flush=True)
+                resp_agent_sys_msg = (
+                    self.builder_model.create(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": self.AGENT_INSIGHT_PROMPT.format(
+                                    agent_name=agent_name,
+                                    agent_sys_msg=agent_sys_msg,
+                                    code_generated=code_generated,
+                                    test_cases=test_cases,
+                                    agent_insights=agent_config['insights']
+                                ),
+                            }
+                        ]
+                    )
+                    .choices[0]
+                    .message.content
+                )
+                agent_config['insights'] += \
+                    cleanup_output(resp_agent_sys_msg, include_key=False) + "\n"
+
+            _config_check(self.cached_configs)
+            return
 
         print(colored("==> Updating agents...", "green"), flush=True)
         for i, agent_config in enumerate(agent_configs):
