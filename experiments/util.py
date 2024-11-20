@@ -416,5 +416,4 @@ def yaml_dump(data, output_file, width=80):
     with open(output_file, 'w') as f: yaml.dump(data, f)
 
 if __name__ == "__main__":
-    yaml_dump("/Users/jason1/Desktop/checkpoint.yaml",
-        "/Users/jason1/Desktop/checkpoint2.yaml")
+    yaml_dump(sys.argv[1], sys.argv[1].replace(".yaml", ".p.yaml"))

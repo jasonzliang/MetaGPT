@@ -169,8 +169,8 @@ def _get_perf_feedback(prob_id, n_steps, solved_steps, eval_result_dir):
 # -Learn from solved problems and create agent knowledge pool (Done)
 # -Collect stats regarding how long it takes to solve problem
 # -Analyze agent descriptions for solved problems and merge them together
-# -Give ground truth code to agent if stuck on problem
 # -Change self_improve_loop and arguments/configuration into object and dict
+# -Let agents “cheat” by looking at the ground truth code
 
 def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
