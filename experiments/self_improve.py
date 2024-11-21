@@ -57,7 +57,9 @@ EVAL_CHAT_LLM_CONFIG = {
 class SolutionSet(object):
     def __init__(self, problem_list, stuck_threshold):
         self.problem_list = problem_list
+        assert len(self.problem_list) > 0
         self.stuck_threshold = stuck_threshold
+        assert self.stuck_threshold > 0
         self.reset()
 
     def reset(self):
@@ -96,11 +98,10 @@ class SolutionSet(object):
         assert prob_id in self.solutions; problem = self.solutions[prob_id]
         problem.add_record(success, gen)
         self.history.append(prob_id)
-        if self.is_stuck(prob_id): problem.stuck = True
+        if self.is_stuck(success, prob_id): problem.stuck = True
 
-    def is_stuck(self, prob_id):
-        if self.stuck_threshold is None or len(self.history) < self.stuck_threshold:
-            return False
+    def is_stuck(self, success, prob_id):
+        if success or len(self.history) < self.stuck_threshold: return False
         prev_prob_ids = set(self.history[-self.stuck_threshold:])
         return len(prev_prob_ids) == 1 and prob_id in prev_prob_ids
 
@@ -127,7 +128,7 @@ class Solution(object):
         self.reset()
 
     def reset(self):
-        self.record = []
+        self.gen_record = []
         self.gen_solved = None
         self.stuck = False
 
@@ -140,22 +141,22 @@ class Solution(object):
     def add_record(self, success, gen):
         assert not self.is_solved()
         # if self.is_solved(): return False
-        self.record.append(gen)
+        self.gen_record.append(gen)
         if success: self.gen_solved = gen
 
     def get_stats(self):
         return {'prob_id': self.prob_id,
             'gen_solved': self.gen_solved,
-            'num_tries': len(self.record)}
+            'num_tries': len(self.gen_record)}
 
     def serialize(self):
         s_dict = self.get_stats()
-        s_dict['gen_record'] = self.record
+        s_dict['gen_record'] = self.gen_record
         return s_dict
 
     def deserialize(self, s_dict):
         assert self.prob_id == s_dict.get('prob_id')
-        self.record = s_dict.get('gen_record', [])
+        self.gen_record = s_dict.get('gen_record', [])
         self.gen_solved = s_dict.get('gen_solved')
 
 
@@ -240,12 +241,12 @@ def _get_perf_feedback(prob_id, n_steps, solved_steps, eval_result_dir):
     if prob_solved:
         code_performance = "Code generated is correct, all test cases passed!"
     else:
-        code_performance = "Code generated is not correct, accuracy: %s\n" % \
-            subprob_acc
-        code_performance += "Stack trace/exception for test cases:\n%s" % \
-            _get_test_output(prob_id, n_steps, eval_result_dir)
+        code_performance = \
+"""Code generated is not correct, accuracy: %s
+Stack trace/exception for test cases:\n%s""" % \
+            (subprob_acc, _get_test_output(prob_id, n_steps, eval_result_dir))
 
-    with open(os.path.join(eval_result_dir, "code_perf.txt"), 'w') as f:
+    with open(os.path.join(eval_result_dir, "code_performance.txt"), 'w') as f:
         f.write(code_performance)
     return prob_solved, code_performance
 
@@ -255,7 +256,7 @@ def _get_perf_feedback(prob_id, n_steps, solved_steps, eval_result_dir):
 # -Reset team role to initial one if stuck on problem (Done)
 # -Get error messages from failed test and use them to update agents (Done)
 # -Learn from solved problems and create agent knowledge pool (Done)
-# -Collect stats regarding how long it takes to solve problem
+# -Collect stats regarding how long it takes to solve problem (Done)
 # -Analyze agent descriptions for solved problems and merge them together
 # -Let agents “cheat” by looking at the ground truth code
 # -Change self_improve_loop and arguments/configuration into object and dict
@@ -264,13 +265,13 @@ def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
     num_gen=200,
     init_seed=0,
-    problem_list=_get_scicode_problem_list(),
-    # problem_list=['19'],
+    # problem_list=_get_scicode_problem_list(),
+    problem_list=['19', '78'],
     update_n_agents=None,
     update_teamwork=True,
     coding_instruct=True,
-    reset_team_role=True,
-    stuck_threshold=10,
+    reset_team_role=False,
+    stuck_threshold=1,
     scicode=True):
 
     if not scicode: raise Exception("Evalplus self-improve not implemented!")

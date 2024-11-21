@@ -643,7 +643,7 @@ With following description: {function_description}
 # Your answer
 -Let's think step by step about what makes the current agent description useful.
 -Write a single sentence summarizing any insight discovered and be sure that it follows the template below.
--Make sure the insight is not a copy or restatement of any of agent's current insights.
+-Make sure the insight is not a copy or restatement of any of the current insights.
 
 # Template
 ## Insight discovered
@@ -725,7 +725,10 @@ With following description: {function_description}
                     flag = True
                     if not include_key: continue
                 if flag is True: new_lines.append(line)
-            return "\n".join(new_lines)
+            if len(new_lines) == 0:
+                return output
+            else:
+                return "\n".join(new_lines)
 
         agent_configs = self.cached_configs['agent_configs']
         total_agents = len(agent_configs)
