@@ -84,7 +84,7 @@ class SolutionSet(object):
     def get_problem(self, return_list=True):
         unsolved_problems = self.unsolved_problems()
         if len(unsolved_problems) == 0:
-            for prob_id, prob in self.solutions.items():
+            for prob_id, problem in self.solutions.items():
                 problem.stuck = False
         unsolved_problems = self.unsolved_problems()
         if len(unsolved_problems) > 0:
@@ -336,8 +336,11 @@ def self_improve_loop(team_role_fp=None,
 
         solution_set.add_problem_result(prob_id, problem_solved, i)
         if not solution_set.is_solved():
-            _eval.problem_list = solution_set.get_problem()
-            if reset_team_role: curr_team_role = init_team_role
+            next_problem = solution_set.get_problem()
+            if problem_solved:
+                assert _eval.problem_list != next_problem
+                _eval.problem_list = next_problem
+                if reset_team_role: curr_team_role = init_team_role
 
             checkpoint_dict = {
                 'curr_team_role': curr_team_role,
