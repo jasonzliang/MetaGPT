@@ -614,7 +614,7 @@ With following description: {function_description}
 
 # Your answer
 -Let's think step by step about how to improve code accuracy by updating the agent description.
--Ensure the updated agent description is concise and strictly follows the template.
+-Ensure the updated agent description does not exceed 200 words and strictly follows the template.
 
 # Template
 {default_sys_msg}
@@ -667,7 +667,7 @@ With following description: {function_description}
 
 # Your answer
 -Let's think step by step about how to improve and update the agent description.
--Ensure the updated agent description is concise and strictly follows the template.
+-Ensure the updated agent description not exceed 200 words and strictly follows the template.
 
 # Template
 {default_sys_msg}
@@ -696,7 +696,7 @@ With following description: {function_description}
 
 # Your answer
 -Let's think step by step about how to improve code accuracy by updating the agent coding instruction.
--Ensure the updated coding instruction is concise and strictly follows the template.
+-Ensure the updated coding instruction not exceed 250 words and strictly follows the template.
 
 # Template
 {default_sys_msg}

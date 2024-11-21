@@ -75,7 +75,9 @@ class SolutionSet(object):
         return [x.prob_id for x in self.solutions.values() if x.is_solved()]
 
     def stuck_problems(self):
-        return [x.prob_id for x in self.solutions.values() if x.is_stuck()]
+        stuck_prob = [x for x in self.solutions.values() if x.is_stuck()]
+        stuck_prob = sorted(stuck_prob, key=lambda x: x.gen_stuck)
+        return [x.prob_id for x in stuck_prob]
 
     def unsolved_problems(self):
         return [x for x in self.problem_list if x not in self.solved_problems() and \
@@ -83,14 +85,15 @@ class SolutionSet(object):
 
     def get_problem(self, return_list=True):
         unsolved_problems = self.unsolved_problems()
+        stuck_problems = self.stuck_problems()
         if len(unsolved_problems) == 0:
-            for prob_id, problem in self.solutions.items():
-                problem.stuck = False
-        unsolved_problems = self.unsolved_problems()
-        if len(unsolved_problems) > 0:
-            prob_id = unsolved_problems.pop(0)
+            if len(stuck_problems) == 0:
+                assert self.is_solved(); prob_id = None
+            else:
+                prob_id = stuck_problems.pop(0)
+                self.solutions[prob_id].gen_stuck = None
         else:
-            assert self.is_solved(); prob_id = None
+            prob_id = unsolved_problems.pop(0)
         if return_list: prob_id = [prob_id]
         return prob_id
 
@@ -98,7 +101,7 @@ class SolutionSet(object):
         assert prob_id in self.solutions; problem = self.solutions[prob_id]
         problem.add_record(success, gen)
         self.history.append(prob_id)
-        if self.is_stuck(success, prob_id): problem.stuck = True
+        if self.is_stuck(success, prob_id): problem.gen_stuck = gen
 
     def is_stuck(self, success, prob_id):
         if success or len(self.history) < self.stuck_threshold: return False
@@ -130,10 +133,10 @@ class Solution(object):
     def reset(self):
         self.gen_record = []
         self.gen_solved = None
-        self.stuck = False
+        self.gen_stuck = None
 
     def is_stuck(self):
-        return self.stuck
+        return self.gen_stuck is not None
 
     def is_solved(self):
         return self.gen_solved is not None
