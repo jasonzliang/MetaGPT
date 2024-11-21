@@ -57,23 +57,23 @@ EVAL_CHAT_LLM_CONFIG = {
 class SolutionSet(object):
     def __init__(self, problem_list, stuck_threshold):
         self.problem_list = problem_list
-        self.stuck_threshold = self.stuck_threshold
+        self.stuck_threshold = stuck_threshold
         self.reset()
 
     def reset(self):
         self.history = []
         self.solutions = {}
-        for prob_id in problem_list:
+        for prob_id in self.problem_list:
             self.solutions[prob_id] = Solution(prob_id)
 
     def is_solved(self):
-        return len(self.solved_problems) == len(self.problem_list)
+        return len(self.solved_problems()) == len(self.problem_list)
 
     def solved_problems(self):
-        return [x for x in self.solutions.values() if x.is_solved()]
+        return [x.prob_id for x in self.solutions.values() if x.is_solved()]
 
     def stuck_problems(self):
-        return [x for x in self.solutions.values() if x.is_stuck()]
+        return [x.prob_id for x in self.solutions.values() if x.is_stuck()]
 
     def unsolved_problems(self):
         return [x for x in self.problem_list if x not in self.solved_problems() and \
@@ -84,9 +84,9 @@ class SolutionSet(object):
         if len(unsolved_problems) == 0:
             for prob_id, prob in self.solutions.items():
                 problem.stuck = False
+        unsolved_problems = self.unsolved_problems()
         if len(unsolved_problems) > 0:
-            unsolved_problems = self.unsolved_problems()
-            prob_id = unsolved_problems.pop(0).prob_id
+            prob_id = unsolved_problems.pop(0)
         else:
             assert self.is_solved(); prob_id = None
         if return_list: prob_id = [prob_id]
@@ -105,11 +105,12 @@ class SolutionSet(object):
         return len(prev_prob_ids) == 1 and prob_id in prev_prob_ids
 
     def serialize(self):
-        unsolved_problems = [x for x in self.problem_list if x not in solved_problems]
+        solutions = [v.serialize() for v in self.solutions.values()]
         return {'history': self.history,
-            'solutions': solution_dict,
+            'solutions': solutions,
             'solved_problems': self.solved_problems(),
-            'unsolved_problems': self.unsolved_problems()}
+            'unsolved_problems': self.unsolved_problems(),
+            'stuck_problems': self.stuck_problems()}
 
     def deserialize(self, ss_dict):
         self.history = ss_dict.get('history', [])
@@ -136,7 +137,7 @@ class Solution(object):
     def is_solved(self):
         return self.gen_solved is not None
 
-    def add_record(success, gen):
+    def add_record(self, success, gen):
         assert not self.is_solved()
         # if self.is_solved(): return False
         self.record.append(gen)
@@ -149,12 +150,12 @@ class Solution(object):
 
     def serialize(self):
         s_dict = self.get_stats()
-        s_dict['record'] = self.record
+        s_dict['gen_record'] = self.record
         return s_dict
 
     def deserialize(self, s_dict):
         assert self.prob_id == s_dict.get('prob_id')
-        self.record = s_dict.get('record', [])
+        self.record = s_dict.get('gen_record', [])
         self.gen_solved = s_dict.get('gen_solved')
 
 
@@ -177,9 +178,7 @@ def _get_scicode_problem_list(dataset=None, problem_order='complexity', whitelis
     return [problem['problem_id'] for problem in problem_list]
 
 
-def _get_subdir(is_code):
-    if is_code: first_dir = "generated_code"
-    else: first_dir = "prompt"
+def _get_subdir(first_dir):
     with_background = SCICODE_EVAL_CONFIG['with_background']
     if with_background: third_dir = "with_background"
     else: third_dir = "without_background"
@@ -198,23 +197,24 @@ def _load_jsonl(dataset):
     return sub_steps, general_tests
 
 
-def _get_code(prob_id,
+def _get_file(prob_id,
     num_steps,
     result_dir,
-    is_code=True):
-    sub_dir = _get_subdir(is_code=is_code)
-    output_file = os.path.join(result_dir, sub_dir, f"{prob_id}.{num_steps}.py")
+    first_dir="generated_code",
+    suffix=".py"):
+    sub_dir = _get_subdir(first_dir)
+    output_file = os.path.join(result_dir, sub_dir, f"{prob_id}.{num_steps}{suffix}")
     assert os.path.exists(output_file)
     with open(output_file, 'r') as f: return f.read()
 
 
-def _get_test_output(prob_id,
-    num_steps,
-    result_dir):
-    sub_dir = os.path.join("test_logs", "scicode_eval", SCICODE_EVAL_CONFIG['with_background'])
-    output_file = os.path.join(result_dir, sub_dir, f"{prob_id}.{num_steps}_output.txt")
-    assert os.path.exists(output_file)
-    with open(output_file, 'r') as f: return f.read()
+def _get_code(prob_id, num_steps, result_dir):
+    return _get_file(prob_id, num_steps, result_dir)
+
+
+def _get_test_output(prob_id, num_steps, result_dir):
+    return _get_file(prob_id, num_steps, result_dir, first_dir="test_logs",
+        suffix="_output.txt")
 
 
 def _save_checkpoint(checkpoint_dict, result_dir):
@@ -235,7 +235,7 @@ def _load_checkpoint(result_dir):
 def _get_perf_feedback(prob_id, n_steps, solved_steps, eval_result_dir):
     subprob_acc = len(solved_steps)/float(n_steps)
     final_step = "%s.%s" % (prob_id, n_steps)
-    prob_solved = True if subprob_acc == 1.0
+    prob_solved = True if subprob_acc == 1.0 else False
 
     if prob_solved:
         code_performance = "Code generated is correct, all test cases passed!"
@@ -243,7 +243,7 @@ def _get_perf_feedback(prob_id, n_steps, solved_steps, eval_result_dir):
         code_performance = "Code generated is not correct, accuracy: %s\n" % \
             subprob_acc
         code_performance += "Stack trace/exception for test cases:\n%s" % \
-            _get_test_output(prob_id, num_steps, eval_result_dir)
+            _get_test_output(prob_id, n_steps, eval_result_dir)
 
     with open(os.path.join(eval_result_dir, "code_perf.txt"), 'w') as f:
         f.write(code_performance)
@@ -295,7 +295,7 @@ def self_improve_loop(team_role_fp=None,
         init_seed = checkpoint_dict.get('init_seed', init_seed)
         solution_set.deserialize(checkpoint_dict.get('solution_set', {}))
 
-    if len(solution_set.is_solved()) == 0:
+    if solution_set.is_solved():
         print("All problems solved, not starting self-improve loop"); return
 
     _eval.problem_list = solution_set.get_problem()
@@ -315,7 +315,7 @@ def self_improve_loop(team_role_fp=None,
         n_steps = sub_steps_dict[prob_id]
         solved_steps = result_dict['eval_result']['correct_dict'][prob_id]
         # prompt = _get_output(prob_id, n_steps, eval_result_dir, is_code=False)
-        code_generated = _get_code(prob_id, n_steps, eval_result_dir, is_code=True)
+        code_generated = _get_code(prob_id, n_steps, eval_result_dir)
         test_cases = test_cases_dict[prob_id]
 
         problem_solved, code_performance = _get_perf_feedback(prob_id,
@@ -349,6 +349,7 @@ def self_improve_loop(team_role_fp=None,
                 'cfg_reset_team_role': reset_team_role,
                 'cfg_stuck_threshold': stuck_threshold
             }
+            # pprint.pprint(checkpoint_dict)
             _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
         else:
             print("All problems solved, exiting self-improve loop"); break

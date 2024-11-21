@@ -674,16 +674,16 @@ With following description: {function_description}
 """
 
     UPDATE_CODE_INSTRUCT_PROMPT = """# Your goal
--Write an updated high-quality code instruction for the agent by filling the given template.
--The code generated using the agent's current code instruction is evaluated on the test cases.
+-Write an updated high-quality coding instruction for the agent by filling the given template.
+-The code generated using the agent's current coding instruction is evaluated on the test cases.
 -The code generated is not correct and accuracy on the test cases can be improved.
--Use chain of thought to analyze problems with the current agent code instruction.
+-Use chain of thought to analyze problems with the current agent coding instruction.
 
 # Agent name
 {agent_name}
 
-# Current code instruction
-{agent_sys_msg}
+# Current coding instruction
+{agent_coding_instruct}
 
 # Code generated
 {code_generated}
@@ -695,8 +695,8 @@ With following description: {function_description}
 {code_performance}
 
 # Your answer
--Let's think step by step about how to improve code accuracy by updating the agent code instruction.
--Ensure the updated agent code instruction is concise and strictly follows the template.
+-Let's think step by step about how to improve code accuracy by updating the agent coding instruction.
+-Ensure the updated coding instruction is concise and strictly follows the template.
 
 # Template
 {default_sys_msg}
@@ -735,12 +735,11 @@ With following description: {function_description}
         else: assert 0 < n_agents <= total_agents
 
         if problem_solved:
-            if 'insights' not in agent_config: agent_config['insights'] = ''
-
             print(colored("==> Discovering agent insights...", "green"), flush=True)
             for i, agent_config in enumerate(agent_configs):
                 if i >= n_agents: break
 
+                if 'insights' not in agent_config: agent_config['insights'] = ''
                 agent_name = agent_config['name']
                 agent_sys_msg = agent_config['system_message']
                 print(f"Preparing new insight for {agent_name}", flush=True)
@@ -765,8 +764,7 @@ With following description: {function_description}
                 agent_config['insights'] += \
                     cleanup_output(resp_agent_sys_msg, include_key=False) + "\n"
 
-            _config_check(self.cached_configs)
-            return
+            _config_check(self.cached_configs); return
 
         print(colored("==> Updating agents...", "green"), flush=True)
         for i, agent_config in enumerate(agent_configs):
@@ -796,7 +794,7 @@ With following description: {function_description}
             )
             agent_config['system_message'] = cleanup_output(resp_agent_sys_msg)
 
-            print(f"Preparing updated description for {agent_name}", flush=True)
+            print(f"Preparing updated description summary for {agent_name}", flush=True)
             resp_agent_description = (
                 self.builder_model.create(
                     messages=[
