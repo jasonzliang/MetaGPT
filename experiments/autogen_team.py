@@ -110,16 +110,16 @@ def start_task(execution_task: str,
         chat_manager=manager,
         llm_config={"config_list": config_list, **_chat_llm_config}
     )
-    code_execution_config = {
-        "last_n_messages": 1,
-        "timeout": 10,
-        "use_docker": False,
-        "work_dir": "/tmp/som_%s" % randomword(ID_LENGTH)
-    }
+    # code_execution_config = {
+    #     "last_n_messages": 1,
+    #     "timeout": 10,
+    #     "use_docker": False,
+    #     "work_dir": "/tmp/som_%s" % randomword(ID_LENGTH)
+    # }
     society_user_proxy = autogen.UserProxyAgent(
         "user_proxy",
         human_input_mode="NEVER",
-        code_execution_config=code_execution_config,
+        code_execution_config=False,
         default_auto_reply="",
         is_termination_msg=lambda x: True,
     )
