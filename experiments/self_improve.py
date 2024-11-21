@@ -48,10 +48,12 @@ EVAL_BUILDER_LLM_CONFIG = {
     'builder_model': 'gpt-4o',
     'custom_coding_instruct': True,
     'max_round': 50,
+    'temperature': 0.8
 }
 
 EVAL_CHAT_LLM_CONFIG = {
-    'model': 'gpt-4o'
+    'model': 'gpt-4o',
+    'temperature': 0.2,
 }
 
 class SolutionSet(object):
