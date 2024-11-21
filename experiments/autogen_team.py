@@ -75,8 +75,6 @@ def start_task(execution_task: str,
     #     else:
     #         user_proxy = agent
 
-    # limit out of control output
-    # pprint.pprint(agent_list)
     context_handling = transform_messages.TransformMessages(
             transforms=[transforms.MessageTokenLimiter(
                 min_tokens=MIN_CHAT_HIST_LEN,
@@ -92,8 +90,7 @@ def start_task(execution_task: str,
         messages=[],
         max_round=chat_llm_config['max_round'],
         # allow_repeat_speaker=agent_list,
-        allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list,
-    )
+        allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list)
 
     _chat_llm_config = {}
     for key in chat_llm_config:
@@ -102,27 +99,27 @@ def start_task(execution_task: str,
 
     manager = autogen.GroupChatManager(
         groupchat=group_chat,
-        llm_config={"config_list": config_list, **_chat_llm_config}
-    )
+        llm_config={"config_list": config_list, **_chat_llm_config})
 
     society_of_mind_agent = SocietyOfMindAgent(
         "society_of_mind",
         chat_manager=manager,
-        llm_config={"config_list": config_list, **_chat_llm_config}
-    )
+        llm_config={"config_list": config_list, **_chat_llm_config})
+
     # code_execution_config = {
     #     "last_n_messages": 1,
     #     "timeout": 10,
     #     "use_docker": False,
     #     "work_dir": "/tmp/som_%s" % randomword(ID_LENGTH)
     # }
+
     society_user_proxy = autogen.UserProxyAgent(
         "user_proxy",
         human_input_mode="NEVER",
         code_execution_config=False,
         default_auto_reply="",
-        is_termination_msg=lambda x: True,
-    )
+        is_termination_msg=lambda x: True)
+
     with Cache.disk(cache_seed=None,
         cache_path_root='/tmp/cache_%s' % randomword(ID_LENGTH)) as cache:
         chat_result = society_user_proxy.initiate_chat(
