@@ -852,7 +852,8 @@ With following description: {function_description}
                 print(f"Preparing updated system message for {agent_name}", flush=True)
                 if 'coding_instruction' in agent_config:
                     agent_coding_instruct = agent_config['coding_instruction']
-                else: agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
+                else:
+                    agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
                 resp_agent_code_instruct = (
                     self.builder_model.create(
                         messages=[
@@ -861,7 +862,7 @@ With following description: {function_description}
                                 "content": self.UPDATE_CODE_INSTRUCT_PROMPT.format(
                                     agent_name=agent_name,
                                     agent_coding_instruct=agent_coding_instruct,
-                                    default_sys_msg=self.DEFAULT_CODING_INSTRUCTION,
+                                    default_sys_msg=self.CODING_AND_TASK_SKILL_INSTRUCTION,
                                     code_generated=code_generated,
                                     test_cases=test_cases,
                                     code_performance=code_performance
