@@ -613,7 +613,7 @@ With following description: {function_description}
 {code_performance}
 
 # Your answer
--Let's think step by step about how to improve code accuracy by updating the agent description.
+-Let's think step by step about how to update the agent description to improve code accuracy.
 -Ensure the updated agent description does not exceed 200 words and strictly follows the template.
 
 # Template
@@ -641,8 +641,9 @@ With following description: {function_description}
 {agent_insights}
 
 # Your answer
--Let's think step by step about what makes the current agent description useful.
--Write a single sentence summarizing any insight discovered and be sure that it follows the template below.
+-Let's think step by step about an insight that explains why the current agent description is useful.
+-Write a single sentence summarizing the insight and be sure that it follows the template.
+-Make sure the insight is general and applies broadly to all problems.
 -Make sure the insight is not a copy or restatement of any of the current insights.
 
 # Template
@@ -654,7 +655,7 @@ With following description: {function_description}
 -Write an updated high-quality code description for the agent by filling the given template.
 -This agent is a part of a team that works together to generate code.
 -The roles and responsibilities of this agent should not overlap with that of other agents.
--Use chain of thought to analyze how to improve synergy between current agent and rest of the team.
+-Use chain of thought to analyze teamwork and synergy between current agent and rest of the team.
 
 # Agent name
 {agent_name}
@@ -666,7 +667,7 @@ With following description: {function_description}
 {other_sys_msg}
 
 # Your answer
--Let's think step by step about how to improve and update the agent description.
+-Let's think step by step about how to update the agent description to improve synergy.
 -Ensure the updated agent description not exceed 200 words and strictly follows the template.
 
 # Template
@@ -695,7 +696,7 @@ With following description: {function_description}
 {code_performance}
 
 # Your answer
--Let's think step by step about how to improve code accuracy by updating the agent coding instruction.
+-Let's think step by step about how to update the agent coding instruction to improve code accuracy.
 -Ensure the updated coding instruction not exceed 250 words and strictly follows the template.
 
 # Template
