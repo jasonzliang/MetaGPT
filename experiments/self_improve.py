@@ -54,6 +54,109 @@ EVAL_CHAT_LLM_CONFIG = {
     'model': 'gpt-4o'
 }
 
+class SolutionSet(object):
+    def __init__(self, problem_list, stuck_threshold):
+        self.problem_list = problem_list
+        self.stuck_threshold = self.stuck_threshold
+        self.reset()
+
+    def reset(self):
+        self.history = []
+        self.solutions = {}
+        for prob_id in problem_list:
+            self.solutions[prob_id] = Solution(prob_id)
+
+    def is_solved(self):
+        return len(self.solved_problems) == len(self.problem_list)
+
+    def solved_problems(self):
+        return [x for x in self.solutions.values() if x.is_solved()]
+
+    def stuck_problems(self):
+        return [x for x in self.solutions.values() if x.is_stuck()]
+
+    def unsolved_problems(self):
+        return [x for x in self.problem_list if x not in self.solved_problems() and \
+            x not in self.stuck_problems()]
+
+    def get_problem(self, return_list=True):
+        unsolved_problems = self.unsolved_problems()
+        if len(unsolved_problems) == 0:
+            for prob_id, prob in self.solutions.items():
+                problem.stuck = False
+        if len(unsolved_problems) > 0:
+            unsolved_problems = self.unsolved_problems()
+            prob_id = unsolved_problems.pop(0).prob_id
+        else:
+            assert self.is_solved(); prob_id = None
+        if return_list: prob_id = [prob_id]
+        return prob_id
+
+    def add_problem_result(self, prob_id, success, gen):
+        assert prob_id in self.solutions; problem = self.solutions[prob_id]
+        problem.add_record(success, gen)
+        self.history.append(prob_id)
+        if self.is_stuck(prob_id): problem.stuck = True
+
+    def is_stuck(self, prob_id):
+        if self.stuck_threshold is None or len(self.history) < self.stuck_threshold:
+            return False
+        prev_prob_ids = set(self.history[-self.stuck_threshold:])
+        return len(prev_prob_ids) == 1 and prob_id in prev_prob_ids
+
+    def serialize(self):
+        unsolved_problems = [x for x in self.problem_list if x not in solved_problems]
+        return {'history': self.history,
+            'solutions': solution_dict,
+            'solved_problems': self.solved_problems(),
+            'unsolved_problems': self.unsolved_problems()}
+
+    def deserialize(self, ss_dict):
+        self.history = ss_dict.get('history', [])
+        for prob_id, solution in self.solutions.items():
+            for s_dict in ss_dict.get('solutions', []):
+                assert 'prob_id' in s_dict
+                if prob_id == s_dict.get('prob_id'):
+                    solution.deserialize(s_dict)
+
+
+class Solution(object):
+    def __init__(self, prob_id):
+        self.prob_id = prob_id
+        self.reset()
+
+    def reset(self):
+        self.record = []
+        self.gen_solved = None
+        self.stuck = False
+
+    def is_stuck(self):
+        return self.stuck
+
+    def is_solved(self):
+        return self.gen_solved is not None
+
+    def add_record(success, gen):
+        assert not self.is_solved()
+        # if self.is_solved(): return False
+        self.record.append(gen)
+        if success: self.gen_solved = gen
+
+    def get_stats(self):
+        return {'prob_id': self.prob_id,
+            'gen_solved': self.gen_solved,
+            'num_tries': len(self.record)}
+
+    def serialize(self):
+        s_dict = self.get_stats()
+        s_dict['record'] = self.record
+        return s_dict
+
+    def deserialize(self, s_dict):
+        assert self.prob_id == s_dict.get('prob_id')
+        self.record = s_dict.get('record', [])
+        self.gen_solved = s_dict.get('gen_solved')
+
 
 def _get_scicode_problem_list(dataset=None, problem_order='complexity', whitelist=None):
     if dataset is None: dataset = SCICODE_EVAL_CONFIG['dataset']
@@ -129,22 +232,7 @@ def _load_checkpoint(result_dir):
     else: return None
 
 
-def _is_stuck(prob_id, history, threshold):
-    if threshold is None or len(history) < threshold: return False
-    prev_prob_ids = set(history[-threshold:])
-    return len(prev_prob_ids) == 1 and prob_id in prev_prob_ids
-
-
 def _get_perf_feedback(prob_id, n_steps, solved_steps, eval_result_dir):
-    # if use_subprob_perf:
-    #     overall_acc = 1.0 if subprob_acc == 1.0 else 0.0
-    # else:
-    #     final_step = "%s.%s" % (prob_id, n_steps)
-    #     if final_step in solved_steps:
-    #         assert final_step == max(solved_steps, key=lambda x: float(x))
-    #         overall_acc = 1.0
-    #     else:
-    #         overall_acc = 0.0
     subprob_acc = len(solved_steps)/float(n_steps)
     final_step = "%s.%s" % (prob_id, n_steps)
     prob_solved = True if subprob_acc == 1.0
@@ -169,8 +257,8 @@ def _get_perf_feedback(prob_id, n_steps, solved_steps, eval_result_dir):
 # -Learn from solved problems and create agent knowledge pool (Done)
 # -Collect stats regarding how long it takes to solve problem
 # -Analyze agent descriptions for solved problems and merge them together
-# -Change self_improve_loop and arguments/configuration into object and dict
 # -Let agents “cheat” by looking at the ground truth code
+# -Change self_improve_loop and arguments/configuration into object and dict
 
 def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
@@ -181,7 +269,6 @@ def self_improve_loop(team_role_fp=None,
     update_n_agents=None,
     update_teamwork=True,
     coding_instruct=True,
-    use_subprob_perf=True,
     reset_team_role=True,
     stuck_threshold=10,
     scicode=True):
@@ -199,19 +286,19 @@ def self_improve_loop(team_role_fp=None,
     init_team_role = indv.team_role
     pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
 
-    curr_team_role = None; start_gen = 0; solved_problems = []; history = []
+    curr_team_role = None; start_gen = 0
+    solution_set = SolutionSet(problem_list, stuck_threshold)
     checkpoint_dict = _load_checkpoint(result_dir)
     if checkpoint_dict is not None:
         curr_team_role = checkpoint_dict.get('curr_team_role', curr_team_role)
         start_gen = checkpoint_dict.get('gen', start_gen)
         init_seed = checkpoint_dict.get('init_seed', init_seed)
-        solved_problems = checkpoint_dict.get('solved_problems', solved_problems)
-        history = checkpoint_dict.get('history', history)
-        problem_list = [x for x in problem_list if x not in solved_problems]
-    if len(problem_list) == 0:
+        solution_set.deserialize(checkpoint_dict.get('solution_set', {}))
+
+    if len(solution_set.is_solved()) == 0:
         print("All problems solved, not starting self-improve loop"); return
 
-    _eval.problem_list = [problem_list.pop(0)]
+    _eval.problem_list = solution_set.get_problem()
     for i in range(start_gen, num_gen):
         prob_id = _eval.problem_list[0]
         indv._set_id(i, seed=i + init_seed, suffix='PROB-%s' % prob_id)
@@ -246,33 +333,24 @@ def self_improve_loop(team_role_fp=None,
         updated_team_fp = os.path.join(eval_result_dir, "team_role_update.json")
         builder.save(updated_team_fp); curr_team_role = builder.cached_configs
 
-        history.append(prob_id); new_problem = False
-        if overall_acc == 1.0:
-            solved_problems.append(prob_id)
-            if len(problem_list) > 0:
-                _eval.problem_list = [problem_list.pop(0)]; new_problem = True
-        elif _is_stuck(prob_id, history, stuck_threshold):
-            problem_list.append(prob_id)
-            _eval.problem_list = [problem_list.pop(0)]
-            new_problem = True
-        if new_problem and reset_team_role: curr_team_role = init_team_role
+        solution_set.add_problem_result(prob_id, problem_solved, i)
+        if not solution_set.is_solved():
+            _eval.problem_list = solution_set.get_problem()
+            if reset_team_role: curr_team_role = init_team_role
 
-        checkpoint_dict = {
-            'curr_team_role': curr_team_role,
-            'gen': i + 1,
-            'init_seed': init_seed,
-            'solved_problems': solved_problems,
-            'unsolved_problems': _eval.problem_list + problem_list,
-            'history': history,
-            'cfg_update_teamwork': update_teamwork,
-            'cfg_update_n_agents': str(update_n_agents),
-            'cfg_coding_instruct': coding_instruct,
-            'cfg_solve_all_subprob': solve_all_subprob,
-            'cfg_reset_team_role': reset_team_role,
-            'cfg_stuck_threshold': stuck_threshold
-        }
-        _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
-        if len(problem_list) == 0:
+            checkpoint_dict = {
+                'curr_team_role': curr_team_role,
+                'gen': i + 1,
+                'init_seed': init_seed,
+                'solution_set': solution_set.serialize(),
+                'cfg_update_teamwork': update_teamwork,
+                'cfg_update_n_agents': str(update_n_agents),
+                'cfg_coding_instruct': coding_instruct,
+                'cfg_reset_team_role': reset_team_role,
+                'cfg_stuck_threshold': stuck_threshold
+            }
+            _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
+        else:
             print("All problems solved, exiting self-improve loop"); break
 
 

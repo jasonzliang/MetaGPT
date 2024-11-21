@@ -590,6 +590,7 @@ With following description: {function_description}
         _config_check(self.cached_configs)
         return self._build_agents(use_oai_assistant, list_of_functions, user_proxy=user_proxy, **kwargs)
 
+# -Let’s work this out in a step by step way to be sure we have the right answer.
     UPDATE_AGENT_PROMPT = """# Your goal
 -Write an updated high-quality description for the agent by filling the given template.
 -The code generated using the agent's current description is evaluated on the test cases.
