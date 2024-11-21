@@ -183,7 +183,7 @@ class Gencode:
             model_fct = get_model_function(model, **model_kwargs)
             response_from_llm = model_fct(prompt)
         else:
-            response_from_llm = self.llm_eval_func(prob_id, prompt, result_dict)
+            response_from_llm = self.llm_eval_func(f"{prob_id}.{num_steps}", prompt, result_dict)
         self.previous_llm_code[num_steps - 1] = extract_python_script(response_from_llm)
         self._save_response_with_steps(prob_data, response_from_llm, previous_code, num_steps)
 
