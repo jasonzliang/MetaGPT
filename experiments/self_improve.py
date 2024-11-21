@@ -86,14 +86,15 @@ class SolutionSet(object):
     def get_problem(self, return_list=True):
         unsolved_problems = self.unsolved_problems()
         stuck_problems = self.stuck_problems()
+        # print(unsolved_problems); print(stuck_problems); exit()
         if len(unsolved_problems) == 0:
             if len(stuck_problems) == 0:
                 assert self.is_solved(); prob_id = None
             else:
-                prob_id = stuck_problems.pop(0)
+                prob_id = stuck_problems[0]
                 self.solutions[prob_id].gen_stuck = None
         else:
-            prob_id = unsolved_problems.pop(0)
+            prob_id = unsolved_problems[0]
         if return_list: prob_id = [prob_id]
         return prob_id
 
@@ -150,6 +151,7 @@ class Solution(object):
     def get_stats(self):
         return {'prob_id': self.prob_id,
             'gen_solved': self.gen_solved,
+            'gen_stuck': self.gen_stuck,
             'num_tries': len(self.gen_record)}
 
     def serialize(self):
@@ -161,6 +163,7 @@ class Solution(object):
         assert self.prob_id == s_dict.get('prob_id')
         self.gen_record = s_dict.get('gen_record', [])
         self.gen_solved = s_dict.get('gen_solved')
+        self.gen_stuck = s_dict.get('gen_stuck')
 
 
 def _get_scicode_problem_list(dataset=None, problem_order='complexity', whitelist=None):
@@ -268,13 +271,13 @@ def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
     num_gen=200,
     init_seed=0,
-    # problem_list=_get_scicode_problem_list(),
-    problem_list=['19', '78'],
+    problem_list=_get_scicode_problem_list(),
+    # problem_list=['19', '78'],
     update_n_agents=None,
     update_teamwork=True,
     coding_instruct=True,
     reset_team_role=False,
-    stuck_threshold=1,
+    stuck_threshold=10,
     scicode=True):
 
     if not scicode: raise Exception("Evalplus self-improve not implemented!")
@@ -342,8 +345,8 @@ def self_improve_loop(team_role_fp=None,
             next_problem = solution_set.get_problem()
             if problem_solved:
                 assert _eval.problem_list != next_problem
-                _eval.problem_list = next_problem
                 if reset_team_role: curr_team_role = init_team_role
+            _eval.problem_list = next_problem
 
             checkpoint_dict = {
                 'curr_team_role': curr_team_role,
