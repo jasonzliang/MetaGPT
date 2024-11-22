@@ -265,8 +265,8 @@ Stack trace/exception for test cases:\n%s""" % \
 # -Get error messages from failed test and use them to update agents (Done)
 # -Learn from solved problems and create agent knowledge pool (Done)
 # -Collect stats regarding how long it takes to solve problem (Done)
-# -Visualize stats (num gen to solve problem) as a bar graph
-# -Analyze agent descriptions for solved problems and merge them together
+# -Visualize stats (num gen to solve problem) as a bar graph (WIP)
+# -Analyze agent descriptions for solved problems and merge them together (WIP)
 # -Let agents “cheat” by looking at the ground truth code
 # -Change self_improve_loop in a class and arguments/configuration into yaml/dict
 
@@ -274,8 +274,8 @@ def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
     num_gen=200,
     init_seed=0,
-    # problem_list=_get_scicode_problem_list(),
-    problem_list=['19'],
+    problem_list=_get_scicode_problem_list(),
+    # problem_list=['19'],
     update_n_agents=None,
     update_teamwork=True,
     coding_instruct=True,
