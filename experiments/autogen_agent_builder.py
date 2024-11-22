@@ -815,7 +815,7 @@ With following description: {function_description}
             )
             agent_config['description'] = resp_agent_description
 
-        if update_teamwork:
+        if update_teamwork and len(agent_configs) > 1:
             print(colored("==> Updating teamwork...", "green"), flush=True)
             for i, agent_config in enumerate(agent_configs):
                 if i >= n_agents: break
