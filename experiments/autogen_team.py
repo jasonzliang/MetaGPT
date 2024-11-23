@@ -43,7 +43,7 @@ CHAT_LLM_CONFIG = {"temperature": 0.1,
     "cache_seed": None,
     # "cache": None,
     "max_round": 15}
-CHAT_LLM_CFG_KEYS = ['temperature', 'model', 'cache_seed', 'base_url', 'api_key']
+CHAT_LLM_CFG_KEYS = ['api_key', 'base_url', 'cache', 'cache_seed', 'model', 'temperature']
 BUILDER_LLM_CONFIG = {"temperature": 0.1,
     "builder_model": "gpt-4o",
     "agent_model": "gpt-4o-mini",
