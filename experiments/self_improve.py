@@ -267,6 +267,7 @@ Stack trace/exception for test cases:\n%s""" % \
 # -Collect stats regarding how long it takes to solve problem (Done)
 # -Visualize stats (num gen to solve problem) as a bar graph (WIP)
 # -Analyze agent descriptions for solved problems and merge them together (WIP)
+# -Move all of the update agent prompts to a separate file
 # -Let agents “cheat” by looking at the ground truth code
 # -Change self_improve_loop in a class and arguments/configuration into yaml/dict
 
