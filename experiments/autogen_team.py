@@ -42,6 +42,9 @@ CHAT_LLM_CONFIG = {"temperature": 0.1,
     "model": "gpt-4o-mini",
     "cache_seed": None,
     # "cache": None,
+    "min_hist_len": 6000,
+    "max_hist_len": 120000,
+    "max_msg_len": 20000,
     "max_round": 15}
 CHAT_LLM_CFG_KEYS = ['api_key', 'base_url', 'cache', 'cache_seed', 'model', 'temperature']
 BUILDER_LLM_CONFIG = {"temperature": 0.1,
@@ -53,13 +56,10 @@ BUILDER_LLM_CONFIG = {"temperature": 0.1,
     "user_for_system_msg": False,
     "min_agents": 2,
     "max_agents": 4}
-MIN_CHAT_HIST_LEN = 60000
-MAX_CHAT_HIST_LEN = 120000
-MAX_MSG_LEN = 20000
+CHAT_TIMEOUT = 120
 # MIN_CHAT_HIST_LEN = 50000
 # MAX_CHAT_HIST_LEN = 100000
 # MAX_MSG_LEN = 10000
-CHAT_TIMEOUT = 120
 # TODO: FIX CACHING/CACHE SEED
 
 # @timeout_decorator.timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError)
@@ -80,9 +80,9 @@ def start_task(execution_task: str,
 
     context_handling = transform_messages.TransformMessages(
             transforms=[transforms.MessageTokenLimiter(
-                min_tokens=MIN_CHAT_HIST_LEN,
-                max_tokens=MAX_CHAT_HIST_LEN,
-                max_tokens_per_message=MAX_MSG_LEN)])
+                min_tokens=chat_llm_config['min_hist_len'],
+                max_tokens=chat_llm_config['max_hist_len'],
+                max_tokens_per_message=chat_llm_config['max_msg_len'])])
     # context_handling.add_to_agent(user_proxy)
     for agent in agent_list: context_handling.add_to_agent(agent)
 
