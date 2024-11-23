@@ -661,7 +661,7 @@ With following description: {function_description}
 -Let's think step by step about an insight that explains why the current agent description is useful.
 -Make sure the insight is general and applies broadly to similar problems.
 -Make sure the insight is not a copy or restatement of any of the current insights.
--Write a single sentence summarizing the insight and be sure that it follows the template.
+-Write a single sentence summarizing the insight and be sure that it strictly follows the template.
 
 # Template
 ## Insight discovered
