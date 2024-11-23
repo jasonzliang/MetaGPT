@@ -268,6 +268,7 @@ Stack trace/exception for test cases:\n%s""" % \
 # -Visualize stats (num gen to solve problem) as a bar graph (WIP)
 # -Analyze agent descriptions for solved problems and merge them together (WIP)
 # -Move all of the update agent prompts to a separate file
+# -Compressing agent chat history with LLMLingua
 # -Let agents “cheat” by looking at the ground truth code
 # -Change self_improve_loop in a class and arguments/configuration into yaml/dict
 
