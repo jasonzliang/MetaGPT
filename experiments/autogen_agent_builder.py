@@ -2,6 +2,7 @@ import hashlib
 import importlib
 import json
 import logging
+import os
 import random
 import re
 import socket
@@ -14,6 +15,7 @@ from termcolor import colored
 
 import autogen
 from autogen_prompts import *
+from util import yaml_dump
 
 logger = logging.getLogger(__name__)
 
@@ -251,6 +253,7 @@ With following description: {function_description}
         max_agents: Optional[int] = 5,
         custom_coding_instruct: Optional[bool] = False,
         user_for_system_msg: Optional[bool] = False,
+        debug_mode: Optional[bool] = False,
         use_cache: Optional[bool] = False,
     ):
         """
@@ -293,6 +296,7 @@ With following description: {function_description}
         self.max_agents = max_agents
         self.custom_coding_instruct = custom_coding_instruct
         self.user_for_system_msg = user_for_system_msg
+        self.debug_mode = debug_mode
 
     def set_builder_model(self, model: str):
         self.builder_model = model
@@ -447,6 +451,15 @@ With following description: {function_description}
             self.clear_agent(agent_name, recycle_endpoint)
         print(colored("All agents have been cleared.", "yellow"), flush=True)
 
+    def _builder_model_create(self, messages):
+        if self.debug_mode:
+            os.makedirs(".debug", exist_ok=True)
+            for i, message in enumerate(messages):
+                msg_file = os.path.join(".debug", "msg_%s_%s" % (i, time.time()))
+                # with open(msg_file, 'w') as f: json.dump(message, f, indent=4)
+                yaml_dump(message, msg_file)
+
+        return self.builder_model.create(messages=messages)
 
     def build(
         self,
@@ -492,7 +505,7 @@ With following description: {function_description}
 
         print(colored("==> Generating agents...", "green"), flush=True)
         resp_agent_name = (
-            self.builder_model.create(
+            self._builder_model_create(
                 messages=[
                     {
                         "role": "user",
@@ -514,7 +527,7 @@ With following description: {function_description}
         for name in agent_name_list:
             print(f"Preparing system message for {name}", flush=True)
             resp_agent_sys_msg = (
-                self.builder_model.create(
+                self._builder_model_create(
                     messages=[
                         {
                             "role": "user",
@@ -536,7 +549,7 @@ With following description: {function_description}
         for name, sys_msg in list(zip(agent_name_list, agent_sys_msg_list)):
             print(f"Preparing description for {name}", flush=True)
             resp_agent_description = (
-                self.builder_model.create(
+                self._builder_model_create(
                     messages=[
                         {
                             "role": "user",
@@ -555,7 +568,7 @@ With following description: {function_description}
             for name, sys_msg in list(zip(agent_name_list, agent_sys_msg_list)):
                 print(f"Preparing coding instructions for {name}", flush=True)
                 resp_agent_coding_instruct = (
-                    self.builder_model.create(
+                    self._builder_model_create(
                         messages=[
                             {
                                 "role": "user",
@@ -587,7 +600,7 @@ With following description: {function_description}
 
         if coding is None:
             resp = (
-                self.builder_model.create(
+                self._builder_model_create(
                     messages=[{"role": "user", "content": self.CODING_PROMPT.format(task=building_task)}]
                 )
                 .choices[0]
@@ -606,12 +619,13 @@ With following description: {function_description}
         )
 
         _config_check(self.cached_configs)
-        return self._build_agents(use_oai_assistant, list_of_functions, user_proxy=user_proxy, **kwargs)
-
+        return self._build_agents(use_oai_assistant, list_of_functions,
+            user_proxy=user_proxy, **kwargs)
 
     def merge_agents(
         self,
-        other_agent_configs):
+        other_agent_configs,
+        other_agent_insights=None):
 
         assert len(other_agent_configs) > 0
         agent_configs = self.cached_configs['agent_configs']
@@ -623,12 +637,12 @@ With following description: {function_description}
         for i, agent_config in enumerate(agent_configs):
             agent_name = agent_config['name']
             other_agent_sys_msgs = [x[i]['system_message'] for x in other_agent_configs]
-            other_agent_sys_msgs = ["Agent %s description:\n%s" % (i+1, x) for i, x in enumerate(other_agent_sys_msgs)]
+            other_agent_sys_msgs = ["\nAgent %s description:\n%s" % (i+1, x) for i, x in enumerate(other_agent_sys_msgs)]
             other_agent_sys_msg = "\n".join(other_agent_sys_msgs)
 
             print(f"Preparing merged description for {agent_name}", flush=True)
             resp_agent_sys_msg = (
-                self.builder_model.create(
+                self._builder_model_create(
                     messages=[
                         {
                             "role": "user",
@@ -647,11 +661,11 @@ With following description: {function_description}
 
             print(f"Preparing updated description summary for {agent_name}", flush=True)
             resp_agent_description = (
-                self.builder_model.create(
+                self._builder_model_create(
                     messages=[
                         {
                             "role": "user",
-                            "content": AGENT_DESCRIPTION_PROMPT.format(
+                            "content": self.AGENT_DESCRIPTION_PROMPT.format(
                                 position=agent_name,
                                 sys_msg=agent_sys_msg),
                         }
@@ -668,15 +682,15 @@ With following description: {function_description}
                 agent_name = agent_config['name']
                 other_agent_code_instructs = [x[i].get('coding_instruction',
                     self.CODING_AND_TASK_SKILL_INSTRUCTION) for x in other_agent_configs]
-                other_agent_code_instructs = ["Agent %s coding instruction:\n%s" % (i+1, x) for i, x in enumerate(other_agent_code_instructs)]
+                other_agent_code_instructs = ["\nAgent %s coding instruction:\n%s" % (i+1, x) for i, x in enumerate(other_agent_code_instructs)]
                 other_agent_code_instruct = "\n".join(other_agent_code_instructs)
 
                 resp_agent_code_instruct = (
-                    self.builder_model.create(
+                    self._builder_model_create(
                         messages=[
                             {
                                 "role": "user",
-                                "content": self.MERGE_CODE_INSTRUCT_PROMPT.format(
+                                "content": MERGE_CODE_INSTRUCT_PROMPT.format(
                                     agent_sys_msg=other_agent_code_instruct,
                                     default_sys_msg=self.DEFAULT_CODING_INSTRUCTION,
                                     # default_sys_msg=self.CODING_AND_TASK_SKILL_INSTRUCTION,
@@ -689,8 +703,13 @@ With following description: {function_description}
                 )
                 agent_config['coding_instruction'] = _cleanup_msg(resp_agent_code_instruct)
 
-        _config_check(self.cached_configs)
+        if other_agent_insights is not None:
+            assert len(agent_configs) == len(other_agent_insights)
+            for agent_config, other_agent_insight in zip(agent_configs, other_agent_insights):
+                if other_agent_insight is not None or len(other_agent_insight) > 0:
+                    agent_config['insights'] = other_agent_insight
 
+        _config_check(self.cached_configs)
 
     def update_agents(
         self,
@@ -724,7 +743,7 @@ With following description: {function_description}
                 agent_sys_msg = agent_config['system_message']
                 print(f"Preparing new insight for {agent_name}", flush=True)
                 resp_agent_sys_msg = (
-                    self.builder_model.create(
+                    self._builder_model_create(
                         messages=[
                             {
                                 "role": "user",
@@ -754,7 +773,7 @@ With following description: {function_description}
             agent_sys_msg = agent_config['system_message']
             print(f"Preparing updated description for {agent_name}", flush=True)
             resp_agent_sys_msg = (
-                self.builder_model.create(
+                self._builder_model_create(
                     messages=[
                         {
                             "role": "user",
@@ -777,11 +796,11 @@ With following description: {function_description}
 
             print(f"Preparing updated description summary for {agent_name}", flush=True)
             resp_agent_description = (
-                self.builder_model.create(
+                self._builder_model_create(
                     messages=[
                         {
                             "role": "user",
-                            "content": AGENT_DESCRIPTION_PROMPT.format(
+                            "content": self.AGENT_DESCRIPTION_PROMPT.format(
                                 position=agent_name,
                                 sys_msg=agent_sys_msg),
                         }
@@ -802,7 +821,7 @@ With following description: {function_description}
                 other_sys_msg = "\n".join(["%s\n%s" % (x['name'], x['system_message']) for x in agent_configs if x['name'] != agent_name])
                 print(f"Preparing updated teamwork for {agent_name}", flush=True)
                 resp_agent_sys_msg = (
-                    self.builder_model.create(
+                    self._builder_model_create(
                         messages=[
                             {
                                 "role": "user",
@@ -832,7 +851,7 @@ With following description: {function_description}
                 else:
                     agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
                 resp_agent_code_instruct = (
-                    self.builder_model.create(
+                    self._builder_model_create(
                         messages=[
                             {
                                 "role": "user",
@@ -854,7 +873,6 @@ With following description: {function_description}
                 agent_config['coding_instruction'] = _cleanup_msg(resp_agent_code_instruct)
 
         _config_check(self.cached_configs)
-
 
     def build_from_library(
         self,
@@ -953,7 +971,7 @@ With following description: {function_description}
         expert_pool = [f"{agent['name']}: {agent['description']}" for agent in agent_config_list]
         while True:
             skill_agent_pair_json = (
-                self.builder_model.create(
+                self._builder_model_create(
                     messages=[
                         {
                             "role": "user",
@@ -1004,7 +1022,7 @@ With following description: {function_description}
 
         if coding is None:
             resp = (
-                self.builder_model.create(
+                self._builder_model_create(
                     messages=[{"role": "user", "content": self.CODING_PROMPT.format(task=building_task)}]
                 )
                 .choices[0]
@@ -1081,7 +1099,7 @@ With following description: {function_description}
             if list_of_functions:
                 for func in list_of_functions:
                     resp = (
-                        self.builder_model.create(
+                        self._builder_model_create(
                             messages=[
                                 {
                                     "role": "user",

@@ -64,7 +64,8 @@ class EvalPlusEvaluator(object):
         assert self.max_problems > 0
         self.problem_list = self.config.get("problem_list", [])
         if len(self.problem_list) > 0: self.max_problems = sys.maxsize
-        self.debug_mode = self.config.get("debug_mode", False)
+        # 0 = Normal, 1 = Print more debug messages, 2 = 1 + Dummy fitness
+        self.debug_mode = self.config.get("debug_mode", 0)
 
         if type(self).__name__ == "EvalPlusEvaluator":
             self._init_evalplus()
@@ -131,10 +132,11 @@ class EvalPlusEvaluator(object):
         else:
             eval_func = self._eval_indv_team_role
 
-        if self.n_workers == 1 or self.debug_mode:
+        if self.n_workers == 1 or self.debug_mode > 0:
+            mlogger.info("Single worker/debug mode evaluation enabled")
             result_dicts = []
             for indv in population:
-                if self.debug_mode:
+                if self.debug_mode == 2:
                     fitness = random.random()
                     result_dict = {}
                     result_dict['fitness'] = fitness
@@ -259,6 +261,15 @@ class EvalPlusEvaluator(object):
         yaml_dump(result_dict, os.path.join(result_dir, "result_dict.yaml"))
         return result_dict
 
+    def _init_builder(self, team_role, builder_llm_config):
+        return init_builder(building_task=None,
+                work_dir='/tmp/build_%s' % randomword(ID_LENGTH),
+                builder_dict=team_role,
+                builder_llm_config=builder_llm_config,
+                use_builder_dict=True,
+                clear_cache=True,
+                debug_mode=self.debug_mode > 0)
+
     def _eval_indv_team_role(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
         # if indv.evolve_mode != "both": main_role = DEFAULT_MAIN_ROLE
@@ -272,12 +283,7 @@ class EvalPlusEvaluator(object):
             (indv.id, chat_llm_config, builder_llm_config))
 
         agent_list, agent_configs, builder, builder_dict = \
-            init_builder(building_task=None,
-                work_dir='/tmp/build_%s' % randomword(ID_LENGTH),
-                builder_dict=team_role,
-                builder_llm_config=builder_llm_config,
-                use_builder_dict=True,
-                clear_cache=True)
+            self._init_builder(team_role, builder_llm_config)
         self.autogen_builder = builder
         # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
@@ -373,12 +379,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
             (indv.id, chat_llm_config, builder_llm_config))
 
         agent_list, agent_configs, builder, builder_dict = \
-            init_builder(building_task=None,
-                work_dir='/tmp/build_%s' % randomword(ID_LENGTH),
-                builder_dict=team_role,
-                builder_llm_config=builder_llm_config,
-                use_builder_dict=True,
-                clear_cache=True)
+            self._init_builder(team_role, builder_llm_config)
         self.autogen_builder = builder
         # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
@@ -536,9 +537,7 @@ def _setup_evaluator(
         if eval_config is None: eval_config = EVALPLUS_EVAL_CONFIG
         Evaluator = EvalPlusEvaluator
 
-    eval_config.update({'n_workers': n_workers,
-        'debug_mode': False,
-        'use_timestamp': False})
+    eval_config.update({'n_workers': n_workers, 'use_timestamp': False})
     return Evaluator(eval_config, evaluator_dir=eval_dir)
 
 

@@ -145,8 +145,9 @@ def init_builder(building_task=None,
     builder_dict=None,
     use_builder_dict=False,
     builder_llm_config=BUILDER_LLM_CONFIG,
+    max_agents=None,
     clear_cache=False,
-    max_agents=None):
+    debug_mode=False):
 
     os.makedirs(work_dir, exist_ok=True)
     if clear_cache: os.system("rm -rf .cache")
@@ -165,7 +166,8 @@ def init_builder(building_task=None,
         max_agents=max_agents,
         custom_coding_instruct=builder_llm_config['custom_coding_instruct'],
         user_for_system_msg=builder_llm_config['user_for_system_msg'],
-        use_cache=False)
+        use_cache=False,
+        debug_mode=debug_mode)
 
     # hack to prevent "builder_model" error msg when running start_task
     _builder_llm_config = {'temperature': builder_llm_config['temperature'],

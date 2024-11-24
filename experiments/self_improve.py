@@ -30,6 +30,7 @@ from util import EVALPLUS_OBJ, SCICODE_OBJ, SLEEP_TIME
 EVALPLUS_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'humaneval',
+    'debug_mode': 0
 }
 
 SCICODE_EVAL_CONFIG = {
@@ -37,6 +38,7 @@ SCICODE_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'problems_dev',
     'with_background': False,
+    'debug_mode': 0
 }
 
 EVAL_LLM_CONFIG = {
@@ -266,8 +268,9 @@ Stack trace/exception for test cases:\n%s""" % \
 # -Learn from solved problems and create agent knowledge pool (Done)
 # -Collect stats regarding how long it takes to solve problem (Done)
 # -Move all of the update agent prompts to a separate file (Done)
+# -Analyze agent descriptions for solved problems and merge them together (Done)
 # -Visualize stats (num gen to solve problem) as a bar graph (WIP)
-# -Analyze agent descriptions for solved problems and merge them together (WIP)
+# -Create a hierarchical team where there is a leader that delegates tasks
 # -Compressing agent chat history with LLMLingua
 # -Let agents “cheat” by looking at the ground truth code
 # -Change self_improve_loop in a class and arguments/configuration into yaml/dict
@@ -333,7 +336,7 @@ def self_improve_loop(team_role_fp=None,
         problem_solved, code_performance = _get_perf_feedback(prob_id,
             n_steps, solved_steps, eval_result_dir)
 
-        builder_llm_config = indv.llm_config['builder_llm_config']
+        # builder_llm_config = indv.llm_config['builder_llm_config']
         builder = _eval.autogen_builder; assert builder is not None
         builder.update_agents(
             code_generated=code_generated,
@@ -367,7 +370,53 @@ def self_improve_loop(team_role_fp=None,
             # pprint.pprint(checkpoint_dict)
             _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
         else:
-            print("All problems solved, exiting self-improve loop"); break
+            print("All problems solved, exiting loop at gen %s" % i + 1); break
+
+    _merge_messages(indv, _eval, result_dir)
+    print("Self-improve loop finished")
+
+
+def _merge_messages(indv,
+    evaluator,
+    result_dir,
+    include_insights=True,
+    output_dir=None):
+
+    assert os.path.exists(result_dir)
+    if output_dir is None: output_dir = result_dir
+
+    checkpoint_file = os.path.join(result_dir, "checkpoint.yaml")
+    assert os.path.exists(checkpoint_file)
+    with open(checkpoint_file, 'r') as f: checkpoint = YAML().load(f)
+
+    agent_configs_list = []
+    for solution in checkpoint['solution_set']['solutions']:
+        if solution['gen_solved'] is None: continue
+        team_role_file = glob.glob(os.path.join(result_dir,
+            "evalG-%s_*" % solution['gen_solved'], "team_role.json"))
+
+        assert len(team_role_file) == 1; team_role_file = team_role_file[0]
+        print("Merging agent config from %s" % team_role_file)
+        with open(team_role_file, 'r') as f:
+            team_role = json.load(f)
+            agent_configs_list.append(team_role['agent_configs'])
+
+    if include_insights:
+        agent_insights = [agent_config.get('insights') for agent_config in \
+            checkpoint['curr_team_role']['agent_configs']]
+    else:
+        agent_insights = None
+
+    agent_list, agent_configs, builder, builder_dict = \
+        evaluator._init_builder(indv.team_role,
+            indv.llm_config['builder_llm_config'])
+    assert builder is not None
+    builder.merge_agents(agent_configs_list, agent_insights)
+    builder.save(os.path.join(output_dir, "merged_team_role.json"))
+
+
+def visualize_performance():
+    pass
 
 
 if __name__ == "__main__":

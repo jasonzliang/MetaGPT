@@ -413,6 +413,7 @@ def yaml_dump(data, output_file, width=80):
     format_content(data)
 
     # Write the formatted YAML
+    if not output_file.endswith(".yaml"): output_file += ".yaml"
     with open(output_file, 'w') as f: yaml.dump(data, f)
 
 if __name__ == "__main__":
