@@ -202,3 +202,4 @@ metagpt/ext/sela/results/*
 experiments/results
 experiments/groupchat
 experiments/*.json
+experiments/.debug
