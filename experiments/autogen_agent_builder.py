@@ -13,6 +13,7 @@ import requests
 from termcolor import colored
 
 import autogen
+from autogen_prompts import *
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +117,7 @@ When the task is complete and the result has been carefully verified, after obta
 - Suggest python code (in a python coding block) or shell script (in a sh coding block) for the Computer_terminal to execute.
 - If missing python packages, you can install the package by suggesting a `pip install` code in the ```sh ... ``` block.
 - When using code, you must indicate the script type in the coding block.
-- Do not the coding block which requires users to modify.
+- Do not suggest a coding block which requires users to modify.
 - Do not suggest a coding block if it's not intended to be executed by the Computer_terminal.
 - The Computer_terminal cannot modify your code.
 - **Use 'print' function for the output when relevant**.
@@ -607,118 +608,89 @@ With following description: {function_description}
         _config_check(self.cached_configs)
         return self._build_agents(use_oai_assistant, list_of_functions, user_proxy=user_proxy, **kwargs)
 
-# -Let’s work this out in a step by step way to be sure we have the right answer.
-    UPDATE_AGENT_PROMPT = """# Your goal
--Write an updated high-quality description for the agent by filling the given template.
--The code generated using the agent's current description is evaluated on the test cases.
--The code generated is not correct and accuracy on the test cases can be improved.
--Use chain of thought to analyze problems with the current agent description.
 
-# Agent name
-{agent_name}
+    def merge_agents(
+        self,
+        other_agent_configs):
 
-# Agent's current description
-{agent_sys_msg}
+        assert len(other_agent_configs) > 0
+        agent_configs = self.cached_configs['agent_configs']
+        num_other_agents = set([len(x) for x in other_agent_configs])
+        assert len(num_other_agents) == 1
+        assert len(agent_configs) == list(num_other_agents)[0]
 
-# Code generated
-{code_generated}
+        print(colored("==> Merging agent descriptions...", "green"), flush=True)
+        for i, agent_config in enumerate(agent_configs):
+            agent_name = agent_config['name']
+            other_agent_sys_msgs = [x[i]['system_message'] for x in other_agent_configs]
+            other_agent_sys_msgs = ["Agent %s description:\n%s" % (i+1, x) for i, x in enumerate(other_agent_sys_msgs)]
+            other_agent_sys_msg = "\n".join(other_agent_sys_msgs)
 
-# Test Cases
-{test_cases}
+            print(f"Preparing merged description for {agent_name}", flush=True)
+            resp_agent_sys_msg = (
+                self.builder_model.create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": MERGE_AGENT_PROMPT.format(
+                                agent_sys_msg=other_agent_sys_msg,
+                                default_sys_msg=self.DEFAULT_DESCRIPTION
+                            ),
+                        }
+                    ]
+                )
+                .choices[0]
+                .message.content
+            )
+            agent_config['system_message'] = _cleanup_msg(resp_agent_sys_msg)
+            agent_sys_msg = agent_config['system_message']
 
-# Code accuracy
-{code_performance}
+            print(f"Preparing updated description summary for {agent_name}", flush=True)
+            resp_agent_description = (
+                self.builder_model.create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": AGENT_DESCRIPTION_PROMPT.format(
+                                position=agent_name,
+                                sys_msg=agent_sys_msg),
+                        }
+                    ]
+                )
+                .choices[0]
+                .message.content
+            )
+            agent_config['description'] = resp_agent_description
 
-# Your answer
--Let's think step by step about how to update the agent description to improve code accuracy.
--Ensure the updated agent description does not exceed 200 words and strictly follows the template.
+        if self.custom_coding_instruct:
+            print(colored("==> Generating coding instructions...", "green"), flush=True)
+            for i, agent_config in enumerate(agent_configs):
+                agent_name = agent_config['name']
+                other_agent_code_instructs = [x[i].get('coding_instruction',
+                    self.CODING_AND_TASK_SKILL_INSTRUCTION) for x in other_agent_configs]
+                other_agent_code_instructs = ["Agent %s coding instruction:\n%s" % (i+1, x) for i, x in enumerate(other_agent_code_instructs)]
+                other_agent_code_instruct = "\n".join(other_agent_code_instructs)
 
-# Template
-{default_sys_msg}
-"""
+                resp_agent_code_instruct = (
+                    self.builder_model.create(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": self.MERGE_CODE_INSTRUCT_PROMPT.format(
+                                    agent_sys_msg=other_agent_code_instruct,
+                                    default_sys_msg=self.DEFAULT_CODING_INSTRUCTION,
+                                    # default_sys_msg=self.CODING_AND_TASK_SKILL_INSTRUCTION,
+                                ),
+                            }
+                        ]
+                    )
+                    .choices[0]
+                    .message.content
+                )
+                agent_config['coding_instruction'] = _cleanup_msg(resp_agent_code_instruct)
 
-    AGENT_INSIGHT_PROMPT = """# Your goal
--The code generated using the agent's current description is evaluated on the test cases.
--The code generated is correct and passes all the test cases.
--Use chain of thought to analyze why the current agent description is effective.
+        _config_check(self.cached_configs)
 
-# Agent name
-{agent_name}
-
-# Agent's current description
-{agent_sys_msg}
-
-# Code generated
-{code_generated}
-
-# Test Cases
-{test_cases}
-
-# Agent's current insights
-{agent_insights}
-
-# Your answer
--Let's think step by step about an insight that explains why the current agent description is useful.
--Make sure the insight is general and applies broadly to similar problems.
--Make sure the insight is not a copy or restatement of any of the current insights.
--Write a single sentence summarizing the insight and be sure that it strictly follows the template.
-
-# Template
-## Insight discovered
-- [Complete this part with single sentence about any insight discovered]
-"""
-
-    UPDATE_AGENT_TEAMWORK_PROMPT = """# Your goal
--Write an updated high-quality code description for the agent by filling the given template.
--This agent is a part of a team that works together to generate code.
--The roles and responsibilities of this agent should not overlap with that of other agents.
--Use chain of thought to analyze teamwork and synergy between current agent and rest of the team.
-
-# Agent name
-{agent_name}
-
-# Agent's current description
-{agent_sys_msg}
-
-# Other agent names and descriptions
-{other_sys_msg}
-
-# Your answer
--Let's think step by step about how to update the agent description to improve synergy.
--Ensure the updated agent description not exceed 200 words and strictly follows the template.
-
-# Template
-{default_sys_msg}
-"""
-
-    UPDATE_CODE_INSTRUCT_PROMPT = """# Your goal
--Write an updated high-quality coding instruction for the agent by filling the given template.
--The code generated using the agent's current coding instruction is evaluated on the test cases.
--The code generated is not correct and accuracy on the test cases can be improved.
--Use chain of thought to analyze problems with the current agent coding instruction.
-
-# Agent name
-{agent_name}
-
-# Current coding instruction
-{agent_coding_instruct}
-
-# Code generated
-{code_generated}
-
-# Test Cases
-{test_cases}
-
-# Code accuracy
-{code_performance}
-
-# Your answer
--Let's think step by step about how to update the agent coding instruction to improve code accuracy.
--Ensure the updated coding instruction not exceed 250 words and strictly follows the template.
-
-# Template
-{default_sys_msg}
-"""
 
     def update_agents(
         self,
@@ -756,7 +728,7 @@ With following description: {function_description}
                         messages=[
                             {
                                 "role": "user",
-                                "content": self.AGENT_INSIGHT_PROMPT.format(
+                                "content": AGENT_INSIGHT_PROMPT.format(
                                     agent_name=agent_name,
                                     agent_sys_msg=agent_sys_msg,
                                     code_generated=code_generated,
@@ -786,7 +758,7 @@ With following description: {function_description}
                     messages=[
                         {
                             "role": "user",
-                            "content": self.UPDATE_AGENT_PROMPT.format(
+                            "content": UPDATE_AGENT_PROMPT.format(
                                 agent_name=agent_name,
                                 agent_sys_msg=agent_sys_msg,
                                 default_sys_msg=self.DEFAULT_DESCRIPTION,
@@ -801,6 +773,7 @@ With following description: {function_description}
                 .message.content
             )
             agent_config['system_message'] = _cleanup_msg(resp_agent_sys_msg)
+            agent_sys_msg = agent_config['system_message']
 
             print(f"Preparing updated description summary for {agent_name}", flush=True)
             resp_agent_description = (
@@ -808,7 +781,7 @@ With following description: {function_description}
                     messages=[
                         {
                             "role": "user",
-                            "content": self.AGENT_DESCRIPTION_PROMPT.format(
+                            "content": AGENT_DESCRIPTION_PROMPT.format(
                                 position=agent_name,
                                 sys_msg=agent_sys_msg),
                         }
@@ -833,7 +806,7 @@ With following description: {function_description}
                         messages=[
                             {
                                 "role": "user",
-                                "content": self.UPDATE_AGENT_TEAMWORK_PROMPT.format(
+                                "content": UPDATE_AGENT_TEAMWORK_PROMPT.format(
                                     agent_name=agent_name,
                                     agent_sys_msg=agent_sys_msg,
                                     default_sys_msg=self.DEFAULT_DESCRIPTION,
@@ -853,7 +826,7 @@ With following description: {function_description}
                 if i >= n_agents: break
 
                 agent_name = agent_config['name']
-                print(f"Preparing updated system message for {agent_name}", flush=True)
+                print(f"Preparing updated coding instruction for {agent_name}", flush=True)
                 if 'coding_instruction' in agent_config:
                     agent_coding_instruct = agent_config['coding_instruction']
                 else:
@@ -867,6 +840,7 @@ With following description: {function_description}
                                     agent_name=agent_name,
                                     agent_coding_instruct=agent_coding_instruct,
                                     default_sys_msg=self.CODING_AND_TASK_SKILL_INSTRUCTION,
+                                    # default_sys_msg=self.CODING_AND_TASK_SKILL_INSTRUCTION,
                                     code_generated=code_generated,
                                     test_cases=test_cases,
                                     code_performance=code_performance
@@ -880,6 +854,7 @@ With following description: {function_description}
                 agent_config['coding_instruction'] = _cleanup_msg(resp_agent_code_instruct)
 
         _config_check(self.cached_configs)
+
 
     def build_from_library(
         self,

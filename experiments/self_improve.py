@@ -265,9 +265,9 @@ Stack trace/exception for test cases:\n%s""" % \
 # -Get error messages from failed test and use them to update agents (Done)
 # -Learn from solved problems and create agent knowledge pool (Done)
 # -Collect stats regarding how long it takes to solve problem (Done)
+# -Move all of the update agent prompts to a separate file (Done)
 # -Visualize stats (num gen to solve problem) as a bar graph (WIP)
 # -Analyze agent descriptions for solved problems and merge them together (WIP)
-# -Move all of the update agent prompts to a separate file
 # -Compressing agent chat history with LLMLingua
 # -Let agents “cheat” by looking at the ground truth code
 # -Change self_improve_loop in a class and arguments/configuration into yaml/dict
