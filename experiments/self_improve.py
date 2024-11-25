@@ -55,7 +55,7 @@ EVAL_BUILDER_LLM_CONFIG = {
 
 EVAL_CHAT_LLM_CONFIG = {
     'model': 'gpt-4o',
-    'temperature': 0.2,
+    'temperature': 0.1,
 }
 
 class SolutionSet(object):

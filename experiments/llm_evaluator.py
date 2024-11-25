@@ -498,6 +498,7 @@ LLM_MODEL = "gpt-4o"
 EVALPLUS_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'humaneval',
+    'debug_mode': 0
 }
 
 SCICODE_EVAL_CONFIG = {
@@ -506,6 +507,7 @@ SCICODE_EVAL_CONFIG = {
     'dataset': 'problems_dev',
     'with_background': False,
     'problem_list': [],
+    'debug_mode': 0
 }
 
 EVAL_LLM_CONFIG = {
@@ -516,11 +518,13 @@ EVAL_BUILDER_LLM_CONFIG = {
     'agent_model': LLM_MODEL,
     'builder_model': LLM_MODEL,
     'custom_coding_instruct': True,
+    'temperature': 0.8
 }
 
 EVAL_CHAT_LLM_CONFIG = {
     'model': LLM_MODEL,
     'max_round': 50,
+    'temperature': 0.1
 }
 
 
