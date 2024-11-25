@@ -515,7 +515,7 @@ EVAL_LLM_CONFIG = {
 EVAL_BUILDER_LLM_CONFIG = {
     'agent_model': LLM_MODEL,
     'builder_model': LLM_MODEL,
-    'custom_coding_instruct': False,
+    'custom_coding_instruct': True,
 }
 
 EVAL_CHAT_LLM_CONFIG = {
