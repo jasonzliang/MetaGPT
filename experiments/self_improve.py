@@ -386,9 +386,8 @@ def _merge_messages(indv,
     assert os.path.exists(result_dir)
     if output_dir is None: output_dir = result_dir
 
-    checkpoint_file = os.path.join(result_dir, "checkpoint.yaml")
-    assert os.path.exists(checkpoint_file)
-    with open(checkpoint_file, 'r') as f: checkpoint = YAML().load(f)
+    checkpoint = _load_checkpoint(result_dir)
+    assert checkoint is not None
 
     agent_configs_list = []
     for solution in checkpoint['solution_set']['solutions']:
@@ -416,9 +415,17 @@ def _merge_messages(indv,
     builder.save(os.path.join(output_dir, "merged_team_role.json"))
 
 
-def visualize_performance(result_dirs):
-    pass
+def visualize_performance(result_dirs, glob=False):
+    if glob:
+        assert type(result_dirs) is str
+        result_dirs = glob.glob(result_dirs)
 
+    solution_dict = defaultdict(list)
+    for result_dir in result_dirs:
+        checkpoint = _load_checkpoint(result_dir)
+        for solution in checkpoint['solution_set']['solutions']:
+            if solution['gen_solved'] is None: continue
+            solution['gen_solved']
 
 if __name__ == "__main__":
     # print(_get_scicode_problem_list())
