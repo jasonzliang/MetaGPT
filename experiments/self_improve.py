@@ -415,7 +415,7 @@ def _merge_messages(indv,
     builder.save(os.path.join(output_dir, "merged_team_role.json"))
 
 
-def visualize_performance():
+def visualize_performance(result_dirs):
     pass
 
 
