@@ -71,8 +71,8 @@ class SolutionSet(object):
     def reset(self):
         self.history = []
         self.solutions = {}
-        for prob_id, prob_step in zip(self.problem_list, self.problem_steps):
-            self.solutions[prob_id] = Solution(prob_id, prob_step)
+        for prob_id, prob_steps in zip(self.problem_list, self.problem_steps):
+            self.solutions[prob_id] = Solution(prob_id, prob_steps)
 
     def is_solved(self):
         return len(self.solved_problems()) == len(self.problem_list)
@@ -133,15 +133,15 @@ class SolutionSet(object):
 
 
 class Solution(object):
-    def __init__(self, prob_id, prob_step):
+    def __init__(self, prob_id, prob_steps):
         self.prob_id = prob_id
-        self.prob_step = prob_step
+        self.prob_steps = prob_steps
         self.reset()
 
     def reset(self):
         self.gen_record = []
         self.gen_solved = None
-        self.steps_solved = None
+        self.steps_solved = 0
         self.gen_stuck = None
 
     def is_stuck(self):
@@ -153,15 +153,17 @@ class Solution(object):
     def add_record(self, gen, success, steps_solved):
         assert not self.is_solved()
         self.gen_record.append(gen)
-        if success: self.gen_solved = gen
-        if success or self.solved_steps is None: self.steps_solved = steps_solved
-        else: self.steps_solved = max(self.steps_solved, steps_solved)
+        if success:
+            self.gen_solved = gen
+            self.steps_solved = steps_solved
+        else:
+            self.steps_solved = max(self.steps_solved, steps_solved)
 
     def get_stats(self):
         return {'prob_id': self.prob_id,
             'gen_solved': self.gen_solved,
             'gen_stuck': self.gen_stuck,
-            'steps_solved': self.steps_solved,
+            'steps_solved': (self.steps_solved, self.prob_steps),
             'num_tries': len(self.gen_record)}
 
     def serialize(self):
@@ -172,7 +174,7 @@ class Solution(object):
     def deserialize(self, s_dict):
         assert self.prob_id == s_dict.get('prob_id')
         self.gen_solved = s_dict.get('gen_solved')
-        self.steps_solved = s_dict.get('steps_solved')
+        self.steps_solved = s_dict.get('steps_solved', (0, self.prob_steps))
         self.gen_stuck = s_dict.get('gen_stuck')
         self.gen_record = s_dict.get('gen_record', [])
 
