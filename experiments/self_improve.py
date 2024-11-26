@@ -314,10 +314,11 @@ def self_improve_loop(team_role_fp=None,
     init_team_role = indv.team_role
     pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
 
-    curr_team_role = None; start_gen = 0
     steps_dict, test_cases_dict = _load_jsonl(_eval.dataset)
     problem_steps = [steps_dict[prob_id] for prob_id in problem_list]
     solution_set = SolutionSet(problem_list, problem_steps, stuck_threshold)
+
+    curr_team_role = None; start_gen = 0
     checkpoint_dict = _load_checkpoint(result_dir)
     if checkpoint_dict is not None:
         curr_team_role = checkpoint_dict.get('curr_team_role', curr_team_role)
@@ -341,12 +342,10 @@ def self_improve_loop(team_role_fp=None,
         eval_result_dir = result_dict['result_dir']
         print("Evaluation results:"); pprint.pprint(result_dict)
 
-        n_steps = steps_dict[prob_id]
+        n_steps = steps_dict[prob_id]; test_cases = test_cases_dict[prob_id]
         solved_steps = result_dict['eval_result']['correct_dict'][prob_id]
         # prompt = _get_output(prob_id, n_steps, eval_result_dir, is_code=False)
         code_generated = _get_code(prob_id, n_steps, eval_result_dir)
-        test_cases = test_cases_dict[prob_id]
-
         problem_solved, code_performance = _get_perf_feedback(prob_id,
             n_steps, solved_steps, eval_result_dir)
 
