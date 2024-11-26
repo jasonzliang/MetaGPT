@@ -518,13 +518,13 @@ EVAL_BUILDER_LLM_CONFIG = {
     'agent_model': LLM_MODEL,
     'builder_model': LLM_MODEL,
     'custom_coding_instruct': True,
-    'temperature': 0.8
+    'temperature': 0.9
 }
 
 EVAL_CHAT_LLM_CONFIG = {
     'model': LLM_MODEL,
     'max_round': 50,
-    'temperature': 0.2
+    'temperature': 0.02
 }
 
 
