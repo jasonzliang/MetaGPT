@@ -163,7 +163,8 @@ class Solution(object):
         return {'prob_id': self.prob_id,
             'gen_solved': self.gen_solved,
             'gen_stuck': self.gen_stuck,
-            'steps_solved': (self.steps_solved, self.prob_steps),
+            'steps_solved': self.steps_solved,
+            'prob_steps': self.prob_steps,
             'num_tries': len(self.gen_record)}
 
     def serialize(self):
@@ -174,7 +175,7 @@ class Solution(object):
     def deserialize(self, s_dict):
         assert self.prob_id == s_dict.get('prob_id')
         self.gen_solved = s_dict.get('gen_solved')
-        self.steps_solved = s_dict.get('steps_solved', (0, self.prob_steps))
+        self.steps_solved = s_dict.get('steps_solved', 0)
         self.gen_stuck = s_dict.get('gen_stuck')
         self.gen_record = s_dict.get('gen_record', [])
 
