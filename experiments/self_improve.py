@@ -153,11 +153,9 @@ class Solution(object):
     def add_record(self, gen, success, steps_solved):
         assert not self.is_solved()
         self.gen_record.append(gen)
-        if success:
-            self.gen_solved = gen
-            self.steps_solved = steps_solved
-        else:
-            self.steps_solved = max(self.steps_solved, steps_solved)
+        if success: self.gen_solved = gen
+        if success or self.solved_steps is None: self.steps_solved = steps_solved
+        else: self.steps_solved = max(self.steps_solved, steps_solved)
 
     def get_stats(self):
         return {'prob_id': self.prob_id,
