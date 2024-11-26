@@ -152,6 +152,7 @@ class Solution(object):
 
     def add_record(self, gen, success, steps_solved):
         assert not self.is_solved()
+        assert steps_solved <= self.prob_steps
         self.gen_record.append(gen)
         if success:
             self.gen_solved = gen
