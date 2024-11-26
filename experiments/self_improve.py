@@ -59,18 +59,23 @@ EVAL_CHAT_LLM_CONFIG = {
 }
 
 class SolutionSet(object):
-    def __init__(self, problem_list, stuck_threshold):
+    def __init__(self, problem_list, problem_steps, stuck_threshold):
         self.problem_list = problem_list
         assert len(self.problem_list) > 0
+        self.problem_steps = problem_steps
+        assert len(self.problem_list) == len(self.problem_steps)
         self.stuck_threshold = stuck_threshold
         assert self.stuck_threshold > 0
+
+        self.solutions = {}
+        for prob_id, prob_step in zip(self.problem_list, self.problem_steps):
+            self.solutions[prob_id] = Solution(prob_id, prob_step)
+
         self.reset()
 
     def reset(self):
         self.history = []
-        self.solutions = {}
-        for prob_id in self.problem_list:
-            self.solutions[prob_id] = Solution(prob_id)
+        for solution in self.solutions.values(): solution.reset()
 
     def is_solved(self):
         return len(self.solved_problems()) == len(self.problem_list)
@@ -102,9 +107,9 @@ class SolutionSet(object):
         if return_list: prob_id = [prob_id]
         return prob_id
 
-    def add_problem_result(self, prob_id, success, gen):
+    def add_problem_result(self, prob_id, gen, success, steps_solved):
         assert prob_id in self.solutions; problem = self.solutions[prob_id]
-        problem.add_record(success, gen)
+        problem.add_record(gen, success, steps_solved)
         self.history.append(prob_id)
         if self.is_stuck(success, prob_id): problem.gen_stuck = gen
 
@@ -131,13 +136,15 @@ class SolutionSet(object):
 
 
 class Solution(object):
-    def __init__(self, prob_id):
+    def __init__(self, prob_id, prob_step):
         self.prob_id = prob_id
+        self.prob_step = prob_step
         self.reset()
 
     def reset(self):
         self.gen_record = []
         self.gen_solved = None
+        self.steps_solved = None
         self.gen_stuck = None
 
     def is_stuck(self):
@@ -146,16 +153,20 @@ class Solution(object):
     def is_solved(self):
         return self.gen_solved is not None
 
-    def add_record(self, success, gen):
+    def add_record(self, gen, success, steps_solved):
         assert not self.is_solved()
-        # if self.is_solved(): return False
         self.gen_record.append(gen)
-        if success: self.gen_solved = gen
+        if success:
+            self.gen_solved = gen
+            self.steps_solved = steps_solved
+        else:
+            self.steps_solved = max(self.steps_solved, steps_solved)
 
     def get_stats(self):
         return {'prob_id': self.prob_id,
             'gen_solved': self.gen_solved,
             'gen_stuck': self.gen_stuck,
+            'steps_solved': self.steps_solved,
             'num_tries': len(self.gen_record)}
 
     def serialize(self):
@@ -165,9 +176,10 @@ class Solution(object):
 
     def deserialize(self, s_dict):
         assert self.prob_id == s_dict.get('prob_id')
-        self.gen_record = s_dict.get('gen_record', [])
         self.gen_solved = s_dict.get('gen_solved')
+        self.steps_solved = s_dict.get('steps_solved')
         self.gen_stuck = s_dict.get('gen_stuck')
+        self.gen_record = s_dict.get('gen_record', [])
 
 
 def _get_scicode_problem_list(dataset=None, problem_order='complexity', whitelist=None):
@@ -303,7 +315,9 @@ def self_improve_loop(team_role_fp=None,
     pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
 
     curr_team_role = None; start_gen = 0
-    solution_set = SolutionSet(problem_list, stuck_threshold)
+    steps_dict, test_cases_dict = _load_jsonl(_eval.dataset)
+    problem_steps = [steps_dict[prob_id] for prob_id in problem_list]
+    solution_set = SolutionSet(problem_list, problem_steps, stuck_threshold)
     checkpoint_dict = _load_checkpoint(result_dir)
     if checkpoint_dict is not None:
         curr_team_role = checkpoint_dict.get('curr_team_role', curr_team_role)
@@ -327,8 +341,7 @@ def self_improve_loop(team_role_fp=None,
         eval_result_dir = result_dict['result_dir']
         print("Evaluation results:"); pprint.pprint(result_dict)
 
-        sub_steps_dict, test_cases_dict = _load_jsonl(_eval.dataset)
-        n_steps = sub_steps_dict[prob_id]
+        n_steps = steps_dict[prob_id]
         solved_steps = result_dict['eval_result']['correct_dict'][prob_id]
         # prompt = _get_output(prob_id, n_steps, eval_result_dir, is_code=False)
         code_generated = _get_code(prob_id, n_steps, eval_result_dir)
@@ -349,7 +362,7 @@ def self_improve_loop(team_role_fp=None,
         updated_team_fp = os.path.join(eval_result_dir, "team_role_update.json")
         builder.save(updated_team_fp); curr_team_role = builder.cached_configs
 
-        solution_set.add_problem_result(prob_id, problem_solved, i)
+        solution_set.add_problem_result(prob_id, i, problem_solved, solved_steps)
         if not solution_set.is_solved():
             next_problem = solution_set.get_problem()
             if problem_solved:
