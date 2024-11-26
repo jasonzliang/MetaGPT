@@ -67,15 +67,13 @@ class SolutionSet(object):
         self.stuck_threshold = stuck_threshold
         assert self.stuck_threshold > 0
 
-        self.solutions = {}
-        for prob_id, prob_step in zip(self.problem_list, self.problem_steps):
-            self.solutions[prob_id] = Solution(prob_id, prob_step)
-
         self.reset()
 
     def reset(self):
         self.history = []
-        for solution in self.solutions.values(): solution.reset()
+        self.solutions = {}
+        for prob_id, prob_step in zip(self.problem_list, self.problem_steps):
+            self.solutions[prob_id] = Solution(prob_id, prob_step)
 
     def is_solved(self):
         return len(self.solved_problems()) == len(self.problem_list)
