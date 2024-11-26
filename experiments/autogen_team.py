@@ -42,7 +42,7 @@ CHAT_LLM_CONFIG = {"temperature": 0.1,
     "model": "gpt-4o-mini",
     "cache_seed": None,
     # "cache": None,
-    "min_hist_len": 6000,
+    "min_hist_len": 60000,
     "max_hist_len": 120000,
     "max_msg_len": 20000,
     "max_round": 15}
