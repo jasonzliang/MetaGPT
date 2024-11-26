@@ -66,7 +66,6 @@ class SolutionSet(object):
         assert len(self.problem_list) == len(self.problem_steps)
         self.stuck_threshold = stuck_threshold
         assert self.stuck_threshold > 0
-
         self.reset()
 
     def reset(self):
