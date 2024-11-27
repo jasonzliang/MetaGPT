@@ -280,6 +280,7 @@ Stack trace/exception for test cases:\n%s""" % \
 # -Move all of the update agent prompts to a separate file (Done)
 # -Analyze agent descriptions for solved problems and merge them together (Done)
 # -Visualize stats (num gen to solve problem) as a bar graph (WIP)
+# -Have multiple rounds of competition between agents, everyone give score to code
 # -Create a library of different expert agents to choose from
 # -Create a hierarchical team where there is a leader that delegates tasks
 # -Compressing agent chat history with LLMLingua
