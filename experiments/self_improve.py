@@ -254,7 +254,7 @@ def _load_checkpoint(result_dir):
 
 
 def _get_perf_feedback(prob_id, n_steps, solved_steps, eval_result_dir):
-    subprob_acc = len(solved_steps)/float(n_steps)
+    subprob_acc = float(solved_steps)/float(n_steps)
     final_step = "%s.%s" % (prob_id, n_steps)
     prob_solved = True if subprob_acc == 1.0 else False
 
@@ -342,7 +342,7 @@ def self_improve_loop(team_role_fp=None,
         print("Evaluation results:"); pprint.pprint(result_dict)
 
         n_steps = steps_dict[prob_id]; test_cases = test_cases_dict[prob_id]
-        solved_steps = result_dict['eval_result']['correct_dict'][prob_id]
+        solved_steps = len(result_dict['eval_result']['correct_dict'][prob_id])
         # prompt = _get_output(prob_id, n_steps, eval_result_dir, is_code=False)
         code_generated = _get_code(prob_id, n_steps, eval_result_dir)
         problem_solved, code_performance = _get_perf_feedback(prob_id,
