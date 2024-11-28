@@ -397,7 +397,7 @@ def _merge_messages(indv,
     if output_dir is None: output_dir = result_dir
 
     checkpoint = _load_checkpoint(result_dir)
-    assert checkoint is not None
+    assert checkpoint is not None
 
     agent_configs_list = []
     for solution in checkpoint['solution_set']['solutions']:
