@@ -747,7 +747,7 @@ With following description: {function_description}
                         messages=[
                             {
                                 "role": "user",
-                                "content": AGENT_INSIGHT_PROMPT.format(
+                                "content": AGENT_INSIGHT_PROMPT_V2.format(
                                     agent_name=agent_name,
                                     agent_sys_msg=agent_sys_msg,
                                     code_generated=code_generated,

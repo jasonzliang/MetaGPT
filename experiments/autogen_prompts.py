@@ -76,6 +76,39 @@ AGENT_INSIGHT_PROMPT = """# Your goal
 - [Complete this part with single sentence about any insight discovered]
 """
 
+AGENT_INSIGHT_PROMPT_V2 = """# Your goal
+-Write a high-quality insight for the agent by filling the given template.
+-The generated code using the agent's current description is evaluated on the test cases.
+-The generated code is correct and passes all the test cases.
+-Use chain of thought to analyze why the current agent description is effective.
+
+# Agent name
+{agent_name}
+
+# Agent's current description
+{agent_sys_msg}
+
+# Generated code
+{code_generated}
+
+# Test Cases
+{test_cases}
+
+# Agent's current insights
+{agent_insights}
+
+# Your answer
+-Let's think step by step about an insight that explains how or why the generated code is correct.
+-Make sure the insight contains useful domain knowledge that applies to similar problems.
+-Domain knowledge includes useful scientific or mathematical facts, principles, and theorems.
+-Make sure the insight is not a copy or restatement of any of the current insights.
+-Write a single sentence summarizing the insight and be sure that it follows the template.
+
+# Template
+## Insight discovered
+- [Complete this part with single sentence about any insight discovered]
+"""
+
 UPDATE_AGENT_TEAMWORK_PROMPT = """# Your goal
 -Write an updated high-quality code description for the agent by filling the given template.
 -This agent is a part of a team that works together to generate code.
