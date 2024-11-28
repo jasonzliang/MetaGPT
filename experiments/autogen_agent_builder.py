@@ -855,7 +855,7 @@ With following description: {function_description}
                         messages=[
                             {
                                 "role": "user",
-                                "content": self.UPDATE_CODE_INSTRUCT_PROMPT.format(
+                                "content": UPDATE_CODE_INSTRUCT_PROMPT.format(
                                     agent_name=agent_name,
                                     agent_coding_instruct=agent_coding_instruct,
                                     default_sys_msg=self.CODING_AND_TASK_SKILL_INSTRUCTION,
