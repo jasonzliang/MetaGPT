@@ -722,16 +722,16 @@ With following description: {function_description}
         **kwargs,
     ) -> None:
 
+        agent_configs = self.cached_configs['agent_configs']
+        total_agents = len(agent_configs)
+        agent_configs = random.sample(agent_configs, total_agents)
+
         if n_agents is None:
             n_agents = total_agents
         elif n_agents == 0:
             _config_check(self.cached_configs); return
         else:
             assert 0 < n_agents <= total_agents
-
-        agent_configs = self.cached_configs['agent_configs']
-        total_agents = len(agent_configs)
-        agent_configs = random.sample(agent_configs, total_agents)
 
         if discover_insight:
             print(colored("==> Discovering agent insights...", "green"), flush=True)
