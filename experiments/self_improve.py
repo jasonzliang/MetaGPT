@@ -154,8 +154,7 @@ class Solution(object):
         assert not self.is_solved(); assert steps_solved <= self.prob_steps
         self.gen_record.append(gen)
         if success:
-            self.gen_solved = gen
-            self.steps_solved = steps_solved
+            self.gen_solved = gen; self.steps_solved = steps_solved
         else:
             self.steps_solved = max(self.steps_solved, steps_solved)
 
