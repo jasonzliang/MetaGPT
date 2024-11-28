@@ -505,7 +505,7 @@ SCICODE_EVAL_CONFIG = {
     'n_tries': 1,
     'max_problems': 999,
     'dataset': 'problems_all',
-    'with_background': False,
+    'with_background': True,
     'problem_list': [],
     'debug_mode': 0
 }
