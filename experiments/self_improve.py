@@ -441,14 +441,14 @@ def visualize_performance(result_dirs,
     key_filter=('gen_solved', None, 0),
     out_dir='results/'):
 
-    assert type(result_dirs) is list
+    if type(result_dirs) is str: result_dirs = [result_dirs]
     if use_glob:
         _result_dirs = []
         for result_dir in result_dirs:
             _result_dirs.extend(glob.glob(result_dir))
         result_dirs = _result_dirs
-    assert len(result_dirs) > 0; result_dirs = sorted(result_dirs,
-        key=lambda x: os.path.basename(x))
+    assert len(result_dirs) > 0
+    result_dirs = sorted(result_dirs, key=lambda x: os.path.basename(x))
 
     solution_dict = defaultdict(list); solved_counter = defaultdict(list)
     for result_dir in result_dirs:
