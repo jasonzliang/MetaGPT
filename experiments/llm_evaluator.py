@@ -524,7 +524,7 @@ EVAL_BUILDER_LLM_CONFIG = {
 EVAL_CHAT_LLM_CONFIG = {
     'model': LLM_MODEL,
     'max_round': 50,
-    'temperature': 0.01
+    'temperature': 0.1
 }
 
 

@@ -98,7 +98,7 @@ AGENT_INSIGHT_PROMPT_V2 = """# Your goal
 {agent_insights}
 
 # Your answer
--Let's think step by step about an insight that explains how or why the generated code is correct.
+-Let's think step by step about an insight that explains how or why the agent generated correct code.
 -Make sure the insight contains useful domain knowledge that applies to similar problems.
 -Domain knowledge includes useful scientific or mathematical facts, principles, and theorems.
 -Make sure the insight is not a copy or restatement of any of the current insights.

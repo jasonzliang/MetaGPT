@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import asyncio
 import copy
+from collections import defaultdict
 import glob
 import json
 import logging
@@ -15,10 +16,14 @@ import traceback
 import time
 import tqdm
 
-from autogen_agent_builder import AgentBuilder
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from ruamel.yaml import YAML
-from scicode.parse.parse import read_from_jsonl
+import seaborn as sns
 
+from scicode.parse.parse import read_from_jsonl
+from autogen_agent_builder import AgentBuilder
 from autogen_team import CONFIG_FILE_OR_ENV
 from llm_evaluator import _setup_indv, _setup_evaluator
 from llm_operators import DEFAULT_MAIN_ROLE_MIN
@@ -278,11 +283,11 @@ Stack trace/exception for test cases:\n%s""" % \
 # -Collect stats regarding how long it takes to solve problem (Done)
 # -Move all of the update agent prompts to a separate file (Done)
 # -Analyze agent descriptions for solved problems and merge them together (Done)
-# -Visualize stats (num gen to solve problem) as a bar graph (WIP)
-# -Create a library of different expert agents to choose from
-# -Create a hierarchical team where there is a leader that delegates tasks
+# -Visualize stats (num gen to solve problem) as a bar graph (Done)
+# -Compressing agent chat history with LLMLingua (WIP)
+# -Create a library of different expert agents to choose from (WIP)
+# -Create a hierarchical team where there is a leader that delegates tasks (WIP)
 # -Have multiple rounds of competition between agents, everyone give score to code
-# -Compressing agent chat history with LLMLingua
 # -Let agents “cheat” by looking at the ground truth code
 # -Change self_improve_loop in a class and arguments/configuration into yaml/dict
 
@@ -297,6 +302,7 @@ def self_improve_loop(team_role_fp=None,
     coding_instruct=True,
     reset_team_role=False,
     stuck_threshold=10,
+    include_insights=True,
     scicode=True):
 
     if not scicode: raise Exception("Evalplus self-improve not implemented!")
@@ -376,14 +382,18 @@ def self_improve_loop(team_role_fp=None,
                 'cfg_update_n_agents': str(update_n_agents),
                 'cfg_coding_instruct': coding_instruct,
                 'cfg_reset_team_role': reset_team_role,
-                'cfg_stuck_threshold': stuck_threshold
+                'cfg_stuck_threshold': stuck_threshold,
+                'cfg_include_insights': include_insights,
             }
             # pprint.pprint(checkpoint_dict)
             _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
         else:
             print("All problems solved, exiting loop at gen %s" % i + 1); break
 
-    _merge_messages(indv, _eval, result_dir)
+    _merge_messages(ind=indv,
+        evaluator=_eval,
+        result_dir=result_dir,
+        include_insights=include_insights)
     print("Self-improve loop finished")
 
 
@@ -425,21 +435,81 @@ def _merge_messages(indv,
     builder.save(os.path.join(output_dir, "merged_team_role.json"))
 
 
-def visualize_performance(result_dirs, glob=False):
-    if glob:
-        assert type(result_dirs) is str
-        result_dirs = glob.glob(result_dirs)
+def visualize_performance(result_dirs,
+    use_glob=True,
+    key='num_tries',
+    key_filter=('gen_solved', None, 0),
+    out_dir='results/'):
 
-    solution_dict = defaultdict(list)
+    assert type(result_dirs) is list
+    if use_glob:
+        _result_dirs = []
+        for result_dir in result_dirs:
+            _result_dirs.extend(glob.glob(result_dir))
+        result_dirs = _result_dirs
+    assert len(result_dirs) > 0; result_dirs = sorted(result_dirs,
+        key=lambda x: os.path.basename(x))
+
+    solution_dict = defaultdict(list); solved_counter = defaultdict(list)
     for result_dir in result_dirs:
         checkpoint = _load_checkpoint(result_dir)
+        assert checkpoint is not None
         for solution in checkpoint['solution_set']['solutions']:
-            if solution['gen_solved'] is None: continue
-            solution['gen_solved']
+            if solution['gen_solved'] is not None:
+                name = os.path.basename(result_dir)
+                solved_counter[name].append(solution['num_tries'])
+
+            prob_id = solution['prob_id']; assert key in solution
+            _key, _cond, _value = key_filter
+            if solution[_key] == _cond:
+                solution_dict[prob_id].append(_value)
+            else:
+                solution_dict[prob_id].append(solution[key])
+
+    categories = []; values = []
+    for _key, _values in solution_dict.items():
+        categories.append(_key); values += _values
+    num_probs = len(solution_dict); groups = []
+    for result_dir in result_dirs:
+        name = os.path.basename(result_dir)
+        n_solved = len(solved_counter[name])
+        avg_tries = "%.2f" % np.mean(solved_counter[name])
+        groups.append(name + " (%s/%s, avg tries: %s)" % \
+            (n_solved, num_probs, avg_tries))
+
+    # Create Pandas DataFrame
+    data = {
+        'categories': np.repeat(categories, len(groups)),
+        'groups': np.tile(groups, len(categories)),
+        'values': values,
+    }
+    assert len(data['categories']) == len(data['groups']) == len(data['values'])
+    df = pd.DataFrame(data)
+    plt.figure(figsize=(10 + len(result_dirs), 6))
+    ax = sns.barplot(x='categories', y='values', hue='groups', data=df)
+
+    # Customize the plot
+    for i in range(1, len(categories)):
+        plt.axvline(x=i - 0.5, color='gray', linestyle='--', alpha=0.5)
+    plt.grid(True, axis='y', color='lightgray', alpha=0.5)
+    plt.title('Comparison of Problem %s for Self-Improve Experiments' % key)
+    plt.xlabel('Problem ID')
+    plt.ylabel(key)
+    plt.legend(title='Experiments', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+
+    # Save the plot to file
+    out_file = os.path.join(out_dir, "comp_%s_%s.png" % \
+        (key, os.path.basename(result_dirs[0])))
+    plt.savefig(out_file, dpi=200, bbox_inches='tight')
+    plt.close()
+
 
 if __name__ == "__main__":
-    # print(_get_scicode_problem_list())
-    self_improve_loop(team_role_fp=sys.argv[1],
-        result_dir=sys.argv[2],
-        update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,
-        coding_instruct=True if "coding_instruct" in sys.argv[2].lower() else False)
+    visualize_performance(["results/11_27*",
+        "results/self_improve_11_24/11_21*no_update",
+        "results/self_improve_11_24/11_22*no_update"])
+    # self_improve_loop(team_role_fp=sys.argv[1],
+    #     result_dir=sys.argv[2],
+    #     update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,
+    #     coding_instruct=True if "coding_instruct" in sys.argv[2].lower() else False)
