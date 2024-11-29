@@ -506,10 +506,10 @@ def visualize_performance(result_dirs,
 
 
 if __name__ == "__main__":
-    visualize_performance(["results/11_27*",
-        "results/self_improve_11_24/11_21*no_update",
-        "results/self_improve_11_24/11_22*no_update"])
-    # self_improve_loop(team_role_fp=sys.argv[1],
-    #     result_dir=sys.argv[2],
-    #     update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,
-    #     coding_instruct=True if "coding_instruct" in sys.argv[2].lower() else False)
+    # visualize_performance(["results/11_27*",
+    #     "results/self_improve_11_24/11_21*no_update",
+    #     "results/self_improve_11_24/11_22*no_update"])
+    self_improve_loop(team_role_fp=sys.argv[1],
+        result_dir=sys.argv[2],
+        update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,
+        coding_instruct=True if "coding_instruct" in sys.argv[2].lower() else False)
