@@ -86,18 +86,18 @@ def start_task(execution_task: str,
     if chat_llm_config['use_llm_lingua']:
         compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
         # llm_lingua = LLMLingua()
-        transforms = [transforms.TextMessageCompressor(
+        _transforms = [transforms.TextMessageCompressor(
             # text_compressor=llm_lingua,
             min_tokens=chat_llm_config['llm_lingua_len'],
             compression_params=compression_params,
             cache=None)]
     else:
-        transforms = [transforms.MessageTokenLimiter(
+        _transforms = [transforms.MessageTokenLimiter(
             min_tokens=chat_llm_config['min_hist_len'],
             max_tokens=chat_llm_config['max_hist_len'],
             max_tokens_per_message=chat_llm_config['max_msg_len'])]
 
-    context_handling = transform_messages.TransformMessages(transforms=transforms)
+    context_handling = transform_messages.TransformMessages(transforms=_transforms)
     for agent in agent_list: context_handling.add_to_agent(agent)
     # context_handling.add_to_agent(user_proxy)
 
