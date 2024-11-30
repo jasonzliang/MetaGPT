@@ -294,7 +294,7 @@ Stack trace/exception for test cases:\n%s""" % \
 
 def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
-    num_gen=200,
+    num_gen=250,
     init_seed=0,
     problem_list=_get_scicode_problem_list(),
     # problem_list=['19'],
