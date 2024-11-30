@@ -85,9 +85,9 @@ def start_task(execution_task: str,
 
     if chat_llm_config['use_llm_lingua']:
         compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
-        llm_lingua = LLMLingua()
+        # llm_lingua = LLMLingua()
         _transforms = [transforms.TextMessageCompressor(
-            text_compressor=llm_lingua,
+            text_compressor=LLMLingua(),
             min_tokens=chat_llm_config['llm_lingua_len'],
             compression_params=compression_params,
             cache=None)]
