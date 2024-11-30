@@ -391,7 +391,7 @@ def self_improve_loop(team_role_fp=None,
         else:
             print("All problems solved, exiting loop at gen %s" % i + 1); break
 
-    _merge_messages(ind=indv,
+    _merge_messages(indv=indv,
         evaluator=_eval,
         result_dir=result_dir,
         include_insights=include_insights)
