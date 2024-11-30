@@ -47,7 +47,7 @@ CHAT_LLM_CONFIG = {"temperature": 0.1,
     "max_hist_len": 120000,
     "max_msg_len": 20000,
     "use_llm_lingua": False,
-    "llm_lingua_len": 30000,
+    "llm_lingua_len": 25000,
     "max_round": 15,
     "max_speaker_select_retries": 9}
 CHAT_LLM_CFG_KEYS = ['api_key', 'base_url', 'cache', 'cache_seed', 'model', 'temperature']

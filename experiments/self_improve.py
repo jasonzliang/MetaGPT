@@ -61,7 +61,7 @@ EVAL_CHAT_LLM_CONFIG = {
     'model': 'gpt-4o',
     'temperature': 0.1,
     'use_llm_lingua': False,
-    'max_round': 50
+    'max_round': 80,
 }
 
 class SolutionSet(object):
