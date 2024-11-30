@@ -14,6 +14,7 @@ import autogen
 from autogen import Cache
 # from autogen.agentchat.contrib.agent_builder import AgentBuilder
 from autogen.agentchat.contrib.capabilities import transform_messages, transforms
+from autogen.agentchat.contrib.capabilities.text_compressors import LLMLingua
 from autogen.agentchat.contrib.society_of_mind_agent import SocietyOfMindAgent
 # from autogen.code_utils import extract_code
 
@@ -27,7 +28,7 @@ from autogen_agent_builder import AgentBuilder
 from alg_util import ID_LENGTH
 from alg_util import randomword
 from util import get_time, killtree, extract_code_from_chat, format_prompt
-from util import yaml_dump
+from util import yaml_dump, OutputRedirector
 
 DEFAULT_MAIN_ROLE = \
 """Write a python function that can {instruction}.
@@ -45,7 +46,10 @@ CHAT_LLM_CONFIG = {"temperature": 0.1,
     "min_hist_len": 60000,
     "max_hist_len": 120000,
     "max_msg_len": 20000,
-    "max_round": 15}
+    "use_llm_lingua": False,
+    "llm_lingua_len": 30000,
+    "max_round": 15,
+    "max_speaker_select_retries": 9}
 CHAT_LLM_CFG_KEYS = ['api_key', 'base_url', 'cache', 'cache_seed', 'model', 'temperature']
 BUILDER_LLM_CONFIG = {"temperature": 0.8,
     "builder_model": "gpt-4o",
@@ -61,6 +65,7 @@ CHAT_TIMEOUT = 120
 # MAX_CHAT_HIST_LEN = 100000
 # MAX_MSG_LEN = 10000
 # TODO: FIX CACHING/CACHE SEED
+
 
 # @timeout_decorator.timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError)
 @timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError,
@@ -78,43 +83,44 @@ def start_task(execution_task: str,
     #     else:
     #         user_proxy = agent
 
-    context_handling = transform_messages.TransformMessages(
-            transforms=[transforms.MessageTokenLimiter(
-                min_tokens=chat_llm_config['min_hist_len'],
-                max_tokens=chat_llm_config['max_hist_len'],
-                max_tokens_per_message=chat_llm_config['max_msg_len'])])
-    # context_handling.add_to_agent(user_proxy)
-    for agent in agent_list: context_handling.add_to_agent(agent)
+    if chat_llm_config['use_llm_lingua']:
+        compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
+        # llm_lingua = LLMLingua()
+        transforms = [transforms.TextMessageCompressor(
+            # text_compressor=llm_lingua,
+            min_tokens=chat_llm_config['llm_lingua_len'],
+            compression_params=compression_params,
+            cache=None)]
+    else:
+        transforms = [transforms.MessageTokenLimiter(
+            min_tokens=chat_llm_config['min_hist_len'],
+            max_tokens=chat_llm_config['max_hist_len'],
+            max_tokens_per_message=chat_llm_config['max_msg_len'])]
 
-    config_list = autogen.config_list_from_json(CONFIG_FILE_OR_ENV,
-        filter_dict={"model": [chat_llm_config['model']]})
+    context_handling = transform_messages.TransformMessages(transforms=transforms)
+    for agent in agent_list: context_handling.add_to_agent(agent)
+    # context_handling.add_to_agent(user_proxy)
+
     group_chat = autogen.GroupChat(
         agents=agent_list,
         messages=[],
         max_round=chat_llm_config['max_round'],
+        max_retries_for_selecting_speaker=chat_llm_config['max_speaker_select_retries'],
+        select_speaker_auto_verbose=True,
+        send_introductions=True,
         # allow_repeat_speaker=agent_list,
         allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list)
 
-    _chat_llm_config = {}
-    for key in chat_llm_config:
-        if key in CHAT_LLM_CFG_KEYS:
-            _chat_llm_config[key] = chat_llm_config[key]
+    llm_config = _get_agent_llm_config(chat_llm_config)
 
     manager = autogen.GroupChatManager(
         groupchat=group_chat,
-        llm_config={"config_list": config_list, **_chat_llm_config})
+        llm_config=llm_config)
 
     society_of_mind_agent = SocietyOfMindAgent(
         "society_of_mind",
         chat_manager=manager,
-        llm_config={"config_list": config_list, **_chat_llm_config})
-
-    # code_execution_config = {
-    #     "last_n_messages": 1,
-    #     "timeout": 10,
-    #     "use_docker": False,
-    #     "work_dir": "/tmp/som_%s" % randomword(ID_LENGTH)
-    # }
+        llm_config=llm_config)
 
     society_user_proxy = autogen.UserProxyAgent(
         "user_proxy",
@@ -123,20 +129,37 @@ def start_task(execution_task: str,
         default_auto_reply="",
         is_termination_msg=lambda x: True)
 
+    # if log_file is not None:
+    #     logging_session_id = autogen.runtime_logging.start(
+    #         logger_type="file", config={"filepath": log_file})
+    #     print("Logging session ID: %s" % logging_session_id)
+    if log_file is not None:
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        redirector = OutputRedirector(log_file); redirector.enable()
+
     with Cache.disk(cache_seed=None,
         cache_path_root='/tmp/cache_%s' % randomword(ID_LENGTH)) as cache:
         chat_result = society_user_proxy.initiate_chat(
             society_of_mind_agent,
             message=execution_task,
             cache=cache)
+        chat_messages = manager._groupchat.messages
 
-    chat_messages = manager._groupchat.messages
     if log_file is not None:
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)
-        yaml_dump(chat_messages, log_file)
-
+        redirector.disable(); yaml_dump(chat_messages, log_file)
     return chat_result, chat_messages
+    # if log_file is not None: autogen.runtime_logging.stop()
     # return agent_list[0].initiate_chat(manager, message=execution_task)
+
+
+def _get_agent_llm_config(chat_llm_config):
+    config_list = autogen.config_list_from_json(CONFIG_FILE_OR_ENV,
+        filter_dict={"model": [chat_llm_config['model']]})
+    _chat_llm_config = {}
+    for key in chat_llm_config:
+        if key in CHAT_LLM_CFG_KEYS:
+            _chat_llm_config[key] = chat_llm_config[key]
+    return {"config_list": config_list, **_chat_llm_config}
 
 
 def init_builder(building_task=None,

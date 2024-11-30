@@ -505,7 +505,7 @@ SCICODE_EVAL_CONFIG = {
     'n_tries': 1,
     'max_problems': 999,
     'dataset': 'problems_all',
-    'with_background': True,
+    'with_background': False,
     'problem_list': [],
     'debug_mode': 0
 }
@@ -524,7 +524,8 @@ EVAL_BUILDER_LLM_CONFIG = {
 EVAL_CHAT_LLM_CONFIG = {
     'model': LLM_MODEL,
     'max_round': 50,
-    'temperature': 0.1
+    'temperature': 0.1,
+    'use_llm_lingua': False,
 }
 
 

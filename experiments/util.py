@@ -2,6 +2,7 @@ import asyncio
 import calendar
 import copy
 from collections import defaultdict
+from contextlib import contextmanager
 import datetime
 import functools
 import json
@@ -415,6 +416,71 @@ def yaml_dump(data, output_file, width=80):
     # Write the formatted YAML
     if not output_file.endswith(".yaml"): output_file += ".yaml"
     with open(output_file, 'w') as f: yaml.dump(data, f)
+
+
+class OutputRedirector:
+    """
+    Class to redirect both stdout and stderr to terminal and a file.
+    """
+    def __init__(self, file_path, file_ext='.log'):
+        """
+        Initialize the output redirector.
+
+        :param file_path: Path to the file where output will be written
+        """
+        # Save the original stdout and stderr
+        self.original_stdout = sys.stdout
+        self.original_stderr = sys.stderr
+        self.file_path = os.path.splitext(file_path)[0] + file_ext
+        self.file = None
+
+        # Custom stream class
+        class TeeStream:
+            def __init__(self, original_stream, file_stream):
+                self.original_stream = original_stream
+                self.file_stream = file_stream
+
+            def write(self, data):
+                # Write to original stream (terminal)
+                self.original_stream.write(data)
+                # Write to file
+                self.file_stream.write(data)
+
+            def flush(self):
+                # Ensure both streams are flushed
+                self.original_stream.flush()
+                self.file_stream.flush()
+
+            # Implement additional methods to mimic stream behavior
+            def isatty(self):
+                return False
+
+        self.TeeStream = TeeStream
+
+    def enable(self):
+        """
+        Enable output redirection to file and terminal.
+        """
+        # Open the file in write mode (overwriting previous content)
+        self.file = open(self.file_path, 'w')
+
+        # Create and set custom stdout and stderr streams
+        sys.stdout = self.TeeStream(self.original_stdout, self.file)
+        sys.stderr = self.TeeStream(self.original_stderr, self.file)
+
+    def disable(self):
+        """
+        Disable output redirection and restore original streams.
+        """
+        # Restore original stdout and stderr
+        sys.stdout = self.original_stdout
+        sys.stderr = self.original_stderr
+
+        # Close the file if it's open
+        if self.file:
+            self.file.close()
+            self.file = None
+
 
 if __name__ == "__main__":
     yaml_dump(sys.argv[1], sys.argv[1].replace(".yaml", ".p.yaml"))

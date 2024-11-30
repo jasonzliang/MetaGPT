@@ -94,12 +94,12 @@ When the task is complete and the result has been carefully verified, after obta
 """
 
     DEFAULT_CODING_INSTRUCTION = """## Useful instructions for task-solving
-    - [Complete this part with useful instructions for task solving]
-    ## How to verify?
-    - [Complete this part with useful instructions for task verification]
-    ## How to use code?
-    - [Complete this part with useful instructions for using the code]
-    - [(Optional) Complete this part with other information]
+- [Complete this part with useful instructions for task solving]
+## How to verify?
+- [Complete this part with useful instructions for task verification]
+## How to use code?
+- [Complete this part with useful instructions for using the code]
+- [(Optional) Complete this part with other information]
 """
 
 # - If missing python packages, you can install the package by suggesting a `pip install` code in the ```sh ... ``` block.
@@ -408,14 +408,15 @@ With following description: {function_description}
             )
             if system_message == "":
                 system_message = agent.system_message
+            elif 'insights' in agent_config:
+                insights = agent_config['insights']
+                system_message = f"{system_message}\n\n## Useful insights and experience for task-solving\n{insights}\n\n{agent_coding_instruct}"
             else:
                 system_message = f"{system_message}\n\n{agent_coding_instruct}"
-                if 'insights' in agent_config:
-                    system_message += "\n\n## Useful insights and experience\n" + \
-                        agent_config['insights']
 
             enhanced_sys_msg = self.GROUP_CHAT_DESCRIPTION.format(
-                name=agent_name, members=member_name, user_proxy_desc=user_proxy_desc, sys_msg=system_message
+                name=agent_name, members=member_name,
+                user_proxy_desc=user_proxy_desc, sys_msg=system_message
             )
             agent.update_system_message(enhanced_sys_msg)
         self.agent_procs_assign[agent_name] = (agent, server_id)

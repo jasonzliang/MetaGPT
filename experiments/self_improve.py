@@ -43,7 +43,7 @@ SCICODE_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'problems_dev',
     'with_background': False,
-    'debug_mode': 0
+    'debug_mode': 1
 }
 
 EVAL_LLM_CONFIG = {
@@ -61,6 +61,7 @@ EVAL_BUILDER_LLM_CONFIG = {
 EVAL_CHAT_LLM_CONFIG = {
     'model': 'gpt-4o',
     'temperature': 0.1,
+    'use_llm_lingua': False
 }
 
 class SolutionSet(object):
@@ -406,11 +407,11 @@ def _merge_messages(indv,
     assert os.path.exists(result_dir)
     if output_dir is None: output_dir = result_dir
 
-    checkpoint = _load_checkpoint(result_dir)
-    assert checkpoint is not None
+    checkpoint_dict = _load_checkpoint(result_dir)
+    assert checkpoint_dict is not None
 
     agent_configs_list = []
-    for solution in checkpoint['solution_set']['solutions']:
+    for solution in checkpoint_dict['solution_set']['solutions']:
         if solution['gen_solved'] is None: continue
         team_role_file = glob.glob(os.path.join(result_dir,
             "evalG-%s_*" % solution['gen_solved'], "team_role.json"))
@@ -423,7 +424,7 @@ def _merge_messages(indv,
 
     if include_insights:
         agent_insights = [agent_config.get('insights') for agent_config in \
-            checkpoint['curr_team_role']['agent_configs']]
+            checkpoint_dict['curr_team_role']['agent_configs']]
     else:
         agent_insights = None
 
@@ -452,9 +453,9 @@ def visualize_performance(result_dirs,
 
     solution_dict = defaultdict(list); solved_counter = defaultdict(list)
     for result_dir in result_dirs:
-        checkpoint = _load_checkpoint(result_dir)
-        assert checkpoint is not None
-        for solution in checkpoint['solution_set']['solutions']:
+        checkpoint_dict = _load_checkpoint(result_dir)
+        assert checkpoint_dict is not None
+        for solution in checkpoint_dict['solution_set']['solutions']:
             if solution['gen_solved'] is not None:
                 name = os.path.basename(result_dir)
                 solved_counter[name].append(solution['num_tries'])
@@ -509,6 +510,8 @@ if __name__ == "__main__":
     # visualize_performance(["results/11_27*",
     #     "results/self_improve_11_24/11_21*no_update",
     #     "results/self_improve_11_24/11_22*no_update"])
+    if "lingua" in sys.argv[2]:
+        EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
     self_improve_loop(team_role_fp=sys.argv[1],
         result_dir=sys.argv[2],
         update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,

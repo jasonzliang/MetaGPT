@@ -74,5 +74,6 @@ pathos
 retry
 wrapt_timeout_decorator
 gdown
+seaborn
 # git+https://github.com/jasonzliang/autogen.git
 # git+https://github.com/evalplus/evalplus.git
