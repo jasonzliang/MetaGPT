@@ -100,7 +100,7 @@ AGENT_INSIGHT_PROMPT_V2 = """# Your goal
 # Your answer
 -Let's think step by step about an insight that explains how or why the agent generated correct code.
 -Make sure the insight contains useful domain knowledge that applies to similar problems.
--Domain knowledge includes useful scientific or mathematical facts, principles, and theorems.
+-Domain knowledge includes useful facts, principles, and theorems about science, mathematics, or programming.
 -Make sure the insight is not a copy or restatement of any of the current insights.
 -Write a single sentence summarizing the insight and be sure that it follows the template.
 
