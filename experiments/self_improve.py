@@ -54,14 +54,14 @@ EVAL_BUILDER_LLM_CONFIG = {
     'agent_model': 'gpt-4o',
     'builder_model': 'gpt-4o',
     'custom_coding_instruct': True,
-    'max_round': 50,
     'temperature': 0.9
 }
 
 EVAL_CHAT_LLM_CONFIG = {
     'model': 'gpt-4o',
     'temperature': 0.1,
-    'use_llm_lingua': False
+    'use_llm_lingua': False,
+    'max_round': 50
 }
 
 class SolutionSet(object):
