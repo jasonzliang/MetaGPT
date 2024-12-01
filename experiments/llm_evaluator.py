@@ -651,6 +651,8 @@ def _test_check_eval_progress(
 
 
 if __name__ == "__main__":
+    if 'lingua' in sys.argv[2]:
+        EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
     test_evaluator(team_role_fp=sys.argv[1], eval_suffix=sys.argv[2])
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
