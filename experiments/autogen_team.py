@@ -68,8 +68,8 @@ CHAT_TIMEOUT = 120
 
 
 # @timeout_decorator.timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError)
-# @timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError,
-#     dec_allow_eval=False, dec_hard_timeout=False, dec_mp_reset_signals=True)
+@timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError,
+    dec_allow_eval=False, dec_hard_timeout=False, dec_mp_reset_signals=True)
 def start_task(execution_task: str,
     agent_list: list,
     chat_llm_config: dict = CHAT_LLM_CONFIG,
