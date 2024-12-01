@@ -391,17 +391,18 @@ def self_improve_loop(team_role_fp=None,
         else:
             print("All problems solved, exiting loop at gen %s" % i + 1); break
 
-    _merge_messages(indv=indv,
+    _merge_agents(indv=indv,
         evaluator=_eval,
         result_dir=result_dir,
         include_insights=include_insights)
     print("Self-improve loop finished")
 
 
-def _merge_messages(indv,
+def _merge_agents(indv,
     evaluator,
     result_dir,
     include_insights=True,
+    merge_insights_with_desc=False,
     output_dir=None):
 
     assert os.path.exists(result_dir)
@@ -432,8 +433,15 @@ def _merge_messages(indv,
         evaluator._init_builder(indv.team_role,
             indv.llm_config['builder_llm_config'])
     assert builder is not None
-    builder.merge_agents(agent_configs_list, agent_insights)
+
+    builder.merge_agents(agent_configs_list, agent_insights,
+        merge_insights_with_desc)
     builder.save(os.path.join(output_dir, "merged_team_role.json"))
+
+    agent_library = builder.generate_agent_library(agent_configs_list,
+        merge_insights_with_desc)
+    with open(os.path.join(output_dir, "agent_library.json"), 'w') as f:
+        json.dump(agent_library, f)
 
 
 def visualize_performance(result_dirs,
