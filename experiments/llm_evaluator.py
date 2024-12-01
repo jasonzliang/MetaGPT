@@ -588,10 +588,12 @@ def test_evaluator(main_role_fp=None,
     team_role_fp=None,
     evolve_mode="team",
     n_indv=1,
-    indv_id_seed=1111,
+    indv_id_seed=0,
     num_gen=1,
+    eval_suffix=get_time(space=False),
     scicode=True):
 
+    assert eval_suffix is not None and len(eval_suffix) > 0
     if scicode: main_role_fp = DEFAULT_MAIN_ROLE_MIN
     _eval = _setup_evaluator(n_indv, "results/", scicode)
     indv = _setup_indv(main_role_fp, team_role_fp, evolve_mode)
@@ -606,7 +608,7 @@ def test_evaluator(main_role_fp=None,
             child = indv.create_child(i)
             if indv_id_seed is not None:
                 child._set_id(i, seed=indv_id_seed + counter,
-                    suffix=os.path.splitext(os.path.basename(team_role_fp))[0])
+                    suffix=eval_suffix)
             counter += 1; population.append(child)
 
         result_dicts = _eval.evaluate(population, gen=i); _eval.reset()
@@ -649,7 +651,7 @@ def _test_check_eval_progress(
 
 
 if __name__ == "__main__":
-    test_evaluator(team_role_fp=sys.argv[1], indv_id_seed=int(sys.argv[2]))
+    test_evaluator(team_role_fp=sys.argv[1], eval_suffix=sys.argv[2])
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
     # _test_evaluator(team_role_fp='config/autogen_team3_init.json')
