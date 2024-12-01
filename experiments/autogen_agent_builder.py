@@ -626,7 +626,8 @@ With following description: {function_description}
     def merge_agents(
         self,
         other_agent_configs,
-        other_agent_insights=None):
+        other_agent_insights=None,
+        merge_insight_with_desc=False):
 
         assert len(other_agent_configs) > 0
         agent_configs = self.cached_configs['agent_configs']
@@ -707,7 +708,12 @@ With following description: {function_description}
         if other_agent_insights is not None:
             assert len(agent_configs) == len(other_agent_insights)
             for agent_config, other_agent_insight in zip(agent_configs, other_agent_insights):
-                if other_agent_insight is not None or len(other_agent_insight) > 0:
+                if other_agent_insight is None or len(other_agent_insight) == 0:
+                    continue
+                if merge_insight_with_desc:
+                    assert 'insights' not in agent_config
+                    agent_config['system_message'] += "\n\n## Useful insights and experience for task-solving\n" + other_agent_insight
+                else:
                     agent_config['insights'] = other_agent_insight
 
         _config_check(self.cached_configs)
@@ -874,6 +880,9 @@ With following description: {function_description}
                 agent_config['coding_instruction'] = _cleanup_msg(resp_agent_code_instruct)
 
         _config_check(self.cached_configs)
+
+    def generate_agent_library():
+        pass
 
     def build_from_library(
         self,

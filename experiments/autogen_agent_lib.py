@@ -15,7 +15,7 @@
 # In[1]:
 
 
-get_ipython().run_line_magic('pip', 'install autogen-agentchat[autobuild]~=0.2')
+# get_ipython().run_line_magic('pip', 'install autogen-agentchat[autobuild]~=0.2')
 
 
 # ## Preparation and useful tools
@@ -34,7 +34,7 @@ import time
 
 import autogen
 
-from agent_builder import AgentBuilder
+from autogen_agent_builder import AgentBuilder
 # from autogen.agentchat.contrib.agent_builder import AgentBuilder
 
 
@@ -83,21 +83,21 @@ position_list = [
     "Environmental_Scientist",
     "Astronomer",
     "Software_Developer",
-    "Data_Analyst",
-    "Journalist",
-    "Teacher",
-    "Lawyer",
-    "Programmer",
-    "Accountant",
-    "Mathematician",
-    "Physicist",
-    "Biologist",
-    "Chemist",
-    "Statistician",
-    "IT_Specialist",
-    "Cybersecurity_Expert",
-    "Artificial_Intelligence_Engineer",
-    "Financial_Analyst",
+    # "Data_Analyst",
+    # "Journalist",
+    # "Teacher",
+    # "Lawyer",
+    # "Programmer",
+    # "Accountant",
+    # "Mathematician",
+    # "Physicist",
+    # "Biologist",
+    # "Chemist",
+    # "Statistician",
+    # "IT_Specialist",
+    # "Cybersecurity_Expert",
+    # "Artificial_Intelligence_Engineer",
+    # "Financial_Analyst",
 ]
 
 
@@ -156,7 +156,7 @@ print(sys_msg_list)
 
 
 json.dump(sys_msg_list, open("./agent_library_example.json", "w"), indent=4)
-
+exit()
 
 # ## Build agents from library (by LLM)
 # Here, we introduce how to build agents from the generated library. As in the previous `build`, we also need to specify a `building_task` that lets the build manager know which agents should be selected from the library according to the task. 
