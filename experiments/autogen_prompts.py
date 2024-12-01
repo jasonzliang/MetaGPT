@@ -141,7 +141,7 @@ UPDATE_CODE_INSTRUCT_PROMPT = """# Your goal
 # Agent name
 {agent_name}
 
-# Current coding instruction
+# Agent's current coding instruction
 {agent_coding_instruct}
 
 # Generated code
@@ -175,4 +175,27 @@ MERGE_CODE_INSTRUCT_PROMPT = """# Your goal
 
 # Template
 {default_sys_msg}
+"""
+
+CREATE_UNIQUE_NAME_PROMPT = """# Your goal
+-Create a unique name based on the agent's description, coding instruction, and insights.
+-Make sure the name is different and is not a repeat of other agent's names.
+
+# Other agent's names
+{other_agent_names}
+
+# Agent's current description
+{agent_sys_msg}
+
+# Agent's coding instruction
+{code_generated}
+
+# Agent's insights
+{agent_insights}
+
+# Your answer
+- Agent's name should follow the format: [skill]_Expert.
+- Agent's name should be relevant to the agent's description, coding instruction, and insights.
+- Only answer with the name of the agent and nothing else.
+For example: Python_Expert
 """

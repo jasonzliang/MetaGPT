@@ -632,13 +632,15 @@ With following description: {function_description}
 
         assert len(other_agent_configs) > 0
         agent_configs = self.cached_configs['agent_configs']
-        num_other_agents = set([len(x) for x in other_agent_configs])
-        assert len(num_other_agents) == 1
-        assert len(agent_configs) == list(num_other_agents)[0]
+        n_agents = set([len(x) for x in other_agent_configs])
+        assert len(n_agents) == 1 and len(agent_configs) == list(n_agents)[0]
 
         print(colored("==> Merging agent descriptions...", "green"), flush=True)
         for i, agent_config in enumerate(agent_configs):
             agent_name = agent_config['name']
+            other_names = set([x[i]['name'] for x in other_agent_configs])
+            assert agent_name in other_names and len(other_names) == 1
+
             other_agent_sys_msgs = [x[i]['system_message'] for x in other_agent_configs]
             other_agent_sys_msgs = ["\nAgent %s description:\n%s" % (i+1, x) for i, x in enumerate(other_agent_sys_msgs)]
             other_agent_sys_msg = "\n".join(other_agent_sys_msgs)
@@ -683,6 +685,9 @@ With following description: {function_description}
             print(colored("==> Generating coding instructions...", "green"), flush=True)
             for i, agent_config in enumerate(agent_configs):
                 agent_name = agent_config['name']
+                other_names = set([x[i]['name'] for x in other_agent_configs])
+                assert agent_name in other_names and len(other_names) == 1
+
                 other_agent_code_instructs = [x[i].get('coding_instruction',
                     self.CODING_AND_TASK_SKILL_INSTRUCTION) for x in other_agent_configs]
                 other_agent_code_instructs = ["\nAgent %s coding instruction:\n%s" % (i+1, x) for i, x in enumerate(other_agent_code_instructs)]
@@ -712,8 +717,8 @@ With following description: {function_description}
                 if other_agent_insight is None or len(other_agent_insight) == 0:
                     continue
                 if merge_insight_with_desc:
-                    assert 'insights' not in agent_config
                     agent_config['system_message'] += "\n\n## Useful insights and experience for task-solving\n" + other_agent_insight
+                    del agent_config['insights']
                 else:
                     agent_config['insights'] = other_agent_insight
 
@@ -882,8 +887,62 @@ With following description: {function_description}
 
         _config_check(self.cached_configs)
 
-    def generate_agent_library():
-        pass
+    def generate_agent_library(
+        self,
+        other_agent_configs,
+        merge_insight_with_desc=False):
+
+        print(colored("==> Creating agent library...", "green"), flush=True)
+        assert len(other_agent_configs) > 0
+        agent_configs = self.cached_configs['agent_configs']; agent_set = set()
+
+        for i, other_agent_config in enumerate(other_agent_configs):
+            agent_tuple = (other_agent_config['name'],
+                other_agent_config['system_message'], '', '')
+            if 'coding_instruction' in other_agent_config:
+                agent_tuple[1] = other_agent_config['coding_instruction']
+            if 'insights' in other_agent_config:
+                agent_tuple[2] = other_agent_config['insights']
+            agent_set.add(agent_tuple)
+
+        other_agent_names = set(); new_agent_configs = []
+        for i, (agent_name, agent_desc, agent_coding, agent_insights) in enumerate(agent_set):
+            print(f"Adding {agent_name} to library...", flush=True)
+
+            new_agent_config = {'name': agent_name}
+            if agent_name in other_agent_names:
+                resp_agent_sys_msg = (
+                    self._builder_model_create(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": CREATE_UNIQUE_NAME_PROMPT.format(
+                                    other_agent_names=other_agent_names,
+                                    agent_sys_msg=agent_desc,
+                                    code_generated=code_generated,
+                                    agent_insights=agent_insights
+                                ),
+                            }
+                        ]
+                    )
+                    .choices[0]
+                    .message.content
+                )
+                print(f"{agent_name} renamed to {resp_agent_sys_msg}", flush=True)
+                new_agent_config['name'] = resp_agent_sys_msg
+                other_agent_names.add(new_agent_config['name'])
+
+            new_agent_config['system_message'] = agent_desc
+            new_agent_config['coding_instruction'] = agent_coding
+            new_agent_config['insights'] = agent_insights
+            new_agent_configs.append(new_agent_config)
+
+        if merge_insight_with_desc:
+            for agent_config in new_agent_configs:
+                agent_config['system_message'] += "\n\n## Useful insights and experience for task-solving\n" + agent_config['insights']
+                del agent_config['insights']
+
+        return new_agent_configs
 
     def build_from_library(
         self,
