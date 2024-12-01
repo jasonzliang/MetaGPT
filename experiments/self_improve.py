@@ -434,14 +434,14 @@ def _merge_agents(indv,
             indv.llm_config['builder_llm_config'])
     assert builder is not None
 
-    builder.merge_agents(agent_configs_list, agent_insights,
-        merge_insights_with_desc)
-    builder.save(os.path.join(output_dir, "merged_team_role.json"))
-
     agent_library = builder.generate_agent_library(agent_configs_list,
         merge_insights_with_desc)
     with open(os.path.join(output_dir, "agent_library.json"), 'w') as f:
         json.dump(agent_library, f)
+
+    builder.merge_agents(agent_configs_list, agent_insights,
+        merge_insights_with_desc)
+    builder.save(os.path.join(output_dir, "merged_team_role.json"))
 
 
 def visualize_performance(result_dirs,
@@ -515,11 +515,11 @@ def visualize_performance(result_dirs,
 
 
 if __name__ == "__main__":
-    visualize_performance(["results/11_29*",
-        "results/self_improve_11_24/11_23*no_update"])
-    # if "lingua" in sys.argv[2]:
-    #     EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
-    # self_improve_loop(team_role_fp=sys.argv[1],
-    #     result_dir=sys.argv[2],
-    #     update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,
-    #     coding_instruct=True if "coding_instruct" in sys.argv[2].lower() else False)
+    # visualize_performance(["results/11_29*",
+    #     "results/self_improve_11_24/11_23*no_update"])
+    if "lingua" in sys.argv[2]:
+        EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
+    self_improve_loop(team_role_fp=sys.argv[1],
+        result_dir=sys.argv[2],
+        update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,
+        coding_instruct=True if "coding_instruct" in sys.argv[2].lower() else False)
