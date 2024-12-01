@@ -45,6 +45,10 @@ SCICODE_OBJ = {'problem_acc': lambda x: x,
 SLEEP_TIME = 5
 
 
+def flatten(xss):
+    return [x for xs in xss for x in xs]
+
+
 def delete_contents_in_directory(directory_path, verbose=False):
     with os.scandir(directory_path) as entries:
         for entry in entries:

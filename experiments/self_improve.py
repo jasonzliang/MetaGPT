@@ -437,7 +437,7 @@ def _merge_agents(indv,
     agent_library = builder.generate_agent_library(agent_configs_list,
         merge_insights_with_desc)
     with open(os.path.join(output_dir, "agent_library.json"), 'w') as f:
-        json.dump(agent_library, f)
+        json.dump(agent_library, f, indent=4)
 
     builder.merge_agents(agent_configs_list, agent_insights,
         merge_insights_with_desc)

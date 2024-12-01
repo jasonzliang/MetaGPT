@@ -15,7 +15,7 @@ from termcolor import colored
 
 import autogen
 from autogen_prompts import *
-from util import yaml_dump
+from util import yaml_dump, flatten
 
 logger = logging.getLogger(__name__)
 
@@ -893,24 +893,26 @@ With following description: {function_description}
         merge_insight_with_desc=False):
 
         print(colored("==> Creating agent library...", "green"), flush=True)
-        assert len(other_agent_configs) > 0
+        assert type(other_agent_configs) is list
+        other_agent_configs = flatten(other_agent_configs)
+        assert len(other_agent_configs) > 0; agent_set = set()
 
         for i, other_agent_config in enumerate(other_agent_configs):
-            agent_tuple = (other_agent_config['name'],
-                other_agent_config['system_message'], '', '')
+            agent_tuple = [other_agent_config['name'], \
+                other_agent_config['system_message'], None, None]
             if 'coding_instruction' in other_agent_config:
-                agent_tuple[1] = other_agent_config['coding_instruction']
+                agent_tuple[2] = other_agent_config['coding_instruction']
             if 'insights' in other_agent_config:
-                agent_tuple[2] = other_agent_config['insights']
-            agent_set.add(agent_tuple)
+                agent_tuple[3] = other_agent_config['insights']
+            agent_set.add(tuple(agent_tuple))
 
-        other_agent_names = set(); new_agent_configs = []
+        other_agent_names = set(); agent_configs = []
         for i, (agent_name, agent_desc, agent_coding, agent_insights) in enumerate(agent_set):
             print(f"Adding {agent_name} to library...", flush=True)
 
-            new_agent_config = {'name': agent_name}
+            agent_config = {'name': agent_name}
             if agent_name in other_agent_names:
-                resp_agent_sys_msg = (
+                new_name = (
                     self._builder_model_create(
                         messages=[
                             {
@@ -918,7 +920,7 @@ With following description: {function_description}
                                 "content": CREATE_UNIQUE_NAME_PROMPT.format(
                                     other_agent_names=other_agent_names,
                                     agent_sys_msg=agent_desc,
-                                    code_generated=code_generated,
+                                    code_generated=agent_coding,
                                     agent_insights=agent_insights
                                 ),
                             }
@@ -927,21 +929,31 @@ With following description: {function_description}
                     .choices[0]
                     .message.content
                 )
-                print(f"{agent_name} renamed to {resp_agent_sys_msg}", flush=True)
-                new_agent_config['name'] = resp_agent_sys_msg
-                other_agent_names.add(new_agent_config['name'])
+                print(f"{agent_name} renamed to {new_name}", flush=True)
+                agent_config['name'] = new_name
+            else:
+                new_name = agent_config['name']
+            other_agent_names.add(new_name)
 
-            new_agent_config['system_message'] = agent_desc
-            new_agent_config['coding_instruction'] = agent_coding
-            new_agent_config['insights'] = agent_insights
-            new_agent_configs.append(new_agent_config)
+            agent_config['system_message'] = \
+                agent_desc.replace(agent_name, new_name)
+            if agent_coding is not None:
+                agent_config['coding_instruction'] = \
+                    agent_coding.replace(agent_name, new_name)
+            if agent_insights is not None:
+                agent_config['insights'] = \
+                    agent_insights.replace(agent_name, new_name)
+            agent_configs.append(agent_config)
 
         if merge_insight_with_desc:
-            for agent_config in new_agent_configs:
+            for agent_config in agent_configs:
+                if 'insights' not in agent_config:
+                    continue
                 agent_config['system_message'] += "\n\n## Useful insights and experience for task-solving\n" + agent_config['insights']
                 del agent_config['insights']
 
-        return new_agent_configs
+        print(f"Added {len(agent_configs)} agents to library", flush=True)
+        return agent_configs
 
     def build_from_library(
         self,
