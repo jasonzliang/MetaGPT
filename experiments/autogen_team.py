@@ -61,9 +61,6 @@ BUILDER_LLM_CONFIG = {"temperature": 0.8,
     "min_agents": 2,
     "max_agents": 4}
 CHAT_TIMEOUT = 120
-# MIN_CHAT_HIST_LEN = 50000
-# MAX_CHAT_HIST_LEN = 100000
-# MAX_MSG_LEN = 10000
 # TODO: FIX CACHING/CACHE SEED
 
 
@@ -85,7 +82,6 @@ def start_task(execution_task: str,
 
     if chat_llm_config['use_llm_lingua']:
         compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
-        # llm_lingua = LLMLingua()
         _transforms = [transforms.TextMessageCompressor(
             text_compressor=LLMLingua(),
             min_tokens=chat_llm_config['llm_lingua_len'],
@@ -108,7 +104,6 @@ def start_task(execution_task: str,
         max_retries_for_selecting_speaker=chat_llm_config['max_speaker_select_retries'],
         select_speaker_auto_verbose=True,
         send_introductions=True,
-        # allow_repeat_speaker=agent_list,
         allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list)
 
     llm_config = _get_agent_llm_config(chat_llm_config)
@@ -196,6 +191,7 @@ def init_builder(building_task=None,
     _builder_llm_config = {'temperature': builder_llm_config['temperature'],
         'cache_seed': builder_llm_config['cache_seed']}
 
+    # if builder dict or builder cfg does not exist, build new team
     if (use_builder_dict and builder_dict is None) or \
         (not use_builder_dict and not os.path.exists(builder_cfg)):
 
@@ -240,9 +236,6 @@ def init_builder(building_task=None,
 
     agent_list, agent_configs = builder.load(
         config_json=json.dumps(builder_dict, indent=4))
-
-    # print("init_builder: builder dict")
-    # pprint.pprint(builder_dict)
 
     if use_builder_dict:
         return agent_list, agent_configs, builder, builder_dict
