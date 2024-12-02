@@ -179,7 +179,9 @@ MERGE_CODE_INSTRUCT_PROMPT = """# Your goal
 
 CREATE_UNIQUE_NAME_PROMPT = """# Your goal
 -Create a unique name based on the agent's description, coding instruction, and insights.
--Make sure the name is different and is not a repeat of other agent's names.
+-Agent's name should not be a repeat or copy of other agent's names.
+-Agent's name should be relevant to the agent's description, coding instruction, and insights.
+-Agent's name should be general and not be too specific or technical.
 
 # Other agent's names
 {other_agent_names}
@@ -194,8 +196,7 @@ CREATE_UNIQUE_NAME_PROMPT = """# Your goal
 {agent_insights}
 
 # Your answer
-- Agent's name should follow the format: [skill]_Expert.
-- Agent's name should be relevant to the agent's description, coding instruction, and insights.
-- Only answer with the name of the agent and nothing else.
+-Agent's name should follow the format: [skill]_Expert, the name must end with _Expert.
+-Only answer with the name of the agent and nothing else.
 For example: Python_Expert
 """
