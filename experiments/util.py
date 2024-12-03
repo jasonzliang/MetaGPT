@@ -153,6 +153,47 @@ def extract_code_from_chat(chat_result):
     return code
 
 
+def parse_comment_block(text):
+    """
+    Extract comment blocks from Python source code, including docstrings.
+
+    Args:
+        text (str): Input text containing Python code and comments
+
+    Returns:
+        list: A list of extracted comment blocks
+    """
+    try:
+        # Regex pattern to match:
+        # 1. Text inside triple quotes (docstrings)
+        # 2. Single-line comments starting with #, including those after code
+        # comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\'|(?:^|\s*)#[^\n]*)'
+        comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\')'
+
+        # Re-use flags for multiline and dot matching
+        flags = re.MULTILINE | re.DOTALL
+
+        # Find all comment blocks
+        comments = re.findall(comment_pattern, text, flags)
+
+        # Clean up the comments
+        processed_comments = []
+        for comment in comments:
+            # Remove triple quotes from docstrings
+            cleaned_comment = re.sub(r'^(\'\'\'|""")|((\'\'\'|""")$)', '', comment).strip()
+
+            # Ensure # comments are preserved
+            if cleaned_comment.startswith('#') or not cleaned_comment:
+                cleaned_comment = comment.strip()
+
+            if cleaned_comment:
+                processed_comments.append(cleaned_comment)
+
+        return "\n".join(processed_comments)
+    except:
+        return text
+
+
 def parse_code(rsp):
     pattern = r"```python(.*)```"
     match = re.search(pattern, rsp, re.DOTALL)
@@ -487,4 +528,17 @@ class OutputRedirector:
 
 
 if __name__ == "__main__":
-    yaml_dump(sys.argv[1], sys.argv[1].replace(".yaml", ".p.yaml"))
+    x = '''def enable(self):
+    """
+    Enable output redirection to file and terminal.
+    """
+    # Open the file in write mode (overwriting previous content)
+    self.file = open(self.file_path, 'w')
+
+    # Create and set custom stdout and stderr streams
+    sys.stdout = self.TeeStream(self.original_stdout, self.file)
+    sys.stderr = self.TeeStream(self.original_stderr, self.file)
+'''
+
+    print(parse_comment_block(x))
+    # yaml_dump(sys.argv[1], sys.argv[1].replace(".yaml", ".p.yaml"))

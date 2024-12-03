@@ -71,6 +71,7 @@ def start_task(execution_task: str,
     agent_list: list,
     chat_llm_config: dict = CHAT_LLM_CONFIG,
     coding: bool = True,
+    code_library: Optional[list] = None,
     log_file: bool = None):
     # last agent is user proxy, remove it and replace with new one
     # _agent_list = []; user_proxy = None
@@ -79,6 +80,7 @@ def start_task(execution_task: str,
     #         _agent_list.append(agent)
     #     else:
     #         user_proxy = agent
+    _register_functions(agent_list, code_library)
 
     if chat_llm_config['use_llm_lingua']:
         compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
@@ -155,6 +157,34 @@ def _get_agent_llm_config(chat_llm_config):
         if key in CHAT_LLM_CFG_KEYS:
             _chat_llm_config[key] = chat_llm_config[key]
     return {"config_list": config_list, **_chat_llm_config}
+
+
+def _register_functions(agent_list, code_library):
+    if code_library is None or len(code_library) == 0: return
+
+    agent_list_noproxy = []; user_proxy = None
+    for agent in agent_list:
+        if type(agent) != autogen.UserProxyAgent:
+            agent_list_noproxy.append(agent)
+        else:
+            user_proxy = agent
+    assert len(agent_list_noproxy) > 0; assert user_proxy is not None
+
+    for func in code_library
+        for agent in agent_list_noproxy:
+            autogen.agentchat.register_function(
+                func["function"],
+                caller=agent,
+                executor=user_proxy,
+                name=func["name"],
+                description=func["description"])
+
+            agents_current_system_message = agent["system_message"]
+            agent.update_system_message(
+                AgentBuilder.UPDATED_AGENT_SYSTEM_MESSAGE.format(
+                    agent_system_message=agents_current_system_message,
+                    function_name=func["name"],
+                    function_description=func["description"]))
 
 
 def init_builder(building_task=None,

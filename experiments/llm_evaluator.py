@@ -393,6 +393,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                 agent_list=agent_list,
                 chat_llm_config=chat_llm_config,
                 coding=agent_configs["coding"],
+                code_library=result_dict['code_library'],
                 log_file=log_file)
             time_elapsed = time.time() - start_time
 

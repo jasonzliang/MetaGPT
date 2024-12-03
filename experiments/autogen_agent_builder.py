@@ -1200,7 +1200,8 @@ With following description: {function_description}
                     autogen.agentchat.register_function(
                         func["function"],
                         caller=self.agent_procs_assign[resp][0],
-                        executor=agent_list[0],
+                        # Shouldn't this be last agent since that is user proxy?
+                        executor=agent_list[-1], # executor=agent_list[0],
                         name=func["name"],
                         description=func["description"],
                     )
