@@ -80,7 +80,6 @@ def start_task(execution_task: str,
     #         _agent_list.append(agent)
     #     else:
     #         user_proxy = agent
-    _register_functions(agent_list, code_library)
 
     if chat_llm_config['use_llm_lingua']:
         compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
@@ -160,31 +159,37 @@ def _get_agent_llm_config(chat_llm_config):
 
 
 def _register_functions(agent_list, code_library):
-    if code_library is None or len(code_library) == 0: return
+    user_proxy = [agent for agent in agent_list if type(agent) == autogen.UserProxyAgent]
+    assert len(user_proxy) == 1; user_proxy = user_proxy[0]
 
-    agent_list_noproxy = []; user_proxy = None
-    for agent in agent_list:
-        if type(agent) != autogen.UserProxyAgent:
-            agent_list_noproxy.append(agent)
-        else:
-            user_proxy = agent
-    assert len(agent_list_noproxy) > 0; assert user_proxy is not None
+    code_exec_config = user_proxy._code_execution_config
+# Wrong way to add functions to code executor
+# def _register_functions(agent_list, code_library):
+#     if code_library is None or len(code_library) == 0: return
 
-    for func in code_library
-        for agent in agent_list_noproxy:
-            autogen.agentchat.register_function(
-                func["function"],
-                caller=agent,
-                executor=user_proxy,
-                name=func["name"],
-                description=func["description"])
+#     agent_list_noproxy = []; user_proxy = None
+#     for agent in agent_list:
+#         if type(agent) != autogen.UserProxyAgent:
+#             agent_list_noproxy.append(agent)
+#         else:
+#             user_proxy = agent
+#     assert len(agent_list_noproxy) > 0; assert user_proxy is not None
 
-            agents_current_system_message = agent["system_message"]
-            agent.update_system_message(
-                AgentBuilder.UPDATED_AGENT_SYSTEM_MESSAGE.format(
-                    agent_system_message=agents_current_system_message,
-                    function_name=func["name"],
-                    function_description=func["description"]))
+#     for func in code_library
+#         for agent in agent_list_noproxy:
+#             autogen.agentchat.register_function(
+#                 func["function"],
+#                 caller=agent,
+#                 executor=user_proxy,
+#                 name=func["name"],
+#                 description=func["description"])
+
+#             agents_current_system_message = agent["system_message"]
+#             agent.update_system_message(
+#                 AgentBuilder.UPDATED_AGENT_SYSTEM_MESSAGE.format(
+#                     agent_system_message=agents_current_system_message,
+#                     function_name=func["name"],
+#                     function_description=func["description"]))
 
 
 def init_builder(building_task=None,
