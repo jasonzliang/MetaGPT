@@ -333,7 +333,8 @@ def test_code(model_name, code_dir, log_dir, output_dir,
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
     for file_path in code_dir_.iterdir():
-        if file_path.is_file():
+        # Add additional check if file is .py extension
+        if file_path.is_file() and file_path.suffix.lower() == ".py":
             file_name = file_path.stem
             file_id = file_name.split(".")[0]
             file_step = file_name.split(".")[1]

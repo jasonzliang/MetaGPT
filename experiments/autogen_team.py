@@ -190,7 +190,7 @@ def _register_functions(agent_list, code_library):
             new_sys_msg = agent.system_message + \
 """\n\nYou have access to call the function: {function_name}.
 With following description:\n{function_description}
-Use the function to help you write code and solve the programming problem given to you""".format(
+Call the function to help you write code and solve the programming problem given to you""".format(
                 function_name=func_dict["name"],
                 function_description=func_dict["description"])
             agent.update_system_message(new_sys_msg)
