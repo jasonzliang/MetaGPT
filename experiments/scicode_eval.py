@@ -192,7 +192,8 @@ class Gencode:
         else:
             result_dict['code_library'] = [self.previous_llm_code[i] for i in range(num_steps - 1)]
             response_from_llm = self.llm_eval_func(f"{prob_id}.{num_steps}", prompt, result_dict)
-        self.previous_llm_code[num_steps - 1]['code'] = extract_python_script(response_from_llm)
+        if self.previous_llm_code[num_steps - 1] is not None:
+            self.previous_llm_code[num_steps - 1]['code'] = extract_python_script(response_from_llm)
         self._save_response_with_steps(prob_data, response_from_llm, previous_code, num_steps)
 
 

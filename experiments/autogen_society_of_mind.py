@@ -27,6 +27,10 @@ class SocietyOfMindAgent(ConversableAgent):
                 llm_config is set to anything else, then a default LLM prompt is used.
     """
 
+    DEFAULT_RESPONSE = """Output a standalone response to the original request, without mentioning any of the intermediate discussion."""
+
+    DEFAULT_TASK_DESC = """Earlier you were asked to fulfill a request. You and your team worked diligently to address that request. Here is a transcript of that conversation:"""
+
     def __init__(
         self,
         name: str,
@@ -59,7 +63,7 @@ class SocietyOfMindAgent(ConversableAgent):
         # response_preparer default depends on if the llm_config is set, and if a client was created
         if response_preparer is None:
             if self.client is not None:
-                response_preparer = "Output a standalone response to the original request, without mentioning any of the intermediate discussion."
+                response_preparer = self.DEFAULT_RESPONSE
             else:
 
                 def response_preparer(agent, messages):
@@ -89,7 +93,7 @@ class SocietyOfMindAgent(ConversableAgent):
         _messages = [
             {
                 "role": "system",
-                "content": """Earlier you were asked to fulfill a request. You and your team worked diligently to address that request. Here is a transcript of that conversation:""",
+                "content": self.DEFAULT_TASK_DESC,
             }
         ]
 

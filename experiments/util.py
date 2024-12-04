@@ -258,10 +258,10 @@ def parse_imports(import_string):
 def create_function_from_string(namespace, func_string, func_name, compile=False):
     # try:
     # Pre-compile the function code to catch syntax errors early
-    if compile: compiled_code = compile(func_string, '<string>', 'exec')
+    if compile: func_string = compile(func_string, '<string>', 'exec')
 
     # Execute function definition in namespace
-    exec(compiled_code, namespace)
+    exec(func_string, namespace)
 
     # Verify function exists in namespace
     if func_name not in namespace:
