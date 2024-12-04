@@ -638,6 +638,8 @@ With following description: {function_description}
         agent_configs = self.cached_configs['agent_configs']
         total_agents = len(agent_configs)
         agent_configs = random.sample(agent_configs, total_agents)
+        if type(test_cases) is list: test_cases = "\n".join(test_cases)
+        assert type(test_cases) is str
 
         if n_agents is None:
             n_agents = total_agents

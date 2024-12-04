@@ -263,7 +263,7 @@ class EvalPlusEvaluator(object):
 
     def _init_builder(self, team_role, builder_llm_config):
         return init_builder(building_task=None,
-                work_dir='/tmp/build_%s' % randomword(ID_LENGTH),
+                work_dir='/tmp/eval_%s' % randomword(ID_LENGTH),
                 builder_dict=team_role,
                 builder_llm_config=builder_llm_config,
                 use_builder_dict=True,

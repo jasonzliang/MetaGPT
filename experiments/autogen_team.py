@@ -17,6 +17,7 @@ from autogen import Cache
 # from autogen.agentchat.contrib.agent_builder import AgentBuilder
 from autogen.agentchat.contrib.capabilities import transform_messages, transforms
 from autogen.agentchat.contrib.capabilities.text_compressors import LLMLingua
+from autogen.coding import LocalCommandLineCodeExecutor
 # from autogen.code_utils import extract_code
 
 from evalplus.data.humaneval import get_human_eval_plus
@@ -76,7 +77,11 @@ def start_task(execution_task: str,
     code_library: Optional[list] = None,
     log_file: bool = None):
 
-    _register_functions(agent_list, code_library)
+    if log_file is not None:
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        redirector = OutputRedirector(log_file); redirector.enable()
+    orig_agent_sys_msgs = _register_functions(agent_list, code_library)
+
     if chat_llm_config['use_llm_lingua']:
         compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
         _transforms = [transforms.TextMessageCompressor(
@@ -121,26 +126,18 @@ def start_task(execution_task: str,
         default_auto_reply="",
         is_termination_msg=lambda x: True)
 
-    # if log_file is not None:
-    #     logging_session_id = autogen.runtime_logging.start(
-    #         logger_type="file", config={"filepath": log_file})
-    #     print("Logging session ID: %s" % logging_session_id)
-    if log_file is not None:
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)
-        redirector = OutputRedirector(log_file); redirector.enable()
+    # with Cache.disk(cache_seed=None,
+    #     cache_path_root='/tmp/cache_%s' % randomword(ID_LENGTH)) as cache:
+    chat_result = society_user_proxy.initiate_chat(
+        society_of_mind_agent,
+        message=execution_task,
+        cache=None)
+    chat_messages = manager._groupchat.messages
 
-    with Cache.disk(cache_seed=None,
-        cache_path_root='/tmp/cache_%s' % randomword(ID_LENGTH)) as cache:
-        chat_result = society_user_proxy.initiate_chat(
-            society_of_mind_agent,
-            message=execution_task,
-            cache=cache)
-        chat_messages = manager._groupchat.messages
-
+    _restore_sys_msg(agent_list, orig_agent_sys_msgs)
     if log_file is not None:
         redirector.disable(); yaml_dump(chat_messages, log_file)
     return chat_result, chat_messages
-    # if log_file is not None: autogen.runtime_logging.stop()
     # return agent_list[0].initiate_chat(manager, message=execution_task)
 
 
@@ -154,6 +151,13 @@ def _get_agent_llm_config(chat_llm_config):
     return {"config_list": config_list, **_chat_llm_config}
 
 
+def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
+    agent_list = [x for x in agent_list if type(x) != autogen.UserProxyAgent]
+    assert len(agent_list) == len(orig_agent_sys_msgs)
+    for agent, orig_sys_msg in zip(agent_list, orig_agent_sys_msgs):
+        agent.update_system_message(orig_sys_msg)
+
+
 def _register_functions(agent_list, code_library):
     if code_library is None or len(code_library) == 0: return
     agent_list_noproxy = []; user_proxy = None
@@ -164,9 +168,9 @@ def _register_functions(agent_list, code_library):
             assert user_proxy is None; user_proxy = agent
     assert len(agent_list_noproxy) > 0; assert user_proxy is not None
 
-    code_exec_config = user_proxy._code_execution_config
-    code_exec_config['commandline-local'] = {'functions': []}
-    namespace = None
+    # code_exec_config = user_proxy._code_execution_config
+    # code_exec_config['commandline-local'] = {'functions': []}
+    functions = []; namespace = None
     for i, func_dict in enumerate(code_library):
         try:
             if namespace is None:
@@ -179,18 +183,24 @@ def _register_functions(agent_list, code_library):
             print("Importing function %s failed!" % func_dict['name'])
             continue
 
-        code_exec_config['commandline-local']['functions'].append(function)
-
+        functions.append(function); orig_agent_sys_msgs = []
         for agent in agent_list_noproxy:
-            agents_current_system_message = agent["system_message"]
-            system_msg = agent["system_message"]
-            system_msg += \
+            orig_agent_sys_msgs.append(agent.system_message)
+            new_sys_msg = agent.system_message + \
 """\n\nYou have access to execute the function: {function_name}.
 With following description:\n{function_description}""".format(
                 function_name=func_dict["name"],
                 function_description=func_dict["description"])
-            agent.update_system_message(system_msg)
+            agent.update_system_message(new_sys_msg)
+            # print(new_sys_msg)
 
+    work_dir = '/tmp/chat_%s' % randomword(ID_LENGTH); timeout=10
+    executor = LocalCommandLineCodeExecutor(
+        timeout=timeout,
+        work_dir=work_dir)
+    user_proxy._code_executor = executor
+    # time.sleep(100000)
+    return orig_agent_sys_msgs
 
 # Wrong way to add functions to code executor
 # def _register_functions(agent_list, code_library):
