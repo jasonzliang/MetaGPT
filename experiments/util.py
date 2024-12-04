@@ -1,3 +1,4 @@
+import ast
 import asyncio
 import calendar
 import copy
@@ -153,7 +154,7 @@ def extract_code_from_chat(chat_result):
     return code
 
 
-def parse_comment_block(text, single_comments=False):
+def parse_comment_block(text, incl_single_comments=False):
     """
     Extract comment blocks from Python source code, including docstrings.
 
@@ -167,7 +168,7 @@ def parse_comment_block(text, single_comments=False):
         # Regex pattern to match:
         # 1. Text inside triple quotes (docstrings)
         # 2. Single-line comments starting with #, including those after code
-        if single_comments:
+        if incl_single_comments:
             comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\'|(?:^|\s*)#[^\n]*)'
         else:
             comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\')'
@@ -273,6 +274,37 @@ def create_function_from_string(namespace, func_string, func_name, compile=False
     # except Exception as e:
     #     traceback.print_exc()
     #     raise RuntimeError(f"Error creating function: {str(e)}")
+
+
+def extract_code_elements(content):
+    try:
+        # Parse the Python code into an AST
+        tree = ast.parse(content)
+
+        # Extract imports and functions
+        imports = []
+        functions = []
+
+        for node in ast.walk(tree):
+            # Get import statements
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                imports.append(ast.get_source_segment(content, node))
+
+            # Get function definitions
+            elif isinstance(node, ast.FunctionDef):
+                # Get the complete function definition including decorators
+                functions.append(ast.get_source_segment(content, node))
+
+        extracted_code = ""
+        if len(imports) > 0:
+            extracted_code += "\n".join(imports) + "\n\n"
+        if len(functions) > 0:
+            extracted_code += "\n\n".join(functions) + "\n"
+
+        return extracted_code
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return None
 
 
 def parse_code(rsp):

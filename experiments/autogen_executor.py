@@ -25,6 +25,8 @@ from autogen.coding.base import CodeBlock, CodeExecutor, CodeExtractor, CommandL
 from autogen.coding.markdown_code_extractor import MarkdownCodeExtractor
 from autogen.coding.utils import _get_file_name_from_content, silence_pip
 
+from util import extract_code_elements
+
 __all__ = ("LocalCommandLineCodeExecutor",)
 
 A = ParamSpec("A")
@@ -131,10 +133,17 @@ $functions"""
             self._setup_functions_complete = False
         else:
             self._setup_functions_complete = True
+        self._code_history = []
 
         self.execution_policies = self.DEFAULT_EXECUTION_POLICY.copy()
         if execution_policies is not None:
             self.execution_policies.update(execution_policies)
+
+    def reset(self):
+        if len(self._functions) > 0:
+            self._setup_functions_complete = False
+        self._functions = []
+        self._code_history = []
 
     def format_functions_for_prompt(self, prompt_template: str = FUNCTION_PROMPT_TEMPLATE) -> str:
         """(Experimental) Format the functions for a prompt.
@@ -261,6 +270,13 @@ $functions"""
             self._setup_functions()
         return self._execute_code_dont_check_setup(code_blocks)
 
+    def _get_code_history(self, lang):
+        code_str = ""
+        for _lang, code in self._code_history:
+            if lang != _lang: continue
+            code_str += code
+        return code_str + "\n"
+
     def _execute_code_dont_check_setup(self, code_blocks: List[CodeBlock]) -> CommandLineCodeResult:
         logs_all = ""
         file_names = []
@@ -297,6 +313,7 @@ $functions"""
                 filename = f"tmp_code_{code_hash}.{'py' if lang.startswith('python') else lang}"
             written_file = (self._work_dir / filename).resolve()
             with written_file.open("w", encoding="utf-8") as f:
+                f.write(self._get_code_history(lang))
                 f.write(code)
             file_names.append(written_file)
 
@@ -319,7 +336,6 @@ $functions"""
                     cmd = [activation_script, "&&", *cmd]
 
             try:
-                # print("HI"); time.sleep(100000)
                 result = subprocess.run(
                     cmd,
                     cwd=self._work_dir,
@@ -341,6 +357,10 @@ $functions"""
 
             if exitcode != 0:
                 break
+
+            extracted_code = extract_code_elements(code)
+            if extracted_code is not None:
+                self._code_history.append((lang, extracted_code))
 
         code_file = str(file_names[0]) if len(file_names) > 0 else None
         return CommandLineCodeResult(exit_code=exitcode, output=logs_all, code_file=code_file)

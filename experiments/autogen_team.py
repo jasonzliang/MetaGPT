@@ -172,8 +172,7 @@ def _register_functions(agent_list, code_library):
     assert len(agent_list_noproxy) > 0; assert user_proxy is not None
 
     if code_library is None or len(code_library) == 0:
-        executor = user_proxy._code_executor; executor._functions = []
-        executor._setup_functions()
+        executor = user_proxy._code_executor; executor.reset()
         return None
 
     functions = []; namespace = None
@@ -190,7 +189,8 @@ def _register_functions(agent_list, code_library):
             print("Importing function %s failed!" % func_dict['name'])
             continue
 
-    executor = user_proxy._code_executor; executor._functions = functions
+    executor = user_proxy._code_executor; executor.reset()
+    executor._functions = functions
     function_msg = executor.format_functions_for_prompt(
         prompt_template=FUNCTION_PROMPT_TEMPLATE)
     executor._setup_functions(imports=code_library[0]['imports'],
@@ -280,7 +280,9 @@ def init_builder(building_task=None,
         #     "use_docker": False,
         #     "work_dir": work_dir
         # }
-        executor = LocalCommandLineCodeExecutor(timeout=10, work_dir=work_dir)
+        executor = LocalCommandLineCodeExecutor(timeout=10,
+            work_dir=work_dir,
+            functions_module='code_library')
         agent_list, agent_configs = builder.build(
             building_task=building_task,
             default_llm_config=_builder_llm_config,
