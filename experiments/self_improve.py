@@ -334,8 +334,10 @@ def self_improve_loop(team_role_fp=None,
     if solution_set.is_solved():
         print("All problems solved, not starting self-improve loop"); return
 
-    _eval.problem_list = solution_set.get_problem()
+    _eval.problem_list = solution_set.get_problem(); end_loop = False
     for i in range(start_gen, num_gen):
+        if end_loop: break
+
         prob_id = _eval.problem_list[0]
         indv._set_id(i, seed=i + init_seed, suffix='PROB-%s' % prob_id)
         if curr_team_role is not None: indv.team_role = curr_team_role
@@ -373,23 +375,23 @@ def self_improve_loop(team_role_fp=None,
                 assert _eval.problem_list != next_problem
                 if reset_team_role: curr_team_role = init_team_role
             _eval.problem_list = next_problem
-
-            checkpoint_dict = {
-                'curr_team_role': curr_team_role,
-                'gen': i + 1,
-                'init_seed': init_seed,
-                'solution_set': solution_set.serialize(),
-                'cfg_update_teamwork': update_teamwork,
-                'cfg_update_n_agents': str(update_n_agents),
-                'cfg_coding_instruct': coding_instruct,
-                'cfg_reset_team_role': reset_team_role,
-                'cfg_stuck_threshold': stuck_threshold,
-                'cfg_include_insights': include_insights,
-            }
-            # pprint.pprint(checkpoint_dict)
-            _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
         else:
-            print("All problems solved, exiting loop at gen %s" % (i + 1)); break
+            print("All problems solved, exiting loop at gen %s" % (i + 1))
+            end_loop = True
+
+        checkpoint_dict = {
+            'curr_team_role': curr_team_role,
+            'gen': i + 1,
+            'init_seed': init_seed,
+            'solution_set': solution_set.serialize(),
+            'cfg_update_teamwork': update_teamwork,
+            'cfg_update_n_agents': str(update_n_agents),
+            'cfg_coding_instruct': coding_instruct,
+            'cfg_reset_team_role': reset_team_role,
+            'cfg_stuck_threshold': stuck_threshold,
+            'cfg_include_insights': include_insights,
+        }
+        _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
 
     _merge_agents(indv=indv,
         evaluator=_eval,
