@@ -158,6 +158,7 @@ class Gencode:
                         func_name = extract_function_name(func_header)
                         function_code = get_function_from_code(prev_file_content, func_name)
                         self.previous_llm_code[prev_step] = {
+                            'imports': prob_data['required_dependencies'],
                             'code': function_code,
                             'name': func_name,
                             'description': parse_comment_block(func_header)}

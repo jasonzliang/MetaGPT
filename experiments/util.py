@@ -153,7 +153,7 @@ def extract_code_from_chat(chat_result):
     return code
 
 
-def parse_comment_block(text):
+def parse_comment_block(text, single_comments=False):
     """
     Extract comment blocks from Python source code, including docstrings.
 
@@ -167,8 +167,10 @@ def parse_comment_block(text):
         # Regex pattern to match:
         # 1. Text inside triple quotes (docstrings)
         # 2. Single-line comments starting with #, including those after code
-        # comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\'|(?:^|\s*)#[^\n]*)'
-        comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\')'
+        if single_comments:
+            comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\'|(?:^|\s*)#[^\n]*)'
+        else:
+            comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\')'
 
         # Re-use flags for multiline and dot matching
         flags = re.MULTILINE | re.DOTALL
@@ -192,6 +194,86 @@ def parse_comment_block(text):
         return "\n".join(processed_comments)
     except:
         return text
+
+
+def parse_imports(import_string):
+    """
+    Parse import statements and add modules to namespace.
+    Handles multiple import formats:
+    - import module
+    - import module as alias
+    - from module import submodule
+    - from module import submodule as alias
+    - Multiple imports on one line (from module import x, y, z)
+    """
+    namespace = globals().copy()  # Start with a copy of the global namespace
+
+    # Split into individual import statements
+    import_lines = [line.strip() for line in import_string.strip().split('\n')
+                   if line.strip() and not line.startswith('#')]
+
+    for line in import_lines:
+        # try:
+        if line.startswith('from'):
+            # Handle "from module import submodule" style imports
+            parts = line.split()
+            module_path = parts[1]
+            # Everything after 'import' is part of targets
+            targets = ' '.join(parts[3:]).split('#')[0].strip()  # Remove inline comments
+
+            # Import the base module
+            __import__(module_path)
+            module = sys.modules[module_path]
+
+            # Handle multiple targets (e.g., from math import sin, cos, tan)
+            for target in targets.split(','):
+                target = target.strip()
+                if ' as ' in target:
+                    name, alias = [x.strip() for x in target.split(' as ')]
+                    namespace[alias] = getattr(module, name)
+                else:
+                    namespace[target] = getattr(module, target)
+        else:
+            # Handle "import module" style imports
+            parts = line.split('#')[0].strip().split()  # Remove inline comments
+            if 'as' in parts:
+                # Handle "import module as alias"
+                as_index = parts.index('as')
+                module_name = parts[1]
+                alias = parts[as_index + 1]
+                module = __import__(module_name)
+                namespace[alias] = module
+            else:
+                # Handle "import module"
+                module_name = parts[1]
+                module = __import__(module_name)
+                namespace[module_name] = module
+        # except Exception as e:
+        #     traceback.print_exc()
+        #     print(f"Error importing {line}: {str(e)}")
+
+    return namespace
+
+
+def create_function_from_string(namespace, func_string, func_name, compile=False):
+    # try:
+    # Pre-compile the function code to catch syntax errors early
+    if compile: compiled_code = compile(func_string, '<string>', 'exec')
+
+    # Execute function definition in namespace
+    exec(compiled_code, namespace)
+
+    # Verify function exists in namespace
+    if func_name not in namespace:
+        raise RuntimeError(f"Function '{func_name}' not found in namespace after execution")
+
+        return namespace[func_name]
+
+    # except SyntaxError as e:
+    #     raise SyntaxError(f"Syntax error in function definition: {str(e)}")
+    # except Exception as e:
+    #     traceback.print_exc()
+    #     raise RuntimeError(f"Error creating function: {str(e)}")
 
 
 def parse_code(rsp):

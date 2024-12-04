@@ -28,7 +28,7 @@ from autogen_society_of_mind import SocietyOfMindAgent
 from alg_util import ID_LENGTH
 from alg_util import randomword
 from util import get_time, killtree, extract_code_from_chat, format_prompt
-from util import yaml_dump, OutputRedirector
+from util import yaml_dump, OutputRedirector, parse_imports, create_function_from_string
 
 DEFAULT_MAIN_ROLE = \
 """Write a python function that can {instruction}.
@@ -73,14 +73,8 @@ def start_task(execution_task: str,
     coding: bool = True,
     code_library: Optional[list] = None,
     log_file: bool = None):
-    # last agent is user proxy, remove it and replace with new one
-    # _agent_list = []; user_proxy = None
-    # for agent in agent_list:
-    #     if type(agent) != autogen.UserProxyAgent:
-    #         _agent_list.append(agent)
-    #     else:
-    #         user_proxy = agent
 
+    _register_functions(agent_list, code_library)
     if chat_llm_config['use_llm_lingua']:
         compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
         _transforms = [transforms.TextMessageCompressor(
@@ -159,10 +153,43 @@ def _get_agent_llm_config(chat_llm_config):
 
 
 def _register_functions(agent_list, code_library):
-    user_proxy = [agent for agent in agent_list if type(agent) == autogen.UserProxyAgent]
-    assert len(user_proxy) == 1; user_proxy = user_proxy[0]
+    if code_library is None or len(code_library) == 0: return
+    agent_list_noproxy = []; user_proxy = None
+    for agent in agent_list:
+        if type(agent) != autogen.UserProxyAgent:
+            agent_list_noproxy.append(agent)
+        else:
+            assert user_proxy is None; user_proxy = agent
+    assert len(agent_list_noproxy) > 0; assert user_proxy is not None
 
     code_exec_config = user_proxy._code_execution_config
+    code_exec_config['commandline-local'] = {'functions': []}
+    namespace = None
+    for i, func_dict in enumerate(code_library):
+        try:
+            if namespace is None:
+                namespace = parse_imports(func_dict['imports'])
+            function = create_function_from_string(namespace,
+                func_dict['code'],
+                func_dict['name'])
+        except:
+            traceback.print_exc()
+            print("Importing function %s failed!" % func_dict['name'])
+            continue
+
+        code_exec_config['commandline-local']['functions'].append(function)
+
+        for agent in agent_list_noproxy:
+            agents_current_system_message = agent["system_message"]
+            system_msg = agent["system_message"]
+            system_msg += \
+"""\n\nYou have access to execute the function: {function_name}.
+With following description: {function_description}""".format(
+                function_name=func_dict["name"],
+                function_description=func_dict["description"])
+            agent.update_system_message(system_msg)
+
+
 # Wrong way to add functions to code executor
 # def _register_functions(agent_list, code_library):
 #     if code_library is None or len(code_library) == 0: return
