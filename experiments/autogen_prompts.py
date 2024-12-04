@@ -21,8 +21,8 @@ UPDATE_AGENT_PROMPT = """# Your goal
 {code_performance}
 
 # Your answer
--Let's think step by step about how to update the agent description to improve code accuracy.
--Ensure the updated agent description does not exceed 200 words and follows the template.
+- Let's think step by step about how to update the agent description to improve code accuracy.
+- Ensure the updated agent description does not exceed 200 words and follows the template.
 
 # Template
 {default_sys_msg}
@@ -201,12 +201,13 @@ CREATE_UNIQUE_NAME_PROMPT = """# Your goal
 For example: Python_Expert
 """
 
-FUNCTION_PROMPT_TEMPLATE = """- You have access to user defined functions from the module called `$module_name` by their function names.
-- You must use these functions as much as possible when suggesting python code.
-- For example, if there was a function called `foo` you could import and call it by writing:
+FUNCTION_PROMPT_TEMPLATE = """- There are user defined functions in the module called '$module_name' that are listed below.
+- You can access these functions by importing them from the module '$module_name'.
+- You must use these functions as much as possible when writing python code.
+- For example, if there was a function called 'tensor', you can import and call it by writing:
 from $module_name import tensor
 result = tensor(args)
 
-# List of functions
+# List of functions in '$module_name'
 $functions
 """

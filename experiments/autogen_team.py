@@ -190,7 +190,8 @@ def _register_functions(agent_list, code_library):
     executor = LocalCommandLineCodeExecutor(
         timeout=timeout,
         work_dir=work_dir,
-        functions=functions)
+        functions=functions,
+        functions_module='code_library')
     function_msg = executor.format_functions_for_prompt(
         prompt_template=FUNCTION_PROMPT_TEMPLATE)
     executor._setup_functions(imports=code_library[0]['imports'],
