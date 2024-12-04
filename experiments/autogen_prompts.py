@@ -205,7 +205,7 @@ FUNCTION_PROMPT_TEMPLATE = """- There are user defined functions in the module c
 - You can access these functions by importing them from the module '$module_name'.
 - You must use these functions as much as possible when writing python code.
 - For example, if there was a function called 'tensor', you can import and call it by writing:
-from $module_name import tensor
+from $module_name import *
 result = tensor(args)
 
 # List of functions in '$module_name'
