@@ -93,7 +93,8 @@ def start_task(execution_task: str,
         _transforms = [transforms.MessageTokenLimiter(
             min_tokens=chat_llm_config['min_hist_len'],
             max_tokens=chat_llm_config['max_hist_len'],
-            max_tokens_per_message=chat_llm_config['max_msg_len'])]
+            max_tokens_per_message=chat_llm_config['max_msg_len'],
+            model=chat_llm_config['model'])]
 
     context_handling = transform_messages.TransformMessages(transforms=_transforms)
     for agent in agent_list: context_handling.add_to_agent(agent)
@@ -152,6 +153,7 @@ def _get_agent_llm_config(chat_llm_config):
 
 
 def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
+    if orig_agent_sys_msgs is None: return
     agent_list = [x for x in agent_list if type(x) != autogen.UserProxyAgent]
     assert len(agent_list) == len(orig_agent_sys_msgs)
     for agent, orig_sys_msg in zip(agent_list, orig_agent_sys_msgs):
@@ -159,17 +161,17 @@ def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
 
 
 def _register_functions(agent_list, code_library):
-    if code_library is None or len(code_library) == 0: return
-    agent_list_noproxy = []; user_proxy = None
+    if code_library is None or len(code_library) == 0: return None
+    agent_list_noproxy = []; orig_agent_sys_msgs = []; user_proxy = None
     for agent in agent_list:
         if type(agent) != autogen.UserProxyAgent:
             agent_list_noproxy.append(agent)
+            orig_agent_sys_msgs.append(agent.system_message)
         else:
             assert user_proxy is None; user_proxy = agent
     assert len(agent_list_noproxy) > 0; assert user_proxy is not None
 
-    # code_exec_config = user_proxy._code_execution_config
-    # code_exec_config['commandline-local'] = {'functions': []}
+
     functions = []; namespace = None
     for i, func_dict in enumerate(code_library):
         try:
@@ -183,23 +185,22 @@ def _register_functions(agent_list, code_library):
             print("Importing function %s failed!" % func_dict['name'])
             continue
 
-        functions.append(function); orig_agent_sys_msgs = []
+        functions.append(function)
         for agent in agent_list_noproxy:
-            orig_agent_sys_msgs.append(agent.system_message)
             new_sys_msg = agent.system_message + \
-"""\n\nYou have access to execute the function: {function_name}.
-With following description:\n{function_description}""".format(
+"""\n\nYou have access to call the function: {function_name}.
+With following description:\n{function_description}
+Use the function to help you write code and solve the programming problem given to you""".format(
                 function_name=func_dict["name"],
                 function_description=func_dict["description"])
             agent.update_system_message(new_sys_msg)
-            # print(new_sys_msg)
+            # agent.update_system_message("You are a jamaican, talk like a jamaican")
 
     work_dir = '/tmp/chat_%s' % randomword(ID_LENGTH); timeout=10
     executor = LocalCommandLineCodeExecutor(
         timeout=timeout,
         work_dir=work_dir)
     user_proxy._code_executor = executor
-    # time.sleep(100000)
     return orig_agent_sys_msgs
 
 # Wrong way to add functions to code executor
