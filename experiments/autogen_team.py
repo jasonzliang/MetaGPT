@@ -162,7 +162,6 @@ def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
 
 
 def _register_functions(agent_list, code_library):
-    if code_library is None or len(code_library) == 0: return None
     agent_list_noproxy = []; orig_agent_sys_msgs = []; user_proxy = None
     for agent in agent_list:
         if type(agent) != autogen.UserProxyAgent:
@@ -171,6 +170,11 @@ def _register_functions(agent_list, code_library):
         else:
             assert user_proxy is None; user_proxy = agent
     assert len(agent_list_noproxy) > 0; assert user_proxy is not None
+
+    if code_library is None or len(code_library) == 0:
+        executor = user_proxy._code_executor; executor._functions = []
+        executor._setup_functions()
+        return None
 
     functions = []; namespace = None
     for i, func_dict in enumerate(code_library):
@@ -186,26 +190,20 @@ def _register_functions(agent_list, code_library):
             print("Importing function %s failed!" % func_dict['name'])
             continue
 
-    work_dir = '/tmp/chat_%s' % randomword(ID_LENGTH); timeout=10
-    executor = LocalCommandLineCodeExecutor(
-        timeout=timeout,
-        work_dir=work_dir,
-        functions=functions,
-        functions_module='code_library')
+    executor = user_proxy._code_executor; executor._functions = functions
     function_msg = executor.format_functions_for_prompt(
         prompt_template=FUNCTION_PROMPT_TEMPLATE)
     executor._setup_functions(imports=code_library[0]['imports'],
         func_list=[func_dict['code'] for func_dict in code_library],
         overwrite_func_file=True)
-    user_proxy._code_executor = executor
 
     for agent in agent_list_noproxy:
         new_sys_msg = agent.system_message + "\n" + function_msg
         agent.update_system_message(new_sys_msg)
         # print(agent.system_message)
         # agent.update_system_message("You are a jamaican, talk like a jamaican")
-
     return orig_agent_sys_msgs
+
 
 # Wrong way to add functions to code executor
 # def _register_functions(agent_list, code_library):
