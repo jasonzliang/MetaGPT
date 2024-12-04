@@ -201,12 +201,11 @@ CREATE_UNIQUE_NAME_PROMPT = """# Your goal
 For example: Python_Expert
 """
 
-FUNCTION_PROMPT_TEMPLATE = """- You have access to the following user defined functions.
-- They can be accessed from the module called `$module_name` by their function names.
+FUNCTION_PROMPT_TEMPLATE = """- You have access to user defined functions from the module called `$module_name` by their function names.
 - You must use these functions as much as possible when suggesting python code.
 - For example, if there was a function called `foo` you could import and call it by writing:
-from $module_name import foo
-result = foo(args)
+from $module_name import tensor
+result = tensor(args)
 
 # List of functions
 $functions

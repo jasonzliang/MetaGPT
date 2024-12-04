@@ -172,7 +172,6 @@ def _register_functions(agent_list, code_library):
             assert user_proxy is None; user_proxy = agent
     assert len(agent_list_noproxy) > 0; assert user_proxy is not None
 
-
     functions = []; namespace = None
     for i, func_dict in enumerate(code_library):
         try:
@@ -194,7 +193,9 @@ def _register_functions(agent_list, code_library):
         functions=functions)
     function_msg = executor.format_functions_for_prompt(
         prompt_template=FUNCTION_PROMPT_TEMPLATE)
-    # executor._setup_functions()
+    executor._setup_functions(imports=code_library[0]['imports'],
+        func_list=[func_dict['code'] for func_dict in code_library],
+        overwrite_func_file=True)
     user_proxy._code_executor = executor
 
     for agent in agent_list_noproxy:
@@ -274,25 +275,25 @@ def init_builder(building_task=None,
 
         print("init_builder: creating new builder")
         assert building_task is not None
-        code_execution_config = {
-            "last_n_messages": 1,
-            "timeout": 10,
-            "use_docker": False,
-            "work_dir": work_dir
-        }
+        # code_execution_config = {
+        #     "last_n_messages": 1,
+        #     "timeout": 10,
+        #     "use_docker": False,
+        #     "work_dir": work_dir
+        # }
+        executor = LocalCommandLineCodeExecutor(timeout=10, work_dir=work_dir)
         agent_list, agent_configs = builder.build(
             building_task=building_task,
             default_llm_config=_builder_llm_config,
             coding=True,
-            code_execution_config=code_execution_config)
-        builder_dict = copy.copy(builder.cached_configs)
+            code_execution_config={'executor': executor})
+        builder_dict = builder.cached_configs
     else:
         print("init_builder: using existing builder")
         if not use_builder_dict:
             assert os.path.exists(builder_cfg)
             # load previous agent configs
-            with open(builder_cfg, "r") as f:
-                builder_dict = json.load(f)
+            with open(builder_cfg, "r") as f: builder_dict = json.load(f)
 
     # overwrite LLM model used by agents for code generation
     for agent_config in builder_dict["agent_configs"]:
@@ -309,10 +310,13 @@ def init_builder(building_task=None,
             agent_config['system_message'] = new_agent_sys_msg
             del agent_config['system_message_file']
     # overwrite working directory used by agents for code execution
-    builder_dict["code_execution_config"]["work_dir"] = work_dir
+    # builder_dict["code_execution_config"]["work_dir"] = work_dir
 
-    agent_list, agent_configs = builder.load(
-        config_json=json.dumps(builder_dict, indent=4))
+    # setup builder agents to use executor for code blocks in future chat
+    executor = LocalCommandLineCodeExecutor(timeout=10, work_dir=work_dir)
+    builder_dict['code_execution_config'] = {'executor': executor}
+    agent_list, agent_configs = builder.load(config_dict=builder_dict)
+    del builder_dict['code_execution_config']
 
     if use_builder_dict:
         return agent_list, agent_configs, builder, builder_dict

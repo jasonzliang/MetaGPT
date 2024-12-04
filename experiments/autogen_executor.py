@@ -3,6 +3,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 import warnings
 from hashlib import md5
 from pathlib import Path
@@ -203,8 +204,18 @@ $functions"""
                 if re.search(pattern, code):
                     raise ValueError(f"Potentially dangerous command detected: {message}")
 
-    def _setup_functions(self) -> None:
-        func_file_content = _build_python_functions_file(self._functions)
+    def _setup_functions(self,
+        imports=None,
+        func_list=None,
+        overwrite_func_file=False) -> None:
+        if overwrite_func_file:
+            func_file_content = ""
+            if imports is not None and len(imports) > 0:
+                func_file_content += imports + "\n\n"
+            if func_list is not None and len(func_list) > 0:
+                func_file_content += "\n\n".join(func_list)
+        else:
+            func_file_content = _build_python_functions_file(self._functions)
         func_file = self._work_dir / f"{self._functions_module}.py"
         func_file.write_text(func_file_content)
 
@@ -307,6 +318,7 @@ $functions"""
                     cmd = [activation_script, "&&", *cmd]
 
             try:
+                # print("HI"); time.sleep(100000)
                 result = subprocess.run(
                     cmd,
                     cwd=self._work_dir,

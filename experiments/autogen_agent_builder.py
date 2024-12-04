@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import importlib
 import json
@@ -1247,6 +1248,7 @@ With following description: {function_description}
         self,
         filepath: Optional[str] = None,
         config_json: Optional[str] = None,
+        config_dict: Optional[dict] = None,
         use_oai_assistant: Optional[bool] = False,
         **kwargs,
     ) -> Tuple[List[autogen.ConversableAgent], Dict]:
@@ -1256,22 +1258,27 @@ With following description: {function_description}
         Args:
             filepath: filepath or JSON string for the save config.
             config_json: JSON string for the save config.
+            config_dict: dictionary for the save config
             use_oai_assistant: use OpenAI assistant api instead of self-constructed agent.
 
         Returns:
             agent_list: a list of agents.
             cached_configs: cached configs.
         """
-        # load json string.
-        if config_json is not None:
-            print(colored("Loading config from JSON...", "green"), flush=True)
-            cached_configs = json.loads(config_json)
-
         # load from path.
         if filepath is not None:
-            print(colored(f"Loading config from {filepath}", "green"), flush=True)
+            print(colored(f"Loading config from {filepath}...", "green"), flush=True)
             with open(filepath) as f:
                 cached_configs = json.load(f)
+        # load json string.
+        elif config_json is not None:
+            print(colored("Loading config from JSON...", "green"), flush=True)
+            cached_configs = json.loads(config_json)
+        elif config_dict is not None:
+            print(colored("Loading config from dictionary...", "green"), flush=True)
+            cached_configs = copy.deepcopy(config_dict)
+        else:
+            raise Exception("You need to specify a source to load builder from!")
 
         _config_check(cached_configs)
 

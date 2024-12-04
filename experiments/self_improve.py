@@ -59,7 +59,7 @@ EVAL_BUILDER_LLM_CONFIG = {
 
 EVAL_CHAT_LLM_CONFIG = {
     'model': 'gpt-4o',
-    'temperature': 0.01,
+    'temperature': 0.9,
     'use_llm_lingua': False,
     'max_round': 69,
 }
