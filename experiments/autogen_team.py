@@ -313,7 +313,7 @@ def init_builder(building_task=None,
     # overwrite working directory used by agents for code execution
     # builder_dict["code_execution_config"]["work_dir"] = work_dir
 
-    # setup builder agents to use executor for code blocks in future chat
+    # overwrite code execution config to use executor for code blocks in future chat
     executor = LocalCommandLineCodeExecutor(timeout=10, work_dir=work_dir)
     builder_dict['code_execution_config'] = {'executor': executor}
     agent_list, agent_configs = builder.load(config_dict=builder_dict)
@@ -322,8 +322,7 @@ def init_builder(building_task=None,
     if use_builder_dict:
         return agent_list, agent_configs, builder, builder_dict
     else:
-        with open(builder_cfg, "w") as f:
-            json.dump(builder_dict, f, indent=4)
+        builder.save(builder_cfg)
         return agent_list, agent_configs, builder, builder_cfg
 
 def _parse_builder_cfgs(builder_cfgs, eval_mode=False):

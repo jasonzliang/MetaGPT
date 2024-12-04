@@ -59,7 +59,7 @@ EVAL_BUILDER_LLM_CONFIG = {
 
 EVAL_CHAT_LLM_CONFIG = {
     'model': 'gpt-4o',
-    'temperature': 0.9,
+    'temperature': 0.01,
     'use_llm_lingua': False,
     'max_round': 69,
 }
@@ -294,7 +294,7 @@ Stack trace/exception for test cases:\n%s""" % \
 
 def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
-    num_gen=250,
+    num_gen=1,
     init_seed=0,
     # problem_list=_get_scicode_problem_list(),
     problem_list=['19'],
@@ -389,7 +389,7 @@ def self_improve_loop(team_role_fp=None,
             # pprint.pprint(checkpoint_dict)
             _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
         else:
-            print("All problems solved, exiting loop at gen %s" % i + 1); break
+            print("All problems solved, exiting loop at gen %s" % (i + 1)); break
 
     _merge_agents(indv=indv,
         evaluator=_eval,

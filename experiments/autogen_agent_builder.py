@@ -15,7 +15,9 @@ import requests
 from termcolor import colored
 
 import autogen
+
 from autogen_prompts import *
+from autogen_executor import LocalCommandLineCodeExecutor
 from util import yaml_dump, flatten
 
 logger = logging.getLogger(__name__)
@@ -1236,10 +1238,16 @@ With following description: {function_description}
         Return:
             filepath: path save.
         """
+        class CustomJSONEncoder(json.JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, LocalCommandLineCodeExecutor):
+                    return None
+                return super().default(obj)
+
         if filepath is None:
             filepath = f'./save_config_{hashlib.md5(self.building_task.encode("utf-8")).hexdigest()}.json'
         with open(filepath, "w") as save_file:
-            json.dump(self.cached_configs, save_file, indent=4)
+            json.dump(self.cached_configs, save_file, indent=4, cls=CustomJSONEncoder)
         print(colored(f"Building config saved to {filepath}", "green"), flush=True)
 
         return filepath

@@ -29,7 +29,7 @@ __all__ = ("LocalCommandLineCodeExecutor",)
 
 A = ParamSpec("A")
 
-
+# TODO: make this class json serializable
 class LocalCommandLineCodeExecutor(CodeExecutor):
     SUPPORTED_LANGUAGES: ClassVar[List[str]] = [
         "bash",
@@ -287,6 +287,7 @@ $functions"""
             try:
                 # Check if there is a filename comment
                 filename = _get_file_name_from_content(code, self._work_dir)
+                if filename is not None: filename = filename[:255]
             except ValueError:
                 return CommandLineCodeResult(exit_code=1, output="Filename is not in the workspace")
 
