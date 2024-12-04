@@ -161,7 +161,7 @@ class Gencode:
                             'imports': prob_data['required_dependencies'],
                             'code': function_code,
                             'name': func_name,
-                            'description': parse_comment_block(func_header)}
+                            'description': func_header}
                     else:
                         try:
                             self.generate_response_with_steps(prob_data,

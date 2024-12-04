@@ -184,7 +184,7 @@ def _register_functions(agent_list, code_library):
             system_msg = agent["system_message"]
             system_msg += \
 """\n\nYou have access to execute the function: {function_name}.
-With following description: {function_description}""".format(
+With following description:\n{function_description}""".format(
                 function_name=func_dict["name"],
                 function_description=func_dict["description"])
             agent.update_system_message(system_msg)
