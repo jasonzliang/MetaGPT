@@ -71,7 +71,7 @@ class AgentBuilder:
 
     DEFAULT_PROXY_AUTO_REPLY = 'There is no code from the last 1 message for me to execute. Group chat manager should let other participants to continue the conversation. If the group chat manager want to end the conversation, you should let other participant reply me only with "TERMINATE"'
 
-    GROUP_CHAT_DESCRIPTION = """ # Group chat instruction
+    GROUP_CHAT_DESCRIPTION = """# Group chat instruction
 You are now working in a group chat with different expert and a group chat manager.
 You should refer to the previous message from other participant members or yourself, follow their topic and reply to them.
 
@@ -125,7 +125,7 @@ When the task is complete and the result has been carefully verified, after obta
 - **Use 'print' function for the output when relevant**.
 - Check the execution result returned by the Computer_terminal.
 - Do not ask Computer_terminal to copy and paste the result.
-- If the result indicates there is an error, fix the error and output the code again. """
+- If the result indicates there is an error, fix the error and output the code again."""
 
     CODING_PROMPT = """Does the following task need programming (i.e., access external API or tool by coding) to solve,
 or coding may help the following task become easier?

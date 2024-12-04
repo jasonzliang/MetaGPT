@@ -267,8 +267,7 @@ def create_function_from_string(namespace, func_string, func_name, compile=False
     if func_name not in namespace:
         raise RuntimeError(f"Function '{func_name}' not found in namespace after execution")
 
-        return namespace[func_name]
-
+    return namespace[func_name]
     # except SyntaxError as e:
     #     raise SyntaxError(f"Syntax error in function definition: {str(e)}")
     # except Exception as e:

@@ -17,7 +17,6 @@ from autogen import Cache
 # from autogen.agentchat.contrib.agent_builder import AgentBuilder
 from autogen.agentchat.contrib.capabilities import transform_messages, transforms
 from autogen.agentchat.contrib.capabilities.text_compressors import LLMLingua
-from autogen.coding import LocalCommandLineCodeExecutor
 # from autogen.code_utils import extract_code
 
 from evalplus.data.humaneval import get_human_eval_plus
@@ -28,6 +27,8 @@ from wrapt_timeout_decorator import *
 
 from autogen_agent_builder import AgentBuilder
 from autogen_society_of_mind import SocietyOfMindAgent
+from autogen_executor import LocalCommandLineCodeExecutor
+from autogen_prompts import FUNCTION_PROMPT_TEMPLATE
 from alg_util import ID_LENGTH
 from alg_util import randomword
 from util import get_time, killtree, extract_code_from_chat, format_prompt
@@ -180,27 +181,28 @@ def _register_functions(agent_list, code_library):
             function = create_function_from_string(namespace,
                 func_dict['code'],
                 func_dict['name'])
+            functions.append(function)
         except:
             traceback.print_exc()
             print("Importing function %s failed!" % func_dict['name'])
             continue
 
-        functions.append(function)
-        for agent in agent_list_noproxy:
-            new_sys_msg = agent.system_message + \
-"""\n\nYou have access to call the function: {function_name}.
-With following description:\n{function_description}
-Call the function to help you write code and solve the programming problem given to you""".format(
-                function_name=func_dict["name"],
-                function_description=func_dict["description"])
-            agent.update_system_message(new_sys_msg)
-            # agent.update_system_message("You are a jamaican, talk like a jamaican")
-
     work_dir = '/tmp/chat_%s' % randomword(ID_LENGTH); timeout=10
     executor = LocalCommandLineCodeExecutor(
         timeout=timeout,
-        work_dir=work_dir)
+        work_dir=work_dir,
+        functions=functions)
+    function_msg = executor.format_functions_for_prompt(
+        prompt_template=FUNCTION_PROMPT_TEMPLATE)
+    # executor._setup_functions()
     user_proxy._code_executor = executor
+
+    for agent in agent_list_noproxy:
+        new_sys_msg = agent.system_message + "\n" + function_msg
+        agent.update_system_message(new_sys_msg)
+        # print(agent.system_message)
+        # agent.update_system_message("You are a jamaican, talk like a jamaican")
+
     return orig_agent_sys_msgs
 
 # Wrong way to add functions to code executor
