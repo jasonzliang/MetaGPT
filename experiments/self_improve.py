@@ -379,6 +379,7 @@ def self_improve_loop(team_role_fp=None,
             print("All problems solved, exiting loop at gen %s" % (i + 1))
             end_loop = True
 
+        del curr_team_role['code_execution_config']
         checkpoint_dict = {
             'curr_team_role': curr_team_role,
             'gen': i + 1,
