@@ -157,6 +157,7 @@ class Gencode:
                         assert prev_file_content is not None
                         func_header = prob_data["sub_steps"][prev_step]["function_header"]
                         func_name = extract_function_name(func_header)
+                        print(prev_file_path)
                         func_code = get_function_from_code(prev_file_content, func_name)
                         self.previous_llm_code[prev_step] = {
                             'imports': prob_data['required_dependencies'],
