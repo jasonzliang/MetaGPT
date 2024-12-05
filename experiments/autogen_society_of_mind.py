@@ -5,6 +5,59 @@ from typing import Callable, Dict, List, Literal, Optional, Tuple, Union
 
 from autogen import Agent, ConversableAgent, GroupChat, GroupChatManager, OpenAIWrapper
 
+DEFAULT_RESPONSE = """Output a standalone response to the original request, without mentioning any of the intermediate discussion."""
+
+DEFAULT_TASK_DESC = """Earlier you were asked to fulfill a request. You and your team worked diligently to address that request. Here is a transcript of that conversation:"""
+
+DEFAULT_RESPONSE_V2 = """# Your answer
+You are tasked with synthesizing the preceding discussion into a clear, coherent answer to the original request. Consider these guidelines:
+
+1. Focus on the key conclusions and agreed-upon solutions that emerged from the discussion
+2. Incorporate any important nuances, caveats, or limitations that were identified
+3. Present the information in a logical, well-structured manner
+4. Use clear, professional language appropriate for the context
+5. Include concrete examples or specific details when they strengthen the answer
+6. If multiple approaches were discussed, present the recommended solution with brief justification
+
+# Answer format
+Extract the final working solution code from the discussion and present it in a ```python [code]``` block. Include only the essential implementation, removing any debugging, testing, or exploratory code. The code should be complete, well-structured, and ready to use."""
+
+DEFAULT_TASK_DESC_V2 = """# Your task
+You are reviewing a collaborative problem-solving session where a team of experts worked together to address a specific request. The transcript below contains their complete discussion, including:
+
+- Their analysis and interpretation of the request
+- Different perspectives and approaches they considered
+- Supporting evidence and reasoning for various options
+- Areas of agreement and any resolved disagreements
+- Technical details and implementation considerations
+- Final conclusions and recommendations
+
+Your role is to distill this discussion into its essential insights and solutions. Focus particularly on:
+- How the team ultimately decided to address the core request
+- Key supporting details and context that inform the solution
+- Important caveats or considerations for implementation
+
+Here is the complete transcript of their discussion:"""
+
+DEFAULT_RESPONSE_V3 = """# Your answer
+Synthesize this discussion into a clear, direct answer that:
+- Focuses on key conclusions and solutions
+- Includes essential caveats and limitations
+- Maintains appropriate context and detail level
+- Reads as a standalone answer without referencing the discussion
+- Uses professional, confident language
+
+# Answer format
+Extract the final working solution code from the discussion and present it in a ```python [code]``` block. Include only the essential implementation, removing any debugging, testing, or exploratory code. The code should be complete, well-structured, and ready to use."""
+
+DEFAULT_TASK_DESC_V3 = """# Your task
+Below is a transcript of experts solving a problem together. Note their:
+- Final conclusions
+- Key supporting evidence
+- Important caveats
+- Implementation details
+
+Review their discussion and prepare to extract the essential solution:"""
 
 class SocietyOfMindAgent(ConversableAgent):
     """(In preview) A single agent that runs a Group Chat as an inner monologue.
@@ -27,10 +80,6 @@ class SocietyOfMindAgent(ConversableAgent):
                 llm_config is set to anything else, then a default LLM prompt is used.
     """
 
-    DEFAULT_RESPONSE = """Output a standalone response to the original request, without mentioning any of the intermediate discussion."""
-
-    DEFAULT_TASK_DESC = """Earlier you were asked to fulfill a request. You and your team worked diligently to address that request. Here is a transcript of that conversation:"""
-
     def __init__(
         self,
         name: str,
@@ -43,6 +92,8 @@ class SocietyOfMindAgent(ConversableAgent):
         code_execution_config: Union[Dict, Literal[False]] = False,
         llm_config: Optional[Union[Dict, Literal[False]]] = False,
         default_auto_reply: Optional[Union[str, Dict, None]] = "",
+        default_response: str = DEFAULT_RESPONSE_V3,
+        default_task_desc: str = DEFAULT_TASK_DESC_V3,
         **kwargs,
     ):
         super().__init__(
@@ -57,13 +108,15 @@ class SocietyOfMindAgent(ConversableAgent):
             default_auto_reply=default_auto_reply,
             **kwargs,
         )
+        self.default_response = default_response
+        self.default_task_desc = default_task_desc
 
         self.update_chat_manager(chat_manager)
 
         # response_preparer default depends on if the llm_config is set, and if a client was created
         if response_preparer is None:
             if self.client is not None:
-                response_preparer = self.DEFAULT_RESPONSE
+                response_preparer = self.default_response
             else:
 
                 def response_preparer(agent, messages):
@@ -93,7 +146,7 @@ class SocietyOfMindAgent(ConversableAgent):
         _messages = [
             {
                 "role": "system",
-                "content": self.DEFAULT_TASK_DESC,
+                "content": self.default_task_desc,
             }
         ]
 

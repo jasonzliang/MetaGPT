@@ -154,12 +154,13 @@ class Gencode:
                     prev_file_path = self._get_output_file_path(prob_id, prev_step + 1)
                     if prev_file_path.is_file() and prev_file_path.stat().st_size > 0:
                         prev_file_content = prev_file_path.read_text(encoding='utf-8')
+                        assert prev_file_content is not None
                         func_header = prob_data["sub_steps"][prev_step]["function_header"]
                         func_name = extract_function_name(func_header)
-                        function_code = get_function_from_code(prev_file_content, func_name)
+                        func_code = get_function_from_code(prev_file_content, func_name)
                         self.previous_llm_code[prev_step] = {
                             'imports': prob_data['required_dependencies'],
-                            'code': function_code,
+                            'code': func_code,
                             'name': func_name}
                             # 'description': parse_comment_block(func_header)}
                     else:
