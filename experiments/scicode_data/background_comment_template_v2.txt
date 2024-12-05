@@ -17,7 +17,7 @@ RESPONSE GUIDELINES:
 1. Start with the scientific background required for the next step, formatted as a comment.
 2. Then write the complete and executable Python program for the next step in a single block.
 3. Your response should focus exclusively on implementing the solution for the next step, adhering closely to the specified function header and the context provided by the initial steps.
-4. You are highly encouraged to import and call functions from PREVIOUS STEPS DESCRIPTION to help implement the Python solution code.
+4. You are highly encouraged to import and call Python functions from PREVIOUS STEPS DESCRIPTION to help implement the solution code.
 5. DO NOT include previous function code, example usage or test code in your response.
 6. Ensure your response is in the format of ```python``` and includes the necessary background as a comment at the top.
 
