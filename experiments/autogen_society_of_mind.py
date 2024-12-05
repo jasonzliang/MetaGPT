@@ -39,15 +39,14 @@ Your role is to distill this discussion into its essential insights and solution
 
 Here is the complete transcript of their discussion:"""
 
+# Synthesize this discussion into a clear, direct answer that:
+# - Focuses on key conclusions and solutions
+# - Includes essential caveats and limitations
+# - Maintains appropriate context and detail level
+# - Reads as a standalone answer without referencing the discussion
+# - Uses professional, confident language
+# # Answer format
 DEFAULT_RESPONSE_V3 = """# Your answer
-Synthesize this discussion into a clear, direct answer that:
-- Focuses on key conclusions and solutions
-- Includes essential caveats and limitations
-- Maintains appropriate context and detail level
-- Reads as a standalone answer without referencing the discussion
-- Uses professional, confident language
-
-# Answer format
 Extract the final working solution code from the discussion and present it in a ```python [code]``` block. Include only the essential implementation, removing any debugging, testing, or exploratory code. The code should be complete, well-structured, and ready to use."""
 
 DEFAULT_TASK_DESC_V3 = """# Your task
