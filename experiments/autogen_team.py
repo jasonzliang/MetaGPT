@@ -171,8 +171,8 @@ def _register_functions(agent_list, code_library):
             assert user_proxy is None; user_proxy = agent
     assert len(agent_list_noproxy) > 0; assert user_proxy is not None
 
+    executor = user_proxy._code_executor; executor.reset()
     if code_library is None or len(code_library) == 0:
-        executor = user_proxy._code_executor; executor.reset()
         return None
 
     functions = []; namespace = None
@@ -189,7 +189,6 @@ def _register_functions(agent_list, code_library):
             print("Importing function %s failed!" % func_dict['name'])
             continue
 
-    executor = user_proxy._code_executor; executor.reset()
     executor._functions = functions
     function_msg = executor.format_functions_for_prompt(
         prompt_template=FUNCTION_PROMPT_TEMPLATE)
@@ -200,38 +199,7 @@ def _register_functions(agent_list, code_library):
     for agent in agent_list_noproxy:
         new_sys_msg = agent.system_message + "\n" + function_msg
         agent.update_system_message(new_sys_msg)
-        # print(agent.system_message)
-        # agent.update_system_message("You are a jamaican, talk like a jamaican")
     return orig_agent_sys_msgs
-
-
-# Wrong way to add functions to code executor
-# def _register_functions(agent_list, code_library):
-#     if code_library is None or len(code_library) == 0: return
-
-#     agent_list_noproxy = []; user_proxy = None
-#     for agent in agent_list:
-#         if type(agent) != autogen.UserProxyAgent:
-#             agent_list_noproxy.append(agent)
-#         else:
-#             user_proxy = agent
-#     assert len(agent_list_noproxy) > 0; assert user_proxy is not None
-
-#     for func in code_library
-#         for agent in agent_list_noproxy:
-#             autogen.agentchat.register_function(
-#                 func["function"],
-#                 caller=agent,
-#                 executor=user_proxy,
-#                 name=func["name"],
-#                 description=func["description"])
-
-#             agents_current_system_message = agent["system_message"]
-#             agent.update_system_message(
-#                 AgentBuilder.UPDATED_AGENT_SYSTEM_MESSAGE.format(
-#                     agent_system_message=agents_current_system_message,
-#                     function_name=func["name"],
-#                     function_description=func["description"]))
 
 
 def init_builder(building_task=None,
@@ -353,6 +321,7 @@ def autogen_mutate(
     work_dir='groupchat',
     builder_llm_config=BUILDER_LLM_CONFIG,
     eval_mode=False):
+
     builder_str = _parse_builder_cfgs([builder_cfg], eval_mode=eval_mode)[0]
     mutate_prompt = \
 """Here is a JSON string that describes an existing team that contains experts with different roles for generating code.
