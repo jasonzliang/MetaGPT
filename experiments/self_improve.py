@@ -366,7 +366,8 @@ def self_improve_loop(team_role_fp=None,
             n_agents=update_n_agents,
             update_teamwork=update_teamwork)
         updated_team_fp = os.path.join(eval_result_dir, "team_role_update.json")
-        builder.save(updated_team_fp); curr_team_role = builder.cached_configs
+        builder.save(updated_team_fp)
+        curr_team_role = copy.copy(builder.cached_configs)
         del curr_team_role['code_execution_config']
 
         solution_set.add_problem_result(prob_id, i, problem_solved, solved_steps)

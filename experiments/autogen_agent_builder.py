@@ -1284,7 +1284,7 @@ With following description: {function_description}
             cached_configs = json.loads(config_json)
         elif config_dict is not None:
             print(colored("Loading config from dictionary...", "green"), flush=True)
-            cached_configs = copy.deepcopy(config_dict)
+            cached_configs = copy.copy(config_dict)
         else:
             raise Exception("You need to specify a source to load builder from!")
 
