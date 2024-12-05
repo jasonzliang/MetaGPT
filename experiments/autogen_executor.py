@@ -300,17 +300,17 @@ $functions"""
                 break
 
             execute_code = self.execution_policies.get(lang, False)
-            try:
-                # Check if there is a filename comment
-                filename = _get_file_name_from_content(code, self._work_dir)
-                if filename is not None: filename = filename[:255]
-            except ValueError:
-                return CommandLineCodeResult(exit_code=1, output="Filename is not in the workspace")
+            # try:
+            #     # Check if there is a filename comment
+            #     filename = _get_file_name_from_content(code, self._work_dir)
+            #     if filename is not None: filename = filename[:255]
+            # except ValueError:
+            #     return CommandLineCodeResult(exit_code=1, output="Filename is not in the workspace")
+            # if filename is None:
 
-            if filename is None:
-                # create a file with an automatically generated name
-                code_hash = md5(code.encode()).hexdigest()
-                filename = f"tmp_code_{code_hash}.{'py' if lang.startswith('python') else lang}"
+            # create a file with an automatically generated name
+            code_hash = md5(code.encode()).hexdigest()
+            filename = f"tmp_code_{code_hash}.{'py' if lang.startswith('python') else lang}"
             written_file = (self._work_dir / filename).resolve()
             with written_file.open("w", encoding="utf-8") as f:
                 f.write(self._get_code_history(lang))
