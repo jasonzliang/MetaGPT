@@ -32,7 +32,7 @@ from util import format_prompt, clear_autogen_cache
 DEFAULT_MAIN_ROLE = \
 """Write a python function that can {instruction}.
 Ensure the function performs correctly and efficiently.
-Return ```python your_code_here ``` with NO other texts,
+Return ```python your_code_here``` with NO other texts,
 your code:
 """
 
