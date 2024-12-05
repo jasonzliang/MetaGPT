@@ -282,7 +282,9 @@ def init_builder(building_task=None,
     # builder_dict["code_execution_config"]["work_dir"] = work_dir
 
     # overwrite code execution config to use executor for code blocks in future chat
-    executor = LocalCommandLineCodeExecutor(timeout=10, work_dir=work_dir)
+    executor = LocalCommandLineCodeExecutor(timeout=10,
+        work_dir=work_dir,
+        functions_module='code_library')
     builder_dict['code_execution_config'] = {'executor': executor}
     agent_list, agent_configs = builder.load(config_dict=builder_dict)
     del builder_dict['code_execution_config']
