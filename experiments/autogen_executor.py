@@ -25,7 +25,7 @@ from autogen.coding.base import CodeBlock, CodeExecutor, CodeExtractor, CommandL
 from autogen.coding.markdown_code_extractor import MarkdownCodeExtractor
 from autogen.coding.utils import _get_file_name_from_content, silence_pip
 
-from util import extract_code_elements
+from util import extract_elements_from_code
 
 __all__ = ("LocalCommandLineCodeExecutor",)
 
@@ -358,7 +358,7 @@ $functions"""
             if exitcode != 0:
                 break
 
-            extracted_code = extract_code_elements(code)
+            extracted_code = extract_elements_from_code(code)
             if extracted_code is not None:
                 self._code_history.append((lang, extracted_code))
 

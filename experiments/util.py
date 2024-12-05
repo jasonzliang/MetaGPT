@@ -141,20 +141,37 @@ def collect_stats_from_chat(result_dict, *args, **kwargs):
     # pprint.pprint(result_dict); time.sleep(999999)
 
 
-def extract_code_from_chat(chat_result):
-    code = ""
-    result = parse_code2(chat_result.summary)
-    if result is not None:
-        code = result
-    else:
-        for msg_dict in chat_result.chat_history[::-1]:
-            result = parse_code2(msg_dict['content'])
-            if result is not None:
-                code = result
-    return code
+def extract_function_from_code(code_string, function_name):
+    """
+    Extracts and returns the source code of the specified function from a given source code string.
+
+    Uses ast.get_source_segment() to extract the precise source code segment.
+
+    :param code_string: String containing Python source code
+    :param function_name: Name of the function to extract
+    :return: String containing the source code of the function, including its docstring,
+             or None if the function is not found
+    """
+    if code_string is None:
+        return None
+
+    try:
+        # Parse the code into an AST
+        tree = ast.parse(code_string)
+
+        # Iterate through all nodes in the AST
+        for node in ast.walk(tree):
+            # Check if the node is a function definition
+            if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name == function_name:
+                # Use get_source_segment to extract the exact source code
+                return ast.get_source_segment(code_string, node)
+
+    except Exception as e:
+        print(f'{function_name} not found with error: {e}')
+        return code_string
 
 
-def parse_comment_block(text, incl_single_comments=False):
+def extract_comments_from_code(text, incl_single_comments=False):
     """
     Extract comment blocks from Python source code, including docstrings.
 
@@ -284,7 +301,7 @@ def create_function_from_string(namespace, func_string, func_name, compile=False
     #     raise RuntimeError(f"Error creating function: {str(e)}")
 
 
-def extract_code_elements(content):
+def extract_elements_from_code(content):
     """
     Extracts and organizes Python code elements (imports, classes, and functions)
     from a string of source code.
@@ -327,6 +344,19 @@ def extract_code_elements(content):
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         return None
+
+
+def extract_code_from_chat(chat_result):
+    code = ""
+    result = parse_code2(chat_result.summary)
+    if result is not None:
+        code = result
+    else:
+        for msg_dict in chat_result.chat_history[::-1]:
+            result = parse_code2(msg_dict['content'])
+            if result is not None:
+                code = result
+    return code
 
 
 def parse_code(rsp):

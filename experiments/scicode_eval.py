@@ -14,7 +14,7 @@ from scicode.gen.models import extract_python_script, get_model_function
 from scicode.parse.parse import extract_function_name, get_function_from_code, \
     read_from_jsonl
 
-from util import parse_comment_block
+from util import extract_function_from_code
 # from scicode.parse.parse import H5PY_FILE
 
 PROB_NUM = 65
@@ -158,7 +158,7 @@ class Gencode:
                         assert prev_file_content is not None
                         func_header = prob_data["sub_steps"][prev_step]["function_header"]
                         func_name = extract_function_name(func_header)
-                        func_code = get_function_from_code(prev_file_content, func_name)
+                        func_code = extract_function_from_code(prev_file_content, func_name)
                         assert func_name is not None and func_code is not None
 
                         self.previous_llm_code[prev_step] = {
