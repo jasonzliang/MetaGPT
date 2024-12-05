@@ -367,6 +367,7 @@ def self_improve_loop(team_role_fp=None,
             update_teamwork=update_teamwork)
         updated_team_fp = os.path.join(eval_result_dir, "team_role_update.json")
         builder.save(updated_team_fp); curr_team_role = builder.cached_configs
+        del curr_team_role['code_execution_config']
 
         solution_set.add_problem_result(prob_id, i, problem_solved, solved_steps)
         if not solution_set.is_solved():
@@ -379,7 +380,6 @@ def self_improve_loop(team_role_fp=None,
             print("All problems solved, exiting loop at gen %s" % (i + 1))
             end_loop = True
 
-        del curr_team_role['code_execution_config']
         checkpoint_dict = {
             'curr_team_role': curr_team_role,
             'gen': i + 1,
