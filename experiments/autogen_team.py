@@ -187,7 +187,7 @@ def _register_functions(agent_list, code_library):
         except:
             traceback.print_exc()
             print("Importing function %s failed!" % func_dict['name'])
-            continue
+            return None
 
     executor._functions = functions
     function_msg = executor.format_functions_for_prompt(

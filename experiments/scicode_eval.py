@@ -153,17 +153,18 @@ class Gencode:
                     # else:
                     prev_file_path = self._get_output_file_path(prob_id, prev_step + 1)
                     if prev_file_path.is_file() and prev_file_path.stat().st_size > 0:
+
                         prev_file_content = prev_file_path.read_text(encoding='utf-8')
                         assert prev_file_content is not None
                         func_header = prob_data["sub_steps"][prev_step]["function_header"]
                         func_name = extract_function_name(func_header)
-                        print(prev_file_path)
                         func_code = get_function_from_code(prev_file_content, func_name)
+                        assert func_code is not None
+
                         self.previous_llm_code[prev_step] = {
                             'imports': prob_data['required_dependencies'],
                             'code': func_code,
                             'name': func_name}
-                            # 'description': parse_comment_block(func_header)}
                     else:
                         try:
                             self.generate_response_with_steps(prob_data,
@@ -194,8 +195,17 @@ class Gencode:
         else:
             result_dict['code_library'] = [self.previous_llm_code[i] for i in range(num_steps - 1)]
             response_from_llm = self.llm_eval_func(f"{prob_id}.{num_steps}", prompt, result_dict)
-        if self.previous_llm_code[num_steps - 1] is not None:
-            self.previous_llm_code[num_steps - 1]['code'] = extract_python_script(response_from_llm)
+
+        func_header = prob_data["sub_steps"][num_steps - 1]["function_header"]
+        func_name = extract_function_name(func_header)
+        func_code = extract_python_script(response_from_llm)
+        assert func_code is not None
+
+        self.previous_llm_code[num_steps - 1] = {
+            'imports': prob_data['required_dependencies'],
+            'code': func_code,
+            'name': func_name,
+        }
         self._save_response_with_steps(prob_data, response_from_llm, previous_code, num_steps)
 
 
