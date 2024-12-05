@@ -555,6 +555,7 @@ def _setup_indv(main_role_fp,
     indv_llm_config=EVAL_LLM_CONFIG,
     clear_cache=False):
 
+    # Warning: do not clear cache if running multiple experiments at same time!
     if clear_cache: clear_autogen_cache()
     from role_ga import Individual
     indv = Individual({}, gen_created=0)

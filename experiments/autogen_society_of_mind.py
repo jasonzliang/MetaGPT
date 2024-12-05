@@ -20,7 +20,7 @@ You are tasked with synthesizing the preceding discussion into a clear, coherent
 6. If multiple approaches were discussed, present the recommended solution with brief justification
 
 # Answer format
-Extract the final working solution code from the discussion and present it in the format of ```python solution_code```. Include only the essential implementation, removing any debugging, testing, or exploratory code. The code should be complete, well-structured, and ready to use."""
+Extract the final working solution code from the discussion and present it in the format of ```python```. Include only the essential implementation, removing any debugging, testing, or exploratory code. The code should be complete, well-structured, and ready to use."""
 
 DEFAULT_TASK_DESC_V2 = """# Your task
 You are reviewing a collaborative problem-solving session where a team of experts worked together to address a specific request. The transcript below contains their complete discussion, including:
@@ -47,7 +47,7 @@ Here is the complete transcript of their discussion:"""
 # - Uses professional, confident language
 # # Answer format
 DEFAULT_RESPONSE_V3 = """# Your answer
-Extract the final working solution code from the discussion and present it in the format of ```python solution_code```. Include only the essential implementation, removing any debugging, testing, or exploratory code. The code should be complete, well-structured, and ready to use."""
+Extract the final working solution code from the discussion and present it in the format of ```python```. Include only the essential implementation, removing any debugging, testing, or exploratory code. The code should be complete, well-structured, and ready to use."""
 
 DEFAULT_TASK_DESC_V3 = """# Your task
 Below is a transcript of experts solving a problem together. Note their:
