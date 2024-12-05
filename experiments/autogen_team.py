@@ -76,12 +76,13 @@ def start_task(execution_task: str,
     chat_llm_config: dict = CHAT_LLM_CONFIG,
     coding: bool = True,
     code_library: Optional[list] = None,
+    imports: Optional[str] = None,
     log_file: bool = None):
 
     if log_file is not None:
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         redirector = OutputRedirector(log_file); redirector.enable()
-    orig_agent_sys_msgs = _register_functions(agent_list, code_library)
+    orig_agent_sys_msgs = _register_functions(agent_list, code_library, imports)
 
     if chat_llm_config['use_llm_lingua']:
         compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
@@ -161,7 +162,7 @@ def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
         agent.update_system_message(orig_sys_msg)
 
 
-def _register_functions(agent_list, code_library):
+def _register_functions(agent_list, code_library, imports):
     agent_list_noproxy = []; orig_agent_sys_msgs = []; user_proxy = None
     for agent in agent_list:
         if type(agent) != autogen.UserProxyAgent:
@@ -179,7 +180,7 @@ def _register_functions(agent_list, code_library):
     for i, func_dict in enumerate(code_library):
         try:
             if namespace is None:
-                namespace = parse_imports(func_dict['imports'])
+                namespace = parse_imports(imports)
             function = create_function_from_string(namespace,
                 func_dict['code'],
                 func_dict['name'])
