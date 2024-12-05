@@ -207,8 +207,9 @@ def parse_imports(import_string):
     - from module import submodule as alias
     - Multiple imports on one line (from module import x, y, z)
     """
-    namespace = globals().copy()  # Start with a copy of the global namespace
 
+    # Start with a copy of the global namespace
+    namespace = globals().copy()
     # Split into individual import statements
     import_lines = [line.strip() for line in import_string.strip().split('\n')
                    if line.strip() and not line.startswith('#')]
@@ -257,51 +258,72 @@ def parse_imports(import_string):
 
 
 def create_function_from_string(namespace, func_string, func_name, compile=False):
-    # try:
+    """
+    Creates a function from a string definition and adds it to the given namespace.
+
+    Args:
+        namespace (dict): The namespace where the function will be created
+        func_string (str): String containing the function definition
+        func_name (str): Expected name of the function
+        pre_compile (bool): Whether to pre-compile the code to catch syntax errors early
+
+    Returns:
+        callable: The created function object
+    """
+
     # Pre-compile the function code to catch syntax errors early
     if compile: func_string = compile(func_string, '<string>', 'exec')
-
     # Execute function definition in namespace
     exec(func_string, namespace)
-
     # Verify function exists in namespace
     if func_name not in namespace:
         raise RuntimeError(f"Function '{func_name}' not found in namespace after execution")
-
     return namespace[func_name]
-    # except SyntaxError as e:
-    #     raise SyntaxError(f"Syntax error in function definition: {str(e)}")
     # except Exception as e:
     #     traceback.print_exc()
     #     raise RuntimeError(f"Error creating function: {str(e)}")
 
 
 def extract_code_elements(content):
+    """
+    Extracts and organizes Python code elements (imports, classes, and functions)
+    from a string of source code.
+
+    Args:
+        content (str): String containing Python source code
+
+    Returns:
+        str | None: A formatted string containing the extracted code elements
+        organized by type, or None if parsing fails
+    """
+
     try:
         # Parse the Python code into an AST
         tree = ast.parse(content)
-
-        # Extract imports and functions
-        imports = []
-        functions = []
+        # Extract imports, functions, and classes
+        imports = []; classes = []; functions = []
 
         for node in ast.walk(tree):
             # Get import statements
             if isinstance(node, (ast.Import, ast.ImportFrom)):
                 imports.append(ast.get_source_segment(content, node))
-
+            # Get class definitions
+            elif isinstance(node, ast.ClassDef):
+                classes.append(ast.get_source_segment(content, node))
             # Get function definitions
             elif isinstance(node, ast.FunctionDef):
-                # Get the complete function definition including decorators
                 functions.append(ast.get_source_segment(content, node))
 
+        # Combine all extracted elements
         extracted_code = ""
         if len(imports) > 0:
             extracted_code += "\n".join(imports) + "\n\n"
+        if len(classes) > 0:
+            extracted_code += "\n\n".join(classes) + "\n\n"
         if len(functions) > 0:
             extracted_code += "\n\n".join(functions) + "\n"
-
         return extracted_code
+
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         return None
