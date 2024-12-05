@@ -265,7 +265,7 @@ def create_function_from_string(namespace, func_string, func_name, compile=False
         namespace (dict): The namespace where the function will be created
         func_string (str): String containing the function definition
         func_name (str): Expected name of the function
-        pre_compile (bool): Whether to pre-compile the code to catch syntax errors early
+        compile (bool): Whether to pre-compile the code to catch syntax errors early
 
     Returns:
         callable: The created function object
