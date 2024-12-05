@@ -194,7 +194,7 @@ def _register_functions(agent_list, code_library, imports):
     executor._functions = functions
     function_msg = executor.format_functions_for_prompt(
         prompt_template=FUNCTION_PROMPT_TEMPLATE)
-    executor._setup_functions(imports=code_library[0]['imports'],
+    executor._setup_functions(imports=imports,
         func_list=[func_dict['code'] for func_dict in code_library],
         overwrite_func_file=True)
 
