@@ -32,7 +32,8 @@ from autogen_prompts import FUNCTION_PROMPT_TEMPLATE
 from alg_util import ID_LENGTH
 from alg_util import randomword
 from util import get_time, killtree, extract_code_from_chat, format_prompt
-from util import yaml_dump, OutputRedirector, parse_imports, create_function_from_string
+from util import yaml_dump, OutputRedirector
+from util import load_imports_from_string, eval_function_from_string
 
 DEFAULT_MAIN_ROLE = \
 """Write a python function that can {instruction}.
@@ -180,8 +181,8 @@ def _register_functions(agent_list, code_library, imports):
     for i, func_dict in enumerate(code_library):
         try:
             if namespace is None:
-                namespace = parse_imports(imports)
-            function = create_function_from_string(namespace,
+                namespace = load_imports_from_string(imports)
+            function = eval_function_from_string(namespace,
                 func_dict['code'],
                 func_dict['name'])
             functions.append(function)

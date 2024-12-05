@@ -214,9 +214,9 @@ def extract_comments_from_code(text, incl_single_comments=False):
         return text
 
 
-def parse_imports(import_string):
+def load_imports_from_string(import_string):
     """
-    Parse import statements and add modules to namespace.
+    Load import statements and add modules to namespace.
     Handles multiple import formats:
     - import module
     - import module as alias
@@ -274,7 +274,7 @@ def parse_imports(import_string):
     return namespace
 
 
-def create_function_from_string(namespace, func_string, func_name, compile=False):
+def eval_function_from_string(namespace, func_string, func_name, compile=False):
     """
     Creates a function from a string definition and adds it to the given namespace.
 
