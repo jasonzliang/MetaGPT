@@ -201,10 +201,11 @@ CREATE_UNIQUE_NAME_PROMPT = """# Your goal
 For example: Python_Expert
 """
 
-FUNCTION_PROMPT_TEMPLATE = """- There are previously defined Python functions in the module called '$module_name' that are listed below.
-- You can access these functions by importing them from the module '$module_name'.
-- You should call these functions as much as possible when writing solution code.
-- For example, if there was a function named 'tensor', you can import and call it by writing:
+FUNCTION_PROMPT_TEMPLATE = """## How to use library functions?
+- There are previously defined Python library functions in the module called '$module_name'.
+- You are able to call these functions by importing them from the module '$module_name'.
+- You should make use of these functions as much as possible when writing the solution code.
+- For example, if there is a function named 'tensor', you can import and call it by writing:
 from $module_name import tensor
 def foo(args):
     result = tensor(args)
