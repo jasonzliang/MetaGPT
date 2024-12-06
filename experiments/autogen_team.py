@@ -83,7 +83,8 @@ def start_task(execution_task: str,
     if log_file is not None:
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         redirector = OutputRedirector(log_file); redirector.enable()
-    orig_agent_sys_msgs = _register_functions(agent_list, code_library, imports)
+    orig_agent_sys_msgs = _register_functions(
+        agent_list, imports, code_library, log_file)
 
     if chat_llm_config['use_llm_lingua']:
         compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
@@ -141,6 +142,7 @@ def start_task(execution_task: str,
     _restore_sys_msg(agent_list, orig_agent_sys_msgs)
     if log_file is not None:
         redirector.disable(); yaml_dump(chat_messages, log_file)
+
     return chat_result, chat_messages
     # return agent_list[0].initiate_chat(manager, message=execution_task)
 
@@ -163,7 +165,7 @@ def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
         agent.update_system_message(orig_sys_msg)
 
 
-def _register_functions(agent_list, code_library, imports):
+def _register_functions(agent_list, imports, code_library, log_file=None):
     agent_list_noproxy = []; orig_agent_sys_msgs = []; user_proxy = None
     for agent in agent_list:
         if type(agent) != autogen.UserProxyAgent:
@@ -198,9 +200,16 @@ def _register_functions(agent_list, code_library, imports):
         func_list=[func_dict['code'] for func_dict in code_library],
         overwrite_func_file=True)
 
+    new_sys_msgs = []
     for agent in agent_list_noproxy:
         new_sys_msg = agent.system_message + "\n" + function_msg
         agent.update_system_message(new_sys_msg)
+        new_sys_msgs.append(new_sys_msg)
+    if log_file is not None:
+        sys_msg_log_file = os.path.splitext(log_file)[0] + "_sys_msg.txt"
+        with open(sys_msg_log_file, 'w') as f:
+            f.write("\n\n".join(new_sys_msgs))
+
     return orig_agent_sys_msgs
 
 

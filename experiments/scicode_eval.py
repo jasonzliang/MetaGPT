@@ -163,7 +163,8 @@ class Gencode:
 
                         self.previous_llm_code[prev_step] = {
                             'code': func_code,
-                            'name': func_name
+                            'name': func_name,
+                            'header': func_header
                         }
                     else:
                         try:
@@ -204,7 +205,8 @@ class Gencode:
 
         self.previous_llm_code[num_steps - 1] = {
             'code': func_code,
-            'name': func_name
+            'name': func_name,
+            'header': func_header
         }
         self._save_response_with_steps(prob_data, response_from_llm, previous_code, num_steps)
 

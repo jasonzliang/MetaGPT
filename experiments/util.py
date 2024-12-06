@@ -583,7 +583,7 @@ def get_eval_config(experiment_dir, config_name="config.yaml"):
     return eval_config
 
 
-def yaml_dump(data, output_file, width=80):
+def yaml_dump(data, output_file, width=80, mode='w'):
     """Dumps data in a human-readable format"""
     def should_use_flow_style(node):
         """Determine if a node should use flow style based on its content"""
@@ -625,7 +625,7 @@ def yaml_dump(data, output_file, width=80):
 
     # Write the formatted YAML
     if not output_file.endswith(".yaml"): output_file += ".yaml"
-    with open(output_file, 'w') as f: yaml.dump(data, f)
+    with open(output_file, mode) as f: yaml.dump(data, f)
 
 
 class OutputRedirector:
