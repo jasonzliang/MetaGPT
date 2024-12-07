@@ -302,7 +302,7 @@ def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
     num_gen=200,
     init_seed=0,
-    problem_list=_get_scicode_problem_list(problem_order='complexity'),
+    problem_list=_get_scicode_problem_list(problem_order='random'),
     # problem_list=['44'],
     update_n_agents=None,
     update_teamwork=True,
@@ -428,7 +428,8 @@ def find_successful_agents(result_dirs,
     create_agent_lib=True,
     evaluator=None,
     indv=None,
-    include_insights=True,
+    library_max_size=None,
+    merge_include_insights=True,
     merge_insights_with_desc=False,
     output_dir=None):
 
@@ -473,7 +474,7 @@ def find_successful_agents(result_dirs,
     assert builder is not None
 
     if merge_agents:
-        if include_insights:
+        if merge_include_insights:
             agent_insights = [agent_config.get('insights') for agent_config in \
                 checkpoint_dict['curr_team_role']['agent_configs']]
         else:
@@ -485,6 +486,8 @@ def find_successful_agents(result_dirs,
     if create_agent_lib:
         agent_library = builder.generate_agent_library(agent_configs_list,
             merge_insights_with_desc)
+        if library_max_size is not None:
+            agent_library = agent_library[:library_max_size]
         out_file = os.path.join(output_dir, "agent_library.json")
         print("Saving agent library with size %s to %s" % \
             (len(agent_library), out_file))
