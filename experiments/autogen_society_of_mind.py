@@ -56,7 +56,7 @@ Below is a transcript of experts solving a problem together. Note their:
 - Important caveats
 - Implementation details
 
-Review their discussion and prepare to extract the essential solution:"""
+Review their discussion and prepare to extract the final solution:"""
 
 class SocietyOfMindAgent(ConversableAgent):
     """(In preview) A single agent that runs a Group Chat as an inner monologue.

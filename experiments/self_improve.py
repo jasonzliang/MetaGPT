@@ -520,12 +520,12 @@ def visualize_performance(result_dirs,
 
 
 if __name__ == "__main__":
-    visualize_performance(["results/12_5*",
-        "results/11_29*",
-        "results/self_improve_11_24/11_*no_update"])
-    # if "lingua" in sys.argv[2]:
-    #     EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
-    # self_improve_loop(team_role_fp=sys.argv[1],
-    #     result_dir=sys.argv[2],
-    #     update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,
-    #     coding_instruct=True if "coding_instruct" in sys.argv[2].lower() else False)
+    # visualize_performance(["results/12_5*",
+    #     "results/11_29*",
+    #     "results/self_improve_11_24/11_*no_update"])
+    if "lingua" in sys.argv[2]:
+        EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
+    self_improve_loop(team_role_fp=sys.argv[1],
+        result_dir=sys.argv[2],
+        update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,
+        coding_instruct=True if "coding_instruct" in sys.argv[2].lower() else False)
