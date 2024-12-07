@@ -550,7 +550,7 @@ def visualize_performance(result_dirs,
 
 
 if __name__ == "__main__":
-    find_successful_agents(["results/12_5*"], merge_agents=False)
+    # find_successful_agents(["results/12_5*"], merge_agents=False)
     # visualize_performance(["results/12_5*",
     #     "results/11_29*",
     #     "results/self_improve_11_24/11_*no_update"])
