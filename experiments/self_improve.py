@@ -185,7 +185,10 @@ class Solution(object):
         self.gen_record = s_dict.get('gen_record', [])
 
 
-def _get_scicode_problem_list(dataset=None, problem_order='complexity', whitelist=None):
+def _get_scicode_problem_list(dataset=None,
+    problem_order='complexity',
+    reverse=False,
+    whitelist=None):
     if dataset is None: dataset = SCICODE_EVAL_CONFIG['dataset']
     dataset_path = os.path.join("scicode_data", dataset + ".jsonl")
     data = read_from_jsonl(dataset_path); problem_list = []
@@ -201,7 +204,10 @@ def _get_scicode_problem_list(dataset=None, problem_order='complexity', whitelis
     else:
         assert problem_order == 'complexity'
         problem_list = sorted(problem_list, key=lambda x: len(x['sub_steps']))
-    return [problem['problem_id'] for problem in problem_list]
+
+    problem_list = [problem['problem_id'] for problem in problem_list]
+    if reverse: problem_list = problem_list[::-1]
+    return problem_list
 
 
 def _get_subdir(first_dir):
@@ -296,7 +302,7 @@ def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
     num_gen=200,
     init_seed=0,
-    problem_list=_get_scicode_problem_list()[::-1],
+    problem_list=_get_scicode_problem_list(problem_order='random'),
     # problem_list=['44'],
     update_n_agents=None,
     update_teamwork=True,
