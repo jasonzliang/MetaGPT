@@ -308,7 +308,7 @@ def self_improve_loop(team_role_fp=None,
     update_teamwork=True,
     coding_instruct=True,
     reset_team_role=False,
-    stuck_threshold=8,
+    stuck_threshold=10,
     include_insights=True,
     scicode=True):
 
