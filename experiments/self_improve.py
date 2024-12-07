@@ -308,7 +308,10 @@ def self_improve_loop(team_role_fp=None,
 
     if not scicode: raise Exception("Evalplus self-improve not implemented!")
 
-    _eval = _setup_evaluator(1, result_dir, scicode, SCICODE_EVAL_CONFIG)
+    _eval = _setup_evaluator(n_workers=1,
+        eval_dir=result_dir,
+        scicode=scicode,
+        eval_config=SCICODE_EVAL_CONFIG)
     EVAL_BUILDER_LLM_CONFIG['custom_coding_instruct'] = coding_instruct
     indv = _setup_indv(main_role_fp=DEFAULT_MAIN_ROLE_MIN,
         team_role_fp=team_role_fp,
@@ -395,58 +398,91 @@ def self_improve_loop(team_role_fp=None,
         }
         _save_checkpoint(checkpoint_dict, result_dir); _eval.reset()
 
-    _merge_agents(indv=indv,
+
+    find_successful_agents(result_dirs=result_dir,
+        indv=indv,
         evaluator=_eval,
-        result_dir=result_dir,
         include_insights=include_insights)
     print("Self-improve loop finished")
 
 
-def _merge_agents(indv,
-    evaluator,
-    result_dir,
+def _glob_result_dirs(result_dirs):
+    if type(result_dirs) is str: result_dirs = [result_dirs]
+    _result_dirs = []
+    for result_dir in result_dirs:
+        _result_dirs.extend(glob.glob(result_dir))
+    result_dirs = list(set(_result_dirs))
+    assert len(result_dirs) > 0
+    result_dirs = sorted(result_dirs, key=lambda x: os.path.basename(x))
+    return result_dirs
+
+
+def find_successful_agents(result_dirs,
+    merge_agents=True,
+    create_agent_lib=True,
+    evaluator=None,
+    indv=None,
     include_insights=True,
     merge_insights_with_desc=False,
     output_dir=None):
 
-    assert os.path.exists(result_dir)
-    if output_dir is None: output_dir = result_dir
+    result_dirs = _glob_result_dirs(result_dirs)
+    if output_dir is None: output_dir = result_dirs[0]
 
-    checkpoint_dict = _load_checkpoint(result_dir)
-    assert checkpoint_dict is not None
+    if evaluator is None:
+        evaluator = _setup_evaluator(n_workers=1,
+            eval_dir=result_dirs[0],
+            scicode=True,
+            eval_config=SCICODE_EVAL_CONFIG)
+    if indv is None:
+        indv = _setup_indv(main_role_fp=None,
+            team_role_fp=None,
+            evolve_mode="team",
+            builder_llm_config=EVAL_BUILDER_LLM_CONFIG,
+            chat_llm_config=EVAL_CHAT_LLM_CONFIG,
+            indv_llm_config=EVAL_LLM_CONFIG)
+    # pprint.pprint(indv.llm_config); pprint.pprint(_eval.config)
 
     agent_configs_list = []
-    for solution in checkpoint_dict['solution_set']['solutions']:
-        if solution['gen_solved'] is None: continue
-        team_role_file = glob.glob(os.path.join(result_dir,
-            "evalG-%s_*" % solution['gen_solved'], "team_role.json"))
+    for result_dir in result_dirs:
+        checkpoint_dict = _load_checkpoint(result_dir)
+        assert checkpoint_dict is not None
 
-        assert len(team_role_file) == 1; team_role_file = team_role_file[0]
-        print("Merging agent config from %s" % team_role_file)
-        with open(team_role_file, 'r') as f:
-            team_role = json.load(f)
-            agent_configs_list.append(team_role['agent_configs'])
+        for solution in checkpoint_dict['solution_set']['solutions']:
+            if solution['gen_solved'] is None: continue
+            team_role_file = glob.glob(os.path.join(result_dir,
+                "evalG-%s_*" % solution['gen_solved'], "team_role.json"))
+
+            assert len(team_role_file) == 1; team_role_file = team_role_file[0]
+            print("Merging agent config from %s" % team_role_file)
+            with open(team_role_file, 'r') as f:
+                team_role = json.load(f)
+                agent_configs_list.append(team_role['agent_configs'])
+
     if len(agent_configs_list) == 0: return
-
-    if include_insights:
-        agent_insights = [agent_config.get('insights') for agent_config in \
-            checkpoint_dict['curr_team_role']['agent_configs']]
-    else:
-        agent_insights = None
 
     agent_list, agent_configs, builder, builder_dict = \
         evaluator._init_builder(indv.team_role,
             indv.llm_config['builder_llm_config'])
     assert builder is not None
 
-    agent_library = builder.generate_agent_library(agent_configs_list,
-        merge_insights_with_desc)
-    with open(os.path.join(output_dir, "agent_library.json"), 'w') as f:
-        json.dump(agent_library, f, indent=4)
+    if merge_agents:
+        if include_insights:
+            agent_insights = [agent_config.get('insights') for agent_config in \
+                checkpoint_dict['curr_team_role']['agent_configs']]
+        else:
+            agent_insights = None
+        builder.merge_agents(agent_configs_list, agent_insights,
+            merge_insights_with_desc)
+        builder.save(os.path.join(output_dir, "merged_agents.json"))
 
-    builder.merge_agents(agent_configs_list, agent_insights,
-        merge_insights_with_desc)
-    builder.save(os.path.join(output_dir, "merged_team_role.json"))
+    if create_agent_lib:
+        agent_library = builder.generate_agent_library(agent_configs_list,
+            merge_insights_with_desc)
+        out_file = os.path.join(output_dir, "agent_library.json")
+        print("Saving agent library with size %s to %s" % \
+            (len(agent_library), out_file))
+        with open(out_file, 'w') as f: json.dump(agent_library, f, indent=4)
 
 
 def visualize_performance(result_dirs,
@@ -455,14 +491,8 @@ def visualize_performance(result_dirs,
     key_filter=('gen_solved', None, 0),
     out_dir='results/'):
 
-    if type(result_dirs) is str: result_dirs = [result_dirs]
     if use_glob:
-        _result_dirs = []
-        for result_dir in result_dirs:
-            _result_dirs.extend(glob.glob(result_dir))
-        result_dirs = list(set(_result_dirs))
-    assert len(result_dirs) > 0
-    result_dirs = sorted(result_dirs, key=lambda x: os.path.basename(x))
+        result_dirs = _glob_result_dirs(_glob_result_dirs)
 
     solution_dict = defaultdict(list); solved_counter = defaultdict(list)
     for result_dir in result_dirs:
@@ -520,6 +550,7 @@ def visualize_performance(result_dirs,
 
 
 if __name__ == "__main__":
+    find_successful_agents(["results/12_5*"], merge_agents=False)
     # visualize_performance(["results/12_5*",
     #     "results/11_29*",
     #     "results/self_improve_11_24/11_*no_update"])

@@ -576,6 +576,9 @@ def _setup_indv(main_role_fp,
         assert evolve_mode in ['both', 'team']
         with open(team_role_fp, "r") as f:
             indv.team_role = json.load(f)
+    else:
+        with open("config/autogen_team_init.json", "r") as f:
+            indv.team_role = json.load(f)
 
     _builder_llm_config = copy.deepcopy(BUILDER_LLM_CONFIG)
     _builder_llm_config.update(builder_llm_config)

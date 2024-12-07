@@ -8,7 +8,7 @@
     "sub_steps": [
         {
             "step_number": "19.1",
-            "step_description_prompt": "(DUPLICATE) Write a function that returns the tensor product of an arbitrary number of matrices/vectors.",
+            "step_description_prompt": "Write a function that returns the tensor product of an arbitrary number of matrices/vectors.",
             "step_background": "",
             "ground_truth_code": "def tensor(*args):\n    \"\"\"\n    Takes the tensor product of an arbitrary number of matrices/vectors.\n    Input:\n    args: any number of arrays, corresponding to input matrices\n    Output:\n    M: the tensor product (kronecker product) of input matrices\n    \"\"\"\n    M = 1\n    for j in range(len(args)):\n        '''\n        if isinstance(args[j], list):\n            for k in range(args[j][1]):\n                M = np.kron(M, args[j][0])\n        else:\n            M = np.kron(M, args[j])\n        '''\n        M = np.kron(M,args[j])\n    return M",
             "function_header": "def tensor():\n    '''Takes the tensor product of an arbitrary number of matrices/vectors.\n    Input:\n    args: any number of arrays, corresponding to input matrices\n    Output:\n    M: the tensor product (kronecker product) of input matrices\n    '''",
