@@ -294,15 +294,15 @@ Stack trace/exception for test cases:\n%s""" % \
 
 def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
-    num_gen=1,
+    num_gen=200,
     init_seed=0,
-    # problem_list=_get_scicode_problem_list(),
-    problem_list=['44'],
+    problem_list=_get_scicode_problem_list()[::-1],
+    # problem_list=['44'],
     update_n_agents=None,
     update_teamwork=True,
     coding_instruct=True,
     reset_team_role=False,
-    stuck_threshold=10,
+    stuck_threshold=8,
     include_insights=True,
     scicode=True):
 
@@ -520,11 +520,12 @@ def visualize_performance(result_dirs,
 
 
 if __name__ == "__main__":
-    # visualize_performance(["results/11_29*",
-    #     "results/self_improve_11_24/11_23*no_update"])
-    if "lingua" in sys.argv[2]:
-        EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
-    self_improve_loop(team_role_fp=sys.argv[1],
-        result_dir=sys.argv[2],
-        update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,
-        coding_instruct=True if "coding_instruct" in sys.argv[2].lower() else False)
+    visualize_performance(["results/12_5*",
+        "results/11_29*",
+        "results/self_improve_11_24/11_*no_update"])
+    # if "lingua" in sys.argv[2]:
+    #     EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
+    # self_improve_loop(team_role_fp=sys.argv[1],
+    #     result_dir=sys.argv[2],
+    #     update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,
+    #     coding_instruct=True if "coding_instruct" in sys.argv[2].lower() else False)
