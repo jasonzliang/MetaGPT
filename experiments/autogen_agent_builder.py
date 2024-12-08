@@ -654,8 +654,8 @@ With following description: {function_description}
         agent_configs = self.cached_configs['agent_configs']
         total_agents = len(agent_configs)
         agent_configs = random.sample(agent_configs, total_agents)
-        if type(test_cases) is list: test_cases = "\n".join(test_cases)
-        assert type(test_cases) is str
+        if isinstance(test_cases, list): test_cases = "\n".join(test_cases)
+        assert isinstance(test_cases, str)
 
         if n_agents is None:
             n_agents = total_agents
@@ -912,7 +912,7 @@ With following description: {function_description}
         library_max_size=None):
 
         print(colored("==> Creating agent library...", "green"), flush=True)
-        assert type(other_agent_configs) is list
+        assert isinstance(other_agent_configs, list)
         other_agent_configs = flatten(other_agent_configs)
         assert len(other_agent_configs) > 0; agent_set = set()
 
@@ -1084,7 +1084,7 @@ With following description: {function_description}
     def build_from_library(
         self,
         building_task: str,
-        library_path_or_json: str,
+        library_list_or_json: Union[str,list],
         default_llm_config: Dict,
         default_retrieval: bool = False,
         full_desc: bool = True,
@@ -1104,7 +1104,7 @@ With following description: {function_description}
 
         Args:
             building_task: instruction that helps build manager (gpt-4) to decide what agent should be built.
-            library_path_or_json: path or JSON string config of agent library.
+            library_list_or_json: path or JSON string config of agent library.
             default_retrieval: whether to use default 2-pass (embedding, llm) for agent retrieval
             default_llm_config: specific configs for LLM (e.g., config_list, seed, temperature, ...).
             full_desc: whether to use agent's sys msg, coding instruct, etc for retrieval
@@ -1146,13 +1146,17 @@ With following description: {function_description}
                 "timeout": 120
             }
 
-        try:
-            agent_library = json.loads(library_path_or_json)
-        except json.decoder.JSONDecodeError:
-            with open(library_path_or_json, "r") as f:
-                agent_library = json.load(f)
-        except Exception as e:
-            raise e
+        if isinstance(library_list_or_json, list):
+            agent_library = library_list_or_json
+            for agent in agent_library: assert isinstance(agent, dict)
+        else:
+            try:
+                agent_library = json.loads(library_list_or_json)
+            except json.decoder.JSONDecodeError:
+                with open(library_list_or_json, "r") as f:
+                    agent_library = json.load(f)
+            except Exception as e:
+                raise e
 
         print(colored("==> Looking for suitable agents in the library...", "green"), flush=True)
         if default_retrieval:

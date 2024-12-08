@@ -86,14 +86,12 @@ def start_task(execution_task: str,
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         redirector = OutputRedirector(log_file); redirector.enable()
     if builder_llm_config['use_agent_library']:
-        assert builder is not None; assert type(agent_list[0]) is dict
-        agent_list, _, _, _ = _build_from_library(
+        assert builder is not None and isinstance(agent_list[0], dict)
+        agent_list = _build_from_library(
             building_task=execution_task,
-            agent_list=agent_list,
+            agent_library=agent_list,
             builder=builder,
             builder_llm_config=builder_llm_config)
-    else:
-        assert issubclass(agent_list[0], autogen.ConversableAgent)
 
     orig_agent_sys_msgs = _register_functions(
         agent_list, imports, code_library, log_file)
@@ -171,7 +169,7 @@ def _filter_llm_config(chat_llm_config):
 
 def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
     if orig_agent_sys_msgs is None: return
-    agent_list = [x for x in agent_list if type(x) != autogen.UserProxyAgent]
+    agent_list = [x for x in agent_list if not isinstance(x, autogen.UserProxyAgent)]
     assert len(agent_list) == len(orig_agent_sys_msgs)
     for agent, orig_sys_msg in zip(agent_list, orig_agent_sys_msgs):
         agent.update_system_message(orig_sys_msg)
@@ -184,7 +182,8 @@ def _register_functions(agent_list,
     work_dir='/tmp/eval_%s' % randomword(ID_LENGTH)):
     agent_list_noproxy = []; orig_agent_sys_msgs = []; user_proxy = None
     for agent in agent_list:
-        if type(agent) != autogen.UserProxyAgent:
+        assert isinstance(agent, autogen.ConversableAgent)
+        if not isinstance(agent, autogen.UserProxyAgent):
             agent_list_noproxy.append(agent)
             orig_agent_sys_msgs.append(agent.system_message)
         else:
@@ -231,7 +230,7 @@ def _register_functions(agent_list,
 
 def _build_from_library(
     building_task,
-    agent_list,
+    agent_library,
     builder,
     builder_llm_config,
     work_dir="/tmp/eval_%s" % randomword(ID_LENGTH)):
@@ -241,13 +240,12 @@ def _build_from_library(
             functions_module='code_library')
     agent_list, agent_configs = builder.build_from_library(
         building_task=building_task,
-        library_path_or_json=agent_list,
+        library_list_or_json=agent_library,
         default_llm_config=_filter_llm_config(builder_llm_config),
         coding=True,
         code_execution_config={'executor': executor})
-    builder_dict = builder.cached_configs
 
-    return agent_list, agent_configs, builder, builder_dict
+    return agent_list
 
 
 def init_builder(building_task=None,
@@ -279,8 +277,10 @@ def init_builder(building_task=None,
         debug_mode=debug_mode)
 
     if builder_llm_config['use_agent_library']:
-        assert type(builder_dict) is list; assert type(builder_dict[0]) is dict
-        return builder_dict, None, builder, None
+        agent_list = copy.deepcopy(builder_dict)
+        assert agent_list is not None and isinstance(agent_list, list)
+        assert isinstance(agent_list[0], dict)
+        return agent_list, None, builder, None
 
     # hack to prevent "builder_model" error msg when running start_task
     _builder_llm_config = _filter_llm_config(builder_llm_config)
