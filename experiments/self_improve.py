@@ -413,7 +413,7 @@ def self_improve_loop(team_role_fp=None,
 
 
 def _glob_result_dirs(result_dirs):
-    if type(result_dirs) is str: result_dirs = [result_dirs]
+    if isinstance(result_dirs, str): result_dirs = [result_dirs]
     _result_dirs = []
     for result_dir in result_dirs:
         _result_dirs.extend(glob.glob(result_dir))

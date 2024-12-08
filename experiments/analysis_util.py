@@ -65,7 +65,7 @@ def is_outlier(points, threshold=3.5):
 
 def get_fitness(indv_dict, override_fitness=None):
     from role_ga import Individual
-    if type(indv_dict) is Individual:
+    if isinstance(indv_dict, Individual):
         indv_dict = indv_dict.serialize()
     if TRUE_FITNESS:
         key = 'true_fitness'

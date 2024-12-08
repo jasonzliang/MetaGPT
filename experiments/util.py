@@ -488,15 +488,15 @@ def datetime_to_epoch(datetime_str, space=True):
 
 def sanitize_result_dict(result_dict):
     '''Converts numpy types to python built ins'''
-    if type(result_dict) in [list, tuple]:
+    if isinstance(result_dict, (list, tuple)):
         return [sanitize_result_dict(x) for x in result_dict]
-    elif type(result_dict) is dict:
+    elif isinstance(result_dict, dict):
         new_result_dict = {}
         for k in result_dict:
             new_result_dict[k] = sanitize_result_dict(result_dict[k])
         return new_result_dict
     elif is_numpy_type(result_dict):
-        if type(result_dict) is np.ndarray:
+        if isinstance(result_dict, np.ndarray):
             return result_dict.tolist()
         else:
             return result_dict.item()
@@ -616,7 +616,7 @@ def yaml_dump(data, output_file, width=80, mode='w'):
     yaml.allow_unicode = True
     # yaml.indent(mapping=2, sequence=4, offset=2)
 
-    if type(data) is str:
+    if isinstance(data, str):
         assert os.path.exists(data)
         with open(data, 'r') as f: data = dict(yaml.load(f))
 
