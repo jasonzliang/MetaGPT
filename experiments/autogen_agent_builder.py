@@ -1135,7 +1135,7 @@ With following description: {function_description}
         import chromadb
         from chromadb.utils import embedding_functions
 
-        def desc(agent): return self._get_agent_desc(agent, full_desc=full_desc)
+        def desc(agent): return self._get_agent_desc(agent, full_desc)
         if max_agents is None: max_agents = self.max_agents; assert max_agents > 0
         if top_k is None: top_k = max_agents; assert top_k > 0
         if code_execution_config is None:
