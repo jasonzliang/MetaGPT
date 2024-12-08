@@ -485,9 +485,7 @@ def find_successful_agents(result_dirs,
 
     if create_agent_lib:
         agent_library = builder.generate_agent_library(agent_configs_list,
-            merge_insights_with_desc)
-        if library_max_size is not None:
-            agent_library = agent_library[:library_max_size]
+            merge_insights_with_desc, library_max_size)
         out_file = os.path.join(output_dir, "agent_library.json")
         print("Saving agent library with size %s to %s" % \
             (len(agent_library), out_file))

@@ -308,6 +308,37 @@ With following description: {function_description}
     def set_agent_model(self, model: str):
         self.agent_model = model
 
+    def _get_agent_desc(self, agent_config, full_desc=True):
+        if not full_desc:
+            return agent_config['description']
+        system_message = [agent_config["system_message"]]
+
+        if 'insights' in agent_config:
+            insights = agent_config['insights']
+            insights = f"## Useful insights and experience for task-solving\n{insights}"
+
+        if len(insights) > 0:
+            system_message.append(insights)
+        else:
+            print(colored("Empty insights for %s" % agent_name, "red"), flush=True)
+
+        # if custom_coding_instruct, accept custom or default coding instructions
+        if self.custom_coding_instruct is True and \
+            "coding_instruction" in agent_config:
+            agent_coding_instruct = agent_config["coding_instruction"]
+        elif "coding_instruction" not in agent_config:
+            agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
+        else:
+            raise Exception("If agents have 'coding_instruction' entry, "
+                "set builder's custom_coding_instruct to True'")
+
+        if len(agent_coding_instruct) > 0:
+            system_message.append(agent_coding_instruct)
+        else:
+            print(colored("Empty coding instruction for %s" % agent_name, "red"), flush=True)
+
+        return "\n\n".join(system_message)
+
     def _create_agent(
         self,
         agent_config: Dict,
@@ -340,20 +371,7 @@ With following description: {function_description}
         )
         model_tags = agent_config.get("tags", [])
         agent_name = agent_config["name"]
-        system_message = agent_config["system_message"]
         description = agent_config["description"]
-        # if custom_coding_instruct, accept custom or default coding instructions
-        if self.custom_coding_instruct is True and \
-            "coding_instruction" in agent_config:
-            agent_coding_instruct = agent_config["coding_instruction"]
-            if len(agent_coding_instruct) == 0:
-                print(colored("Empty coding instruction for %s" % agent_name,
-                    "red"), flush=True)
-        elif "coding_instruction" not in agent_config:
-            agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
-        else:
-            raise Exception("If agents have 'coding_instruction' entry, "
-                "set builder's custom_coding_instruct to True'")
 
         # Path to the customize **ConversableAgent** class.
         model_path = agent_config.get("model_path", None)
@@ -381,7 +399,7 @@ With following description: {function_description}
             agent = GPTAssistantAgent(
                 name=agent_name,
                 llm_config={**current_config, "assistant_id": None},
-                instructions=system_message,
+                instructions=self._get_agent_desc(agent_config),
                 overwrite_instructions=False,
                 role_for_system_message=sys_msg_role
             )
@@ -408,16 +426,12 @@ With following description: {function_description}
                     "model_path", "tags", "coding_instruction", "insights"]
             }
             agent = model_class(
-                name=agent_name, llm_config=current_config.copy(), description=description, **additional_config
+                name=agent_name, llm_config=current_config.copy(),
+                description=description, **additional_config
             )
-            if system_message == "":
-                system_message = agent.system_message
-            elif 'insights' in agent_config:
-                insights = agent_config['insights']
-                system_message = f"{system_message}\n\n## Useful insights and experience for task-solving\n{insights}\n\n{agent_coding_instruct}"
-            else:
-                system_message = f"{system_message}\n\n{agent_coding_instruct}"
 
+            system_message = self._get_agent_desc(agent_config)
+            if len(system_message) == 0: system_message = agent.system_message
             enhanced_sys_msg = self.GROUP_CHAT_DESCRIPTION.format(
                 name=agent_name, members=member_name,
                 user_proxy_desc=user_proxy_desc, sys_msg=system_message
@@ -502,8 +516,7 @@ With following description: {function_description}
                 "timeout": 10,
             }
 
-        if max_agents is None:
-            max_agents = self.max_agents
+        if max_agents is None: max_agents = self.max_agents; assert max_agents > 0
 
         agent_configs = []
         self.building_task = building_task
@@ -523,8 +536,8 @@ With following description: {function_description}
         )
         agent_name_list = [agent_name.strip().replace(" ", "_") \
             for agent_name in resp_agent_name.split(",")]
-        if len(agent_name_list) > self.max_agents:
-            agent_name_list = agent_name_list[:self.max_agents]
+        if len(agent_name_list) > max_agents:
+            agent_name_list = agent_name_list[:max_agents]
         print(f"{agent_name_list} are generated.", flush=True)
 
         print(colored("==> Generating system message...", "green"), flush=True)
@@ -895,7 +908,8 @@ With following description: {function_description}
     def generate_agent_library(
         self,
         other_agent_configs,
-        merge_insight_with_desc=False):
+        merge_insight_with_desc=False,
+        library_max_size=None):
 
         print(colored("==> Creating agent library...", "green"), flush=True)
         assert type(other_agent_configs) is list
@@ -904,15 +918,22 @@ With following description: {function_description}
 
         for i, other_agent_config in enumerate(other_agent_configs):
             agent_tuple = [other_agent_config['name'], \
-                other_agent_config['system_message'], None, None]
+                other_agent_config['system_message'],
+                other_agent_config['description'], None, None]
             if 'coding_instruction' in other_agent_config:
-                agent_tuple[2] = other_agent_config['coding_instruction']
+                agent_tuple[-2] = other_agent_config['coding_instruction']
             if 'insights' in other_agent_config:
-                agent_tuple[3] = other_agent_config['insights']
+                agent_tuple[-1] = other_agent_config['insights']
             agent_set.add(tuple(agent_tuple))
 
+        agent_list = list(agent_set)
+        if library_max_size is not None:
+            assert library_max_size > 0
+            agent_list = sorted(agent_list, key=lambda x: len(str(x)),
+                reverse=True)[:library_max_size]
+
         other_agent_names = set(); agent_configs = []
-        for i, (agent_name, agent_desc, agent_coding, agent_insights) in enumerate(agent_set):
+        for i, (agent_name, agent_sys_msg, agent_desc, agent_coding, agent_insights) in enumerate(agent_list):
             print(f"Adding {agent_name} to library...", flush=True)
 
             agent_config = {'name': agent_name}
@@ -924,7 +945,7 @@ With following description: {function_description}
                                 "role": "user",
                                 "content": CREATE_UNIQUE_NAME_PROMPT.format(
                                     other_agent_names=other_agent_names,
-                                    agent_sys_msg=agent_desc,
+                                    agent_sys_msg=agent_sys_msg,
                                     code_generated=agent_coding,
                                     agent_insights=agent_insights
                                 ),
@@ -941,6 +962,8 @@ With following description: {function_description}
             other_agent_names.add(new_name)
 
             agent_config['system_message'] = \
+                agent_sys_msg.replace(agent_name, new_name)
+            agent_config['description'] = \
                 agent_desc.replace(agent_name, new_name)
             if agent_coding is not None:
                 agent_config['coding_instruction'] = \
@@ -960,17 +983,118 @@ With following description: {function_description}
         print(f"Added {len(agent_configs)} agents to library", flush=True)
         return agent_configs
 
+    def _default_retrieval(
+        self,
+        building_task,
+        agent_library,
+        desc,
+        top_k,
+        embedding_model,
+        max_agents):
+
+        skills = building_task.replace(":", " ").split("\n")
+        # skills = [line.split("-", 1)[1].strip() if line.startswith("-") else line for line in lines]
+        if len(skills) == 0: skills = [building_task]
+
+        chroma_client = chromadb.Client()
+        collection = chroma_client.create_collection(
+            name="agent_list",
+            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name=embedding_model),
+        )
+        collection.add(
+            documents=[desc(agent) for agent in agent_library],
+            metadatas=[{"source": "agent_profile"} for _ in range(len(agent_library))],
+            ids=[f"agent_{i}" for i in range(len(agent_library))],
+        )
+        agent_desc_list = set()
+        for skill in skills:
+            recall = set(collection.query(query_texts=[skill], n_results=top_k)["documents"][0])
+            agent_desc_list = agent_desc_list.union(recall)
+
+        agent_config_list = []
+        for description in list(agent_desc_list):
+            for agent in agent_library:
+                if description == desc(agent):
+                    agent_config_list.append(agent.copy())
+                    break
+        chroma_client.delete_collection(collection.name)
+
+        # double recall from the searching result
+        expert_pool = [f"{agent['name']}: {desc(agent)}" for agent in agent_config_list]
+        while True:
+            skill_agent_pair_json = (
+                self._builder_model_create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": self.AGENT_SELECTION_PROMPT.format(
+                                skills=building_task, expert_pool=expert_pool
+                            ),
+                        }
+                    ]
+                )
+                .choices[0]
+                .message.content
+            )
+            try:
+                skill_agent_pair_json = _retrieve_json(skill_agent_pair_json)
+                skill_agent_pair = json.loads(skill_agent_pair_json)
+                break
+            except Exception as e:
+                print(e, flush=True)
+                time.sleep(5)
+                continue
+
+        recalled_agent_config_list = []
+        recalled_name_desc = []
+        created_agent_config_list = []
+        for skill, agent_profile in skill_agent_pair.items():
+            # If no suitable agent, generate an agent
+            if agent_profile == "None":
+                _, agent_config_temp = self.build(
+                    building_task=skill,
+                    default_llm_config=default_llm_config.copy(),
+                    coding=False,
+                    use_oai_assistant=use_oai_assistant,
+                    max_agents=1,
+                )
+                self.clear_agent(agent_config_temp["agent_configs"][0]["name"])
+                created_agent_config_list.append(agent_config_temp["agent_configs"][0])
+            else:
+                if agent_profile in recalled_name_desc:
+                    # prevent identical agents
+                    continue
+                recalled_name_desc.append(agent_profile)
+                name = agent_profile.split(":")[0].strip()
+                description = agent_profile.split(":")[1].strip()
+                for agent in agent_config_list:
+                    if name == agent["name"] and description == desc(agent):
+                        recalled_agent_config_list.append(agent.copy())
+
+        agent_config_list = recalled_agent_config_list + created_agent_config_list
+        return agent_config_list[:max_agents]
+
+    def _llm_only_retrieval(
+        self,
+        building_task,
+        agent_library,
+        desc):
+        pass
+
     def build_from_library(
         self,
         building_task: str,
         library_path_or_json: str,
         default_llm_config: Dict,
-        top_k: int = 3,
+        default_retrieval: bool = False,
+        full_desc: bool = True,
+        top_k: Optional[int] = None,
         coding: Optional[bool] = None,
         code_execution_config: Optional[Dict] = None,
         use_oai_assistant: Optional[bool] = False,
         embedding_model: Optional[str] = "all-mpnet-base-v2",
         user_proxy: Optional[autogen.ConversableAgent] = None,
+        max_agents: Optional[int] = None,
         **kwargs,
     ) -> Tuple[List[autogen.ConversableAgent], Dict]:
         """
@@ -981,7 +1105,10 @@ With following description: {function_description}
         Args:
             building_task: instruction that helps build manager (gpt-4) to decide what agent should be built.
             library_path_or_json: path or JSON string config of agent library.
+            default_retrieval: whether to use default 2-pass (embedding, llm) for agent retrieval
             default_llm_config: specific configs for LLM (e.g., config_list, seed, temperature, ...).
+            full_desc: whether to use agent's sys msg, coding instruct, etc for retrieval
+            top_k: retrieve the top K agents when using agent description embeddings
             coding: use to identify if the user proxy (a code interpreter) should be added.
             code_execution_config: specific configs for user proxy (e.g., last_n_messages, work_dir, ...).
             use_oai_assistant: use OpenAI assistant api instead of self-constructed agent.
@@ -1008,12 +1135,15 @@ With following description: {function_description}
         import chromadb
         from chromadb.utils import embedding_functions
 
+        def desc(agent): return self._get_agent_desc(agent, full_desc=full_desc)
+        if max_agents is None: max_agents = self.max_agents; assert max_agents > 0
+        if top_k is None: top_k = max_agents; assert top_k > 0
         if code_execution_config is None:
             code_execution_config = {
                 "last_n_messages": 1,
                 "work_dir": "groupchat",
                 "use_docker": False,
-                "timeout": 120,
+                "timeout": 120
             }
 
         try:
@@ -1025,86 +1155,21 @@ With following description: {function_description}
             raise e
 
         print(colored("==> Looking for suitable agents in the library...", "green"), flush=True)
-        skills = building_task.replace(":", " ").split("\n")
-        # skills = [line.split("-", 1)[1].strip() if line.startswith("-") else line for line in lines]
-        if len(skills) == 0:
-            skills = [building_task]
-
-        chroma_client = chromadb.Client()
-        collection = chroma_client.create_collection(
-            name="agent_list",
-            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name=embedding_model),
-        )
-        collection.add(
-            documents=[agent["description"] for agent in agent_library],
-            metadatas=[{"source": "agent_profile"} for _ in range(len(agent_library))],
-            ids=[f"agent_{i}" for i in range(len(agent_library))],
-        )
-        agent_desc_list = set()
-        for skill in skills:
-            recall = set(collection.query(query_texts=[skill], n_results=top_k)["documents"][0])
-            agent_desc_list = agent_desc_list.union(recall)
-
-        agent_config_list = []
-        for description in list(agent_desc_list):
-            for agent in agent_library:
-                if agent["description"] == description:
-                    agent_config_list.append(agent.copy())
-                    break
-        chroma_client.delete_collection(collection.name)
-
-        # double recall from the searching result
-        expert_pool = [f"{agent['name']}: {agent['description']}" for agent in agent_config_list]
-        while True:
-            skill_agent_pair_json = (
-                self._builder_model_create(
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": self.AGENT_SELECTION_PROMPT.format(
-                                skills=building_task, expert_pool=expert_pool, max_agents=self.max_agents
-                            ),
-                        }
-                    ]
-                )
-                .choices[0]
-                .message.content
-            )
-            try:
-                skill_agent_pair_json = _retrieve_json(skill_agent_pair_json)
-                skill_agent_pair = json.loads(skill_agent_pair_json)
-                break
-            except Exception as e:
-                print(e, flush=True)
-                time.sleep(5)
-                continue
-
-        recalled_agent_config_list = []
-        recalled_name_desc = []
-        for skill, agent_profile in skill_agent_pair.items():
-            # If no suitable agent, generate an agent
-            if agent_profile == "None":
-                _, agent_config_temp = self.build(
-                    building_task=skill,
-                    default_llm_config=default_llm_config.copy(),
-                    coding=False,
-                    use_oai_assistant=use_oai_assistant,
-                    max_agents=1,
-                )
-                self.clear_agent(agent_config_temp["agent_configs"][0]["name"])
-                recalled_agent_config_list.append(agent_config_temp["agent_configs"][0])
-            else:
-                if agent_profile in recalled_name_desc:
-                    # prevent identical agents
-                    continue
-                recalled_name_desc.append(agent_profile)
-                name = agent_profile.split(":")[0].strip()
-                desc = agent_profile.split(":")[1].strip()
-                for agent in agent_config_list:
-                    if name == agent["name"] and desc == agent["description"]:
-                        recalled_agent_config_list.append(agent.copy())
-
-        print(f"{[agent['name'] for agent in recalled_agent_config_list]} are selected.", flush=True)
+        if default_retrieval:
+            agent_config_list = self._default_retrieval(
+                building_task=building_task,
+                agent_library=agent_library,
+                desc=desc,
+                top_k=top_k,
+                embedding_model=embedding_model,
+                max_agents=max_agents)
+        else:
+            agent_config_list = self._llm_only_retrieval(
+                building_task=building_task,
+                agent_library=agent_library,
+                desc=desc,
+                max_agents=max_agents)
+        print(f"{[agent['name'] for agent in agent_config_list]} are selected.", flush=True)
 
         if coding is None:
             resp = (
@@ -1119,7 +1184,7 @@ With following description: {function_description}
         self.cached_configs.update(
             {
                 "building_task": building_task,
-                "agent_configs": recalled_agent_config_list,
+                "agent_configs": agent_config_list,
                 "coding": coding,
                 "default_llm_config": default_llm_config,
                 "code_execution_config": code_execution_config,
