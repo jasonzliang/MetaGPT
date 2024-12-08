@@ -120,9 +120,6 @@ $functions"""
             raise ValueError("Module name must be a valid Python identifier")
 
         self._functions_module = functions_module
-
-        work_dir.mkdir(exist_ok=True)
-
         self._timeout = timeout
         self._work_dir: Path = work_dir
         self._virtual_env_context: Optional[SimpleNamespace] = virtual_env_context
@@ -139,7 +136,9 @@ $functions"""
         if execution_policies is not None:
             self.execution_policies.update(execution_policies)
 
-    def reset(self):
+    def reset(self, work_dir=None):
+        if work_dir is not None:
+            self._work_dir = Path(work_dir)
         if len(self._functions) > 0:
             self._setup_functions_complete = False
         self._functions = []
@@ -225,6 +224,8 @@ $functions"""
                 func_file_content += "\n\n".join(func_list)
         else:
             func_file_content = _build_python_functions_file(self._functions)
+
+        self._work_dir.mkdir(exist_ok=True)
         func_file = self._work_dir / f"{self._functions_module}.py"
         func_file.write_text(func_file_content)
 
@@ -309,6 +310,7 @@ $functions"""
             # if filename is None:
 
             # create a file with an automatically generated name
+            self._work_dir.mkdir(exist_ok=True)
             code_hash = md5(code.encode()).hexdigest()
             filename = f"tmp_code_{code_hash}.{'py' if lang.startswith('python') else lang}"
             written_file = (self._work_dir / filename).resolve()

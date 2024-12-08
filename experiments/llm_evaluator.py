@@ -263,10 +263,10 @@ class EvalPlusEvaluator(object):
 
     def _init_builder(self, team_role, builder_llm_config):
         return init_builder(building_task=None,
-                work_dir='/tmp/eval_%s' % randomword(ID_LENGTH),
+                # work_dir='/tmp/eval_%s' % randomword(ID_LENGTH),
+                use_builder_dict=True,
                 builder_dict=team_role,
                 builder_llm_config=builder_llm_config,
-                use_builder_dict=True,
                 clear_cache=True,
                 debug_mode=self.debug_mode > 0)
 
@@ -282,24 +282,23 @@ class EvalPlusEvaluator(object):
         mlogger.info("Indv: %s\nChat config: %s\nBuilder config: %s" % \
             (indv.id, chat_llm_config, builder_llm_config))
 
-        agent_list, agent_configs, builder, builder_dict = \
+        agent_list, _, builder, _ = \
             self._init_builder(team_role, builder_llm_config)
         self.autogen_builder = builder
         # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
         def eval_func(problem, result_dict):
-            prompt = format_prompt(prompt=main_role,
-                instruction=problem['prompt'])
-
             start_time = time.time()
+            prompt = format_prompt(prompt=main_role, instruction=problem['prompt'])
             log_file = os.path.join(result_dict['result_dir'], "chat_logs",
                 "%s_chat.yaml" % problem['task_id']) if self.log_to_file else None
             chat_result, groupchat_messages = start_task(
                 execution_task=prompt,
                 agent_list=agent_list,
-                coding=agent_configs["coding"],
                 chat_llm_config=chat_llm_config,
+                builder=self.autogen_builder,
+                builder_llm_config=builder_llm_config,
                 log_file=log_file)
             time_elapsed = time.time() - start_time
 
@@ -378,7 +377,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         mlogger.info("Indv: %s\nChat config: %s\nBuilder config: %s" % \
             (indv.id, chat_llm_config, builder_llm_config))
 
-        agent_list, agent_configs, builder, builder_dict = \
+        agent_list, _, builder, _ = \
             self._init_builder(team_role, builder_llm_config)
         self.autogen_builder = builder
         # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
@@ -392,7 +391,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                 execution_task=prompt,
                 agent_list=agent_list,
                 chat_llm_config=chat_llm_config,
-                coding=agent_configs["coding"],
+                builder=self.autogen_builder,
+                builder_llm_config=builder_llm_config,
                 code_library=result_dict['code_library'],
                 imports=result_dict['imports'],
                 log_file=log_file)

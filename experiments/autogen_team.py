@@ -64,7 +64,8 @@ BUILDER_LLM_CONFIG = {"temperature": 0.8,
     "custom_coding_instruct": False,
     "user_for_system_msg": False,
     "min_agents": 2,
-    "max_agents": 4}
+    "max_agents": 4,
+    "use_agent_library": False}
 CHAT_TIMEOUT = 150
 # TODO: FIX CACHING/CACHE SEED
 
@@ -75,14 +76,25 @@ CHAT_TIMEOUT = 150
 def start_task(execution_task: str,
     agent_list: list,
     chat_llm_config: dict = CHAT_LLM_CONFIG,
-    coding: bool = True,
+    builder: Optional[AgentBuilder] = None,
+    builder_llm_config: dict = BUILDER_LLM_CONFIG,
     code_library: Optional[list] = None,
     imports: Optional[str] = None,
-    log_file: bool = None):
+    log_file: Optional[str] = None):
 
     if log_file is not None:
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         redirector = OutputRedirector(log_file); redirector.enable()
+    if builder_llm_config['use_agent_library']:
+        assert builder is not None; assert type(agent_list[0]) is dict
+        agent_list, _, _, _ = _build_from_library(
+            building_task=execution_task,
+            agent_list=agent_list,
+            builder=builder,
+            builder_llm_config=builder_llm_config)
+    else:
+        assert issubclass(agent_list[0], autogen.ConversableAgent)
+
     orig_agent_sys_msgs = _register_functions(
         agent_list, imports, code_library, log_file)
 
@@ -111,18 +123,18 @@ def start_task(execution_task: str,
         max_retries_for_selecting_speaker=chat_llm_config['max_speaker_select_retries'],
         select_speaker_auto_verbose=True,
         send_introductions=True,
-        allow_repeat_speaker=agent_list[:-1] if coding is True else agent_list)
+        allow_repeat_speaker=agent_list[:-1]) #if coding is True else agent_list)
 
-    llm_config = _get_agent_llm_config(chat_llm_config)
+    _agent_llm_config = _filter_llm_config(chat_llm_config)
 
     manager = autogen.GroupChatManager(
         groupchat=group_chat,
-        llm_config=llm_config)
+        llm_config=_agent_llm_config)
 
     society_of_mind_agent = SocietyOfMindAgent(
         "society_of_mind",
         chat_manager=manager,
-        llm_config=llm_config)
+        llm_config=_agent_llm_config)
 
     society_user_proxy = autogen.UserProxyAgent(
         "user_proxy",
@@ -147,7 +159,7 @@ def start_task(execution_task: str,
     # return agent_list[0].initiate_chat(manager, message=execution_task)
 
 
-def _get_agent_llm_config(chat_llm_config):
+def _filter_llm_config(chat_llm_config):
     config_list = autogen.config_list_from_json(CONFIG_FILE_OR_ENV,
         filter_dict={"model": [chat_llm_config['model']]})
     _chat_llm_config = {}
@@ -165,7 +177,11 @@ def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
         agent.update_system_message(orig_sys_msg)
 
 
-def _register_functions(agent_list, imports, code_library, log_file=None):
+def _register_functions(agent_list,
+    imports,
+    code_library,
+    log_file=None,
+    work_dir='/tmp/eval_%s' % randomword(ID_LENGTH)):
     agent_list_noproxy = []; orig_agent_sys_msgs = []; user_proxy = None
     for agent in agent_list:
         if type(agent) != autogen.UserProxyAgent:
@@ -175,7 +191,7 @@ def _register_functions(agent_list, imports, code_library, log_file=None):
             assert user_proxy is None; user_proxy = agent
     assert len(agent_list_noproxy) > 0; assert user_proxy is not None
 
-    executor = user_proxy._code_executor; executor.reset()
+    executor = user_proxy._code_executor; executor.reset(work_dir)
     if code_library is None or len(code_library) == 0:
         return None
 
@@ -213,20 +229,39 @@ def _register_functions(agent_list, imports, code_library, log_file=None):
     return orig_agent_sys_msgs
 
 
+def _build_from_library(
+    building_task,
+    agent_list,
+    builder,
+    builder_llm_config,
+    work_dir="/tmp/eval_%s" % randomword(ID_LENGTH)):
+
+    executor = LocalCommandLineCodeExecutor(timeout=10,
+            work_dir=work_dir,
+            functions_module='code_library')
+    agent_list, agent_configs = builder.build_from_library(
+        building_task=building_task,
+        library_path_or_json=agent_list,
+        default_llm_config=_filter_llm_config(builder_llm_config),
+        coding=True,
+        code_execution_config={'executor': executor})
+    builder_dict = builder.cached_configs
+
+    return agent_list, agent_configs, builder, builder_dict
+
+
 def init_builder(building_task=None,
-    work_dir='groupchat',
+    work_dir='/tmp/eval_%s' % randomword(ID_LENGTH),
+    use_builder_dict=False,
     builder_cfg=None,
     builder_dict=None,
-    use_builder_dict=False,
     builder_llm_config=BUILDER_LLM_CONFIG,
     max_agents=None,
     clear_cache=False,
     debug_mode=False):
 
-    os.makedirs(work_dir, exist_ok=True)
-    if clear_cache: os.system("rm -rf .cache")
-    if builder_cfg is None:
-        builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
+    if clear_cache and os.path.exists(".cache"):
+        os.system("rm -rf .cache")
     if max_agents is None:
         a = builder_llm_config['min_agents']
         b = builder_llm_config['max_agents']
@@ -243,13 +278,16 @@ def init_builder(building_task=None,
         use_cache=False,
         debug_mode=debug_mode)
 
+    if builder_llm_config['use_agent_library']:
+        assert type(builder_dict) is list; assert type(builder_dict[0]) is dict
+        return builder_dict, None, builder, None
+
     # hack to prevent "builder_model" error msg when running start_task
-    _builder_llm_config = {'temperature': builder_llm_config['temperature'],
-        'cache_seed': builder_llm_config['cache_seed']}
+    _builder_llm_config = _filter_llm_config(builder_llm_config)
 
     # if builder dict or builder cfg does not exist, build new team
     if (use_builder_dict and builder_dict is None) or \
-        (not use_builder_dict and not os.path.exists(builder_cfg)):
+        (not use_builder_dict and builder_cfg is None):
 
         print("init_builder: creating new builder")
         assert building_task is not None
@@ -271,7 +309,7 @@ def init_builder(building_task=None,
     else:
         print("init_builder: using existing builder")
         if not use_builder_dict:
-            assert os.path.exists(builder_cfg)
+            assert builder_cfg is not None and os.path.exists(builder_cfg)
             # load previous agent configs
             with open(builder_cfg, "r") as f: builder_dict = json.load(f)
 
@@ -303,8 +341,11 @@ def init_builder(building_task=None,
     if use_builder_dict:
         return agent_list, agent_configs, builder, builder_dict
     else:
+        if builder_cfg is None:
+            builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
         builder.save(builder_cfg)
         return agent_list, agent_configs, builder, builder_cfg
+
 
 def _parse_builder_cfgs(builder_cfgs, eval_mode=False):
     builder_strs = []
@@ -327,6 +368,7 @@ def _parse_builder_cfgs(builder_cfgs, eval_mode=False):
                 builder_str = builder_cfg
             builder_strs.append(builder_str)
     return builder_strs
+
 
 def autogen_mutate(
     builder_cfg="autogen_builder_cfg.json",
@@ -393,7 +435,7 @@ Combine and merge these experts to create a new and improved team for generating
 def run_evalplus(
     result_dir="results/evalplus_results_%s" % get_time(space=False),
     builder_cfg="config/autogen_builder_cfg2.json",
-    work_dir="/tmp/eval_%s" % randomword(12),
+    work_dir="/tmp/eval_%s" % randomword(ID_LENGTH),
     clear_cache=True,
     humaneval=True,
     max_agents=3,
@@ -433,8 +475,7 @@ def run_evalplus(
             try:
                 chat_result, chat_messages = start_task(
                     execution_task=prompt,
-                    agent_list=agent_list,
-                    coding=agent_configs["coding"])
+                    agent_list=agent_list)
                 code = extract_code_from_chat(chat_result)
                 builder.clear_all_agents(recycle_endpoint=False)
                 break
