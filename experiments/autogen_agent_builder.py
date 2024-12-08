@@ -257,6 +257,7 @@ With following description: {function_description}
         max_agents: Optional[int] = 5,
         custom_coding_instruct: Optional[bool] = False,
         user_for_system_msg: Optional[bool] = False,
+        code_execution_config: Optional[dict] = None,
         debug_mode: Optional[bool] = False,
         use_cache: Optional[bool] = False,
     ):
@@ -301,6 +302,15 @@ With following description: {function_description}
         self.custom_coding_instruct = custom_coding_instruct
         self.user_for_system_msg = user_for_system_msg
         self.debug_mode = debug_mode
+        self.code_execution_config = code_execution_config
+
+        if self.code_execution_config is None:
+            self.code_execution_config = {
+                "last_n_messages": 1,
+                "work_dir": "groupchat",
+                "use_docker": False,
+                "timeout": 10,
+            }
 
     def set_builder_model(self, model: str):
         self.builder_model = model
@@ -508,18 +518,10 @@ With following description: {function_description}
             agent_list: a list of agents.
             cached_configs: cached configs.
         """
-        if code_execution_config is None:
-            code_execution_config = {
-                "last_n_messages": 1,
-                "work_dir": "groupchat",
-                "use_docker": False,
-                "timeout": 10,
-            }
-
-        if max_agents is None: max_agents = self.max_agents; assert max_agents > 0
-
-        agent_configs = []
         self.building_task = building_task
+        if code_execution_config is None:
+            code_execution_config = self.code_execution_config
+        if max_agents is None: max_agents = self.max_agents; assert max_agents > 0
 
         print(colored("==> Generating agents...", "green"), flush=True)
         resp_agent_name = (
@@ -604,6 +606,7 @@ With following description: {function_description}
         else:
             agent_coding_instruct_list = [None] * len(agent_name_list)
 
+        agent_configs = []
         for name, sys_msg, description, coding_instruction in list(zip(agent_name_list, agent_sys_msg_list, agent_description_list, agent_coding_instruct_list)):
             agent_config = {
                 "name": name,
@@ -1136,15 +1139,12 @@ With following description: {function_description}
         from chromadb.utils import embedding_functions
 
         def desc(agent): return self._get_agent_desc(agent, full_desc)
+
+        self.building_task = building_task
         if max_agents is None: max_agents = self.max_agents; assert max_agents > 0
         if top_k is None: top_k = max_agents; assert top_k > 0
         if code_execution_config is None:
-            code_execution_config = {
-                "last_n_messages": 1,
-                "work_dir": "groupchat",
-                "use_docker": False,
-                "timeout": 120
-            }
+            code_execution_config = self.code_execution_config
 
         if isinstance(library_list_or_json, list):
             agent_library = library_list_or_json

@@ -232,18 +232,13 @@ def _build_from_library(
     building_task,
     agent_library,
     builder,
-    builder_llm_config,
-    work_dir="/tmp/eval_%s" % randomword(ID_LENGTH)):
+    builder_llm_config):
 
-    executor = LocalCommandLineCodeExecutor(timeout=10,
-            work_dir=work_dir,
-            functions_module='code_library')
     agent_list, agent_configs = builder.build_from_library(
         building_task=building_task,
         library_list_or_json=agent_library,
         default_llm_config=_filter_llm_config(builder_llm_config),
-        coding=True,
-        code_execution_config={'executor': executor})
+        coding=True)
 
     return agent_list
 
@@ -266,6 +261,9 @@ def init_builder(building_task=None,
         assert a > 0 and b > 0 and a <= b; max_agents = random.randint(a, b)
     else: assert max_agents > 0
 
+    executor = LocalCommandLineCodeExecutor(timeout=10,
+            work_dir=work_dir,
+            functions_module='code_library')
     builder = AgentBuilder(
         config_file_or_env=CONFIG_FILE_OR_ENV,
         builder_model=builder_llm_config['builder_model'],
@@ -273,6 +271,7 @@ def init_builder(building_task=None,
         max_agents=max_agents,
         custom_coding_instruct=builder_llm_config['custom_coding_instruct'],
         user_for_system_msg=builder_llm_config['user_for_system_msg'],
+        code_execution_config={'executor': executor},
         use_cache=False,
         debug_mode=debug_mode)
 
@@ -297,14 +296,10 @@ def init_builder(building_task=None,
         #     "use_docker": False,
         #     "work_dir": work_dir
         # }
-        executor = LocalCommandLineCodeExecutor(timeout=10,
-            work_dir=work_dir,
-            functions_module='code_library')
         agent_list, agent_configs = builder.build(
             building_task=building_task,
             default_llm_config=_builder_llm_config,
-            coding=True,
-            code_execution_config={'executor': executor})
+            coding=True)
         builder_dict = builder.cached_configs
     else:
         print("init_builder: using existing builder")
@@ -331,12 +326,8 @@ def init_builder(building_task=None,
     # builder_dict["code_execution_config"]["work_dir"] = work_dir
 
     # overwrite code execution config to use executor for code blocks in future chat
-    executor = LocalCommandLineCodeExecutor(timeout=10,
-        work_dir=work_dir,
-        functions_module='code_library')
-    builder_dict['code_execution_config'] = {'executor': executor}
-    agent_list, agent_configs = builder.load(config_dict=builder_dict)
-    del builder_dict['code_execution_config']
+    agent_list, agent_configs = builder.load(config_dict=builder_dict,
+        code_execution_config={'executor': executor})
 
     if use_builder_dict:
         return agent_list, agent_configs, builder, builder_dict
