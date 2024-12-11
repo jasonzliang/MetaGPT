@@ -66,6 +66,9 @@ class EvalPlusEvaluator(object):
         if len(self.problem_list) > 0: self.max_problems = sys.maxsize
         # 0 = Normal, 1 = Print more debug messages, 2 = 1 + Dummy fitness
         self.debug_mode = self.config.get("debug_mode", 0)
+        if self.debug_mode:
+            mlogger.warn("Warning, debug mode turned on: %s" % self.debug_mode)
+            time.sleep(0.5)
 
         if type(self).__name__ == "EvalPlusEvaluator":
             self._init_evalplus()
