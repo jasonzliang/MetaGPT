@@ -65,8 +65,7 @@ BUILDER_LLM_CONFIG = {"temperature": 0.8,
     "user_for_system_msg": False,
     "min_agents": 3,
     "max_agents": 3,
-    "use_agent_library": False,
-    "agent_lib_include_coding_instruct": False}
+    "use_agent_library": False}
 CHAT_TIMEOUT = 1000
 # TODO: FIX CACHING/CACHE SEED
 
