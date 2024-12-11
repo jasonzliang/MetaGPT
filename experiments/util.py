@@ -228,6 +228,7 @@ def extract_function_from_code(code_string, function_name):
     :return: String containing the source code of the function, including its docstring,
              or None if the function is not found
     """
+
     if code_string is None:
         return "def %s(): pass\n" % function_name
 
@@ -242,11 +243,10 @@ def extract_function_from_code(code_string, function_name):
             if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name == function_name:
                 # Use get_source_segment to extract the exact source code
                 function_code = ast.get_source_segment(code_string, node)
+                # Fall back method if get_source_segment fails
+                if function_code is None: function_code = ast.unparse(node)
 
-                if function_code is None:
-                    function_code = ast.unparse(node)
-
-        # Fall back methods
+        # Additional fall back methods using tokenize and regex
         if function_code is None:
             function_code = extract_function_from_code_tokenize(code_string, function_name)
         if function_code is None:
@@ -269,6 +269,7 @@ def extract_comments_from_code(text, incl_single_comments=False):
     Returns:
         list: A list of extracted comment blocks
     """
+
     try:
         # Regex pattern to match:
         # 1. Text inside triple quotes (docstrings)
