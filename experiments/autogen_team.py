@@ -63,8 +63,8 @@ BUILDER_LLM_CONFIG = {"temperature": 0.8,
     # "cache": None,
     "custom_coding_instruct": False,
     "user_for_system_msg": False,
-    "min_agents": 2,
-    "max_agents": 4,
+    "min_agents": 3,
+    "max_agents": 3,
     "use_agent_library": False,
     "agent_lib_include_coding_instruct": False}
 CHAT_TIMEOUT = 1000
