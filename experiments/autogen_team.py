@@ -65,7 +65,8 @@ BUILDER_LLM_CONFIG = {"temperature": 0.8,
     "user_for_system_msg": False,
     "min_agents": 2,
     "max_agents": 4,
-    "use_agent_library": False}
+    "use_agent_library": False,
+    "agent_lib_include_coding_instruct": False}
 CHAT_TIMEOUT = 150
 # TODO: FIX CACHING/CACHE SEED
 
@@ -244,7 +245,9 @@ def _build_from_library(
         building_task=building_task,
         library_list_or_json=agent_library,
         default_llm_config=_filter_builder_llm_config(builder_llm_config),
-        coding=True)
+        coding=True,
+        include_insights=builder_llm_config.get('agent_lib_include_insights', True),
+        include_coding_instruct=builder_llm_config.get('agent_lib_include_coding_instruct', True))
 
     return agent_list
 

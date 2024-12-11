@@ -53,8 +53,8 @@ EVAL_LLM_CONFIG = {
 EVAL_BUILDER_LLM_CONFIG = {
     'agent_model': 'gpt-4o',
     'builder_model': 'gpt-4o',
-    'custom_coding_instruct': True,
-    'use_agent_library': True,
+    'custom_coding_instruct': False,
+    'use_agent_library': False,
     'temperature': 0.9
 }
 
@@ -303,7 +303,7 @@ def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
     num_gen=200,
     init_seed=0,
-    problem_list=_get_scicode_problem_list(problem_order='complexity'),
+    problem_list=_get_scicode_problem_list(problem_order='complexity', reverse=True),
     # problem_list=['44'],
     update_n_agents=None,
     update_teamwork=True,
@@ -407,9 +407,11 @@ def self_improve_loop(team_role_fp=None,
 
 
     find_successful_agents(result_dirs=result_dir,
+        merge_agents=True,
+        create_agent_lib=True,
         indv=indv,
         evaluator=_eval,
-        include_insights=include_insights)
+        merge_include_insights=include_insights)
     print("Self-improve loop finished")
 
 
@@ -564,7 +566,12 @@ if __name__ == "__main__":
     #     "results/self_improve_11_24/11_*no_update"])
     if "lingua" in sys.argv[2]:
         EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
+    if "library" in sys.argv[2]:
+        EVAL_BUILDER_LLM_CONFIG['use_agent_library'] = True
+    exp_name = sys.argv[2].lower()
+    if not exp_name.startswith("results/"):
+        exp_name = os.path.join("results", exp_name)
     self_improve_loop(team_role_fp=sys.argv[1],
         result_dir=sys.argv[2],
-        update_teamwork=True if "update_teamwork" in sys.argv[2].lower() else False,
-        coding_instruct=True if "coding_instruct" in sys.argv[2].lower() else False)
+        update_teamwork=True if "update_teamwork" in exp_name else False,
+        coding_instruct=True if "coding_instruct" in exp_name else False)

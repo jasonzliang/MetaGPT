@@ -520,6 +520,7 @@ EVAL_BUILDER_LLM_CONFIG = {
     'agent_model': LLM_MODEL,
     'builder_model': LLM_MODEL,
     'custom_coding_instruct': True,
+    'use_agent_library': False,
     'temperature': 0.9
 }
 
@@ -659,6 +660,10 @@ def _test_check_eval_progress(
 if __name__ == "__main__":
     if 'lingua' in sys.argv[2]:
         EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
+    if 'library' in sys.argv[2]:
+        EVAL_BUILDER_LLM_CONFIG['use_agent_library'] = True
+    if 'background' in sys.argv[2]:
+        SCICODE_EVAL_CONFIG['with_background'] = True
     test_evaluator(team_role_fp=sys.argv[1], eval_suffix=sys.argv[2])
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")

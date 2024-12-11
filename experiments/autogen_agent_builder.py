@@ -4,6 +4,7 @@ import importlib
 import json
 import logging
 import os
+import pprint
 import random
 import re
 import socket
@@ -318,34 +319,42 @@ With following description: {function_description}
     def set_agent_model(self, model: str):
         self.agent_model = model
 
-    def _get_agent_desc(self, agent_config, full_desc=True):
+    def _get_agent_desc(
+        self,
+        agent_config,
+        full_desc=True,
+        include_insights=True,
+        include_coding_instruct=True):
+
         if not full_desc:
-            return agent_config['description']
+            return agent_config["description"]
         system_message = [agent_config["system_message"]]
 
-        if 'insights' in agent_config:
-            insights = agent_config['insights']
+        insights = ""
+        if include_insights and "insights" in agent_config:
+            insights = agent_config["insights"]
             insights = f"## Useful insights and experience for task-solving\n{insights}"
 
         if len(insights) > 0:
             system_message.append(insights)
         else:
-            print(colored("Empty insights for %s" % agent_name, "red"), flush=True)
+            print(colored("Empty insights for %s" % agent_config["name"], "red"), flush=True)
 
         # if custom_coding_instruct, accept custom or default coding instructions
-        if self.custom_coding_instruct is True and \
+        agent_coding_instruct = ""
+        if include_coding_instruct and self.custom_coding_instruct is True and \
             "coding_instruction" in agent_config:
             agent_coding_instruct = agent_config["coding_instruction"]
-        elif "coding_instruction" not in agent_config:
+        elif include_coding_instruct and "coding_instruction" not in agent_config:
             agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
-        else:
+        elif include_coding_instruct:
             raise Exception("If agents have 'coding_instruction' entry, "
                 "set builder's custom_coding_instruct to True'")
 
         if len(agent_coding_instruct) > 0:
             system_message.append(agent_coding_instruct)
         else:
-            print(colored("Empty coding instruction for %s" % agent_name, "red"), flush=True)
+            print(colored("Empty coding instruction for %s" % agent_config["name"], "red"), flush=True)
 
         return "\n\n".join(system_message)
 
@@ -355,6 +364,7 @@ With following description: {function_description}
         member_name: List[str],
         llm_config: dict,
         use_oai_assistant: Optional[bool] = False,
+        **kwargs
     ) -> autogen.AssistantAgent:
         """
         Create a group chat participant agent.
@@ -993,7 +1003,8 @@ With following description: {function_description}
         full_desc,
         top_k,
         embedding_model,
-        max_agents):
+        max_agents,
+        **kwargs):
 
         def _desc(agent): return self._get_agent_desc(agent, full_desc)
 
@@ -1083,14 +1094,18 @@ With following description: {function_description}
         self,
         building_task,
         agent_library,
-        max_agents):
+        max_agents,
+        **kwargs):
 
-        def _desc(agent): return self._get_agent_desc(agent, full_desc=True)
+        def _desc(agent): return self._get_agent_desc(agent,
+            full_desc=True,
+            include_insights=kwargs.get('include_insights', True),
+            include_coding_instruct=kwargs.get('include_coding_instruct', True))
         def _format_agent_list(agent_dict):
             agent_list = sorted(agent_dict.values(), key=lambda x: x['name'])
             formatted_agent_list = []
             for agent in agent_list:
-                agent_str = "Name: %s\nDescription:%s\n" % (agent['name'],
+                agent_str = "Name: %s\nDescription:\n%s\n" % (agent['name'],
                     _desc(agent))
                 formatted_agent_list.append(agent_str)
             return "\n\n".join(formatted_agent_list)
@@ -1121,7 +1136,7 @@ With following description: {function_description}
             agent_names = [agent.strip() for agent in agent_name_resp.split(",")]
             for agent_name in agent_names:
                 if agent_name.lower() in agent_dict:
-                    retrieved_agents.append(agent_dict[agent_name])
+                    retrieved_agents.append(agent_dict[agent_name.lower()])
                 else:
                     print(colored("Bad agent name, cannot find: %s" % agent_name,
                         "green"), flush=True)
@@ -1211,13 +1226,15 @@ With following description: {function_description}
                 full_desc=full_desc,
                 top_k=top_k,
                 embedding_model=embedding_model,
-                max_agents=max_agents)
+                max_agents=max_agents,
+                **kwargs)
         else:
             agent_config_list = self._llm_only_retrieval(
                 building_task=building_task,
                 agent_library=agent_library,
-                max_agents=max_agents)
-        print(f"{[agent['name'] for agent in agent_config_list]} are selected.", flush=True)
+                max_agents=max_agents,
+                **kwargs)
+        print(f"{", ".join([agent['name'] for agent in agent_config_list])} are selected.", flush=True)
 
         if coding is None:
             resp = (
