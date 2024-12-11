@@ -275,7 +275,7 @@ $functions"""
                 self._setup_functions()
             except:
                 traceback.print_exc()
-                print("Function setup failed!")
+                print("Setup functions failed!")
         return self._execute_code_dont_check_setup(code_blocks)
 
     def _get_code_history(self, lang):

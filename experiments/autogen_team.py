@@ -206,7 +206,7 @@ def _register_functions(agent_list,
     if code_library is None or len(code_library) == 0:
         return None
 
-    functions = []; loaded_code_library = []; namespace = None
+    namespace = None; functions = []; loaded_code_library = []
     for i, func_dict in enumerate(code_library):
         try:
             if namespace is None:
@@ -223,10 +223,10 @@ def _register_functions(agent_list,
 
     executor._functions = functions
     func_list = [func_dict['code'] for func_dict in loaded_code_library]
-    function_msg = executor.format_functions_for_prompt(
-        prompt_template=FUNCTION_PROMPT_TEMPLATE)
     executor._setup_functions(imports=imports, func_list=func_list,
         overwrite_func_file=True)
+    function_msg = executor.format_functions_for_prompt(
+        prompt_template=FUNCTION_PROMPT_TEMPLATE)
 
     new_sys_msgs = []
     for agent in agent_list_noproxy:
