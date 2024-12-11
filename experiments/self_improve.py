@@ -571,7 +571,9 @@ if __name__ == "__main__":
     exp_name = sys.argv[2].lower()
     if not exp_name.startswith("results/"):
         exp_name = os.path.join("results", exp_name)
-    self_improve_loop(team_role_fp=sys.argv[1],
-        result_dir=sys.argv[2],
+    self_improve_loop(
+        team_role_fp=sys.argv[1],
+        result_dir=exp_name,
         update_teamwork=True if "update_teamwork" in exp_name else False,
-        coding_instruct=True if "coding_instruct" in exp_name else False)
+        coding_instruct=True if "coding_instruct" in exp_name else False
+    )
