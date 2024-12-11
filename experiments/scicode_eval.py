@@ -147,13 +147,14 @@ class Gencode:
                 self.previous_llm_code = [None] * tot_steps
             for prev_step in range(num_steps - 1):
                 if self.previous_llm_code[prev_step] is None:
-                    # if (prob_id == "13" and prev_step == 5) or (prob_id == "62" and prev_step == 0)\
-                    #         or (prob_id == "76" and prev_step == 2):
-                    #     prev_file_path = Path("scicode_data", f"{prob_id}.{prev_step+1}.txt")
-                    # else:
-                    prev_file_path = self._get_output_file_path(prob_id, prev_step + 1)
-                    if prev_file_path.is_file() and prev_file_path.stat().st_size > 0:
+                    # 291 - 3 = 288 actual subproblems (3 are provided)
+                    if (prob_id == "13" and prev_step == 5) or (prob_id == "62" and prev_step == 0)\
+                            or (prob_id == "76" and prev_step == 2):
+                        prev_file_path = Path("scicode_data", f"{prob_id}.{prev_step+1}.txt")
+                    else:
+                        prev_file_path = self._get_output_file_path(prob_id, prev_step + 1)
 
+                    if prev_file_path.is_file() and prev_file_path.stat().st_size > 0:
                         prev_file_content = prev_file_path.read_text(encoding='utf-8')
                         assert prev_file_content is not None
                         func_header = prob_data["sub_steps"][prev_step]["function_header"]
