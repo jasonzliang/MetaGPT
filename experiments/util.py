@@ -254,6 +254,8 @@ def extract_function_from_code(code_string, function_name):
         if function_code is None:
             function_code = code_string
 
+        return function_code
+
     except Exception as e:
         print(f'{function_name} not found with error: {e}')
         return code_string
