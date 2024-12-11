@@ -25,7 +25,7 @@ ALL_PROB_NUM = PROB_NUM + DEV_PROB_NUM
 ALL_STEP_NUM = STEP_NUM + DEV_STEP_NUM
 
 DEFAULT_PROMPT_TEMPLATE = Path("scicode_data", "background_comment_template_v2.txt").read_text()
-BACKGOUND_PROMPT_TEMPLATE = Path("scicode_data", "multistep_template.txt").read_text()
+BACKGOUND_PROMPT_TEMPLATE = Path("scicode_data", "multistep_template_v2.txt").read_text()
 
 H5PY_FILE = os.path.join("scicode_data/test_data.h5")
 CLEANUP_TMP_FILES = False
