@@ -24,6 +24,6 @@ if __name__ == "__main__":
         print("Error: too many arguments!"); exit()
 
     if not EXPERIMENT_NAME.endswith("*"): EXPERIMENT_NAME += "*"
-    os.system("rsync -Phavz --exclude '%s' --stats %s:%s %s" % \
+    os.system("rsync -ahvzAPX --no-i-r --stats --exclude '%s' %s:%s %s" % \
         (EXCLUDE_DIR, SERVER_IP,
             os.path.join(SERVER_DIR, EXPERIMENT_NAME), LOCAL_DIR))
