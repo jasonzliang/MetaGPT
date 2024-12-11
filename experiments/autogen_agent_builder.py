@@ -990,10 +990,12 @@ With following description: {function_description}
         self,
         building_task,
         agent_library,
-        desc,
+        full_desc,
         top_k,
         embedding_model,
         max_agents):
+
+        def _desc(agent): return self._get_agent_desc(agent, full_desc)
 
         skills = building_task.replace(":", " ").split("\n")
         # skills = [line.split("-", 1)[1].strip() if line.startswith("-") else line for line in lines]
@@ -1005,7 +1007,7 @@ With following description: {function_description}
             embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name=embedding_model),
         )
         collection.add(
-            documents=[desc(agent) for agent in agent_library],
+            documents=[_desc(agent) for agent in agent_library],
             metadatas=[{"source": "agent_profile"} for _ in range(len(agent_library))],
             ids=[f"agent_{i}" for i in range(len(agent_library))],
         )
@@ -1017,13 +1019,13 @@ With following description: {function_description}
         agent_config_list = []
         for description in list(agent_desc_list):
             for agent in agent_library:
-                if description == desc(agent):
+                if description == _desc(agent):
                     agent_config_list.append(agent.copy())
                     break
         chroma_client.delete_collection(collection.name)
 
         # double recall from the searching result
-        expert_pool = [f"{agent['name']}: {desc(agent)}" for agent in agent_config_list]
+        expert_pool = [f"{agent['name']}: {_desc(agent)}" for agent in agent_config_list]
         while True:
             skill_agent_pair_json = (
                 self._builder_model_create(
@@ -1071,7 +1073,7 @@ With following description: {function_description}
                 name = agent_profile.split(":")[0].strip()
                 description = agent_profile.split(":")[1].strip()
                 for agent in agent_config_list:
-                    if name == agent["name"] and description == desc(agent):
+                    if name == agent["name"] and description == _desc(agent):
                         recalled_agent_config_list.append(agent.copy())
 
         agent_config_list = recalled_agent_config_list + created_agent_config_list
@@ -1081,8 +1083,50 @@ With following description: {function_description}
         self,
         building_task,
         agent_library,
-        desc):
-        pass
+        max_agents):
+
+        def _desc(agent): return self._get_agent_desc(agent, full_desc=True)
+        def _format_agent_list(agent_dict):
+            agent_list = sorted(agent_dict.values(), key=lambda x: x['name'])
+            formatted_agent_list = []
+            for agent in agent_list:
+                agent_str = "Name: %s\nDescription:%s\n" % (agent['name'],
+                    _desc(agent))
+                formatted_agent_list.append(agent_str)
+            return "\n\n".join(formatted_agent_list)
+
+        agent_dict = {}
+        for agent in agent_library:
+            agent_dict[agent['name'].lower()] = agent
+
+        retrieved_agents = []
+        while True:
+            if len(retrieved_agents) >= max_agents: break
+            agent_name_resp = (
+                self._builder_model_create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": AGENT_LIBRARY_PROMPT.format(
+                                task=building_task,
+                                agent_list=_format_agent_list(agent_dict),
+                                max_agents=max_agents
+                            ),
+                        }
+                    ]
+                )
+                .choices[0]
+                .message.content
+            )
+            agent_names = [agent.strip() for agent in agent_name_resp.split(",")]
+            for agent_name in agent_names:
+                if agent_name.lower() in agent_dict:
+                    retrieved_agents.append(agent_dict[agent_name])
+                else:
+                    print(colored("Bad agent name, cannot find: %s" % agent_name,
+                        "green"), flush=True)
+
+        return retrieved_agents[:max_agents]
 
     def build_from_library(
         self,
@@ -1092,7 +1136,7 @@ With following description: {function_description}
         default_retrieval: bool = False,
         full_desc: bool = True,
         top_k: Optional[int] = None,
-        coding: Optional[bool] = None,
+        coding: Optional[bool] = True,
         code_execution_config: Optional[Dict] = None,
         use_oai_assistant: Optional[bool] = False,
         embedding_model: Optional[str] = "all-mpnet-base-v2",
@@ -1138,8 +1182,6 @@ With following description: {function_description}
         import chromadb
         from chromadb.utils import embedding_functions
 
-        def desc(agent): return self._get_agent_desc(agent, full_desc)
-
         self.building_task = building_task
         if max_agents is None: max_agents = self.max_agents; assert max_agents > 0
         if top_k is None: top_k = max_agents; assert top_k > 0
@@ -1148,7 +1190,6 @@ With following description: {function_description}
 
         if isinstance(library_list_or_json, list):
             agent_library = library_list_or_json
-            for agent in agent_library: assert isinstance(agent, dict)
         else:
             try:
                 agent_library = json.loads(library_list_or_json)
@@ -1158,12 +1199,16 @@ With following description: {function_description}
             except Exception as e:
                 raise e
 
+        for agent in agent_library:
+            assert isinstance(agent, dict)
+            assert 'name' in agent and 'system_message' in agent
+
         print(colored("==> Looking for suitable agents in the library...", "green"), flush=True)
         if default_retrieval:
             agent_config_list = self._default_retrieval(
                 building_task=building_task,
                 agent_library=agent_library,
-                desc=desc,
+                full_desc=full_desc,
                 top_k=top_k,
                 embedding_model=embedding_model,
                 max_agents=max_agents)
@@ -1171,7 +1216,6 @@ With following description: {function_description}
             agent_config_list = self._llm_only_retrieval(
                 building_task=building_task,
                 agent_library=agent_library,
-                desc=desc,
                 max_agents=max_agents)
         print(f"{[agent['name'] for agent in agent_config_list]} are selected.", flush=True)
 

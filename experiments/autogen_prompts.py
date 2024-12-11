@@ -214,3 +214,21 @@ def foo(args):
 # List of functions in '$module_name'
 $functions
 """
+
+AGENT_LIBRARY_PROMPT = """# Your goal
+- Considering the following task, what experts are best suited for solving the task?
+- You can select from a list of experts, which contains their names and descriptions.
+- Consider which experts will have the best synergy and teamwork when working together.
+
+# TASK
+{task}
+
+# EXPERT LIST
+{agent_list}
+
+# Your answer
+- You should consider if the experts' name and description match the task.
+- You should select {max_agents} experts and make sure each expert is unique.
+- Only return a list of expert names separated by commas.
+- For example: Algorithm_Expert, Python_Expert, etc
+"""

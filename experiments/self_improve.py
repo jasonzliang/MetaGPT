@@ -43,7 +43,7 @@ SCICODE_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'problems_dev',
     'with_background': False,
-    'debug_mode': 0
+    'debug_mode': 1
 }
 
 EVAL_LLM_CONFIG = {
@@ -54,6 +54,7 @@ EVAL_BUILDER_LLM_CONFIG = {
     'agent_model': 'gpt-4o',
     'builder_model': 'gpt-4o',
     'custom_coding_instruct': True,
+    'use_agent_library': True,
     'temperature': 0.9
 }
 
@@ -302,7 +303,7 @@ def self_improve_loop(team_role_fp=None,
     result_dir='results/self_improve_%s' % get_time(space=False),
     num_gen=200,
     init_seed=0,
-    problem_list=_get_scicode_problem_list(problem_order='random'),
+    problem_list=_get_scicode_problem_list(problem_order='complexity'),
     # problem_list=['44'],
     update_n_agents=None,
     update_teamwork=True,

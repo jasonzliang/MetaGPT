@@ -123,7 +123,7 @@ def start_task(execution_task: str,
         send_introductions=True,
         allow_repeat_speaker=agent_list[:-1]) #if coding is True else agent_list)
 
-    _agent_llm_config = _filter_llm_config(chat_llm_config)
+    _agent_llm_config = _filter_chat_llm_config(chat_llm_config)
 
     manager = autogen.GroupChatManager(
         groupchat=group_chat,
@@ -157,7 +157,7 @@ def start_task(execution_task: str,
     # return agent_list[0].initiate_chat(manager, message=execution_task)
 
 
-def _filter_llm_config(chat_llm_config):
+def _filter_chat_llm_config(chat_llm_config):
     config_list = autogen.config_list_from_json(CONFIG_FILE_OR_ENV,
         filter_dict={"model": [chat_llm_config['model']]})
     _chat_llm_config = {}
@@ -165,6 +165,12 @@ def _filter_llm_config(chat_llm_config):
         if key in CHAT_LLM_CFG_KEYS:
             _chat_llm_config[key] = chat_llm_config[key]
     return {"config_list": config_list, **_chat_llm_config}
+
+
+def _filter_builder_llm_config(builder_llm_config):
+    _builder_llm_config = {'temperature': builder_llm_config['temperature'],
+        'cache_seed': builder_llm_config['cache_seed']}
+    return _builder_llm_config
 
 
 def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
@@ -237,7 +243,7 @@ def _build_from_library(
     agent_list, agent_configs = builder.build_from_library(
         building_task=building_task,
         library_list_or_json=agent_library,
-        default_llm_config=_filter_llm_config(builder_llm_config),
+        default_llm_config=_filter_builder_llm_config(builder_llm_config),
         coding=True)
 
     return agent_list
@@ -282,7 +288,7 @@ def init_builder(building_task=None,
         return agent_list, None, builder, None
 
     # hack to prevent "builder_model" error msg when running start_task
-    _builder_llm_config = _filter_llm_config(builder_llm_config)
+    _builder_llm_config = _filter_builder_llm_config(builder_llm_config)
 
     # if builder dict or builder cfg does not exist, build new team
     if (use_builder_dict and builder_dict is None) or \
