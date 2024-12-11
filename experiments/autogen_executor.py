@@ -139,8 +139,8 @@ $functions"""
     def reset(self, work_dir=None):
         if work_dir is not None:
             self._work_dir = Path(work_dir)
-        if len(self._functions) > 0:
-            self._setup_functions_complete = False
+
+        self._setup_functions_complete = False
         self._functions = []
         self._code_history = []
 
@@ -253,11 +253,14 @@ $functions"""
                 raise ValueError("Pip install timed out") from e
             if result.returncode != 0:
                 raise ValueError(f"Pip install failed. {result.stdout}, {result.stderr}")
+
         # Attempt to load the function file to check for syntax errors, imports etc.
         exec_result = self._execute_code_dont_check_setup([CodeBlock(code=func_file_content, language="python")])
+
+        self._setup_functions_complete = True
         if exec_result.exit_code != 0:
             raise ValueError(f"Functions failed to load: {exec_result.output}")
-        self._setup_functions_complete = True
+        return True
 
     def execute_code_blocks(self, code_blocks: List[CodeBlock]) -> CommandLineCodeResult:
         """(Experimental) Execute the code blocks and return the result.
@@ -268,7 +271,11 @@ $functions"""
         Returns:
             CommandLineCodeResult: The result of the code execution."""
         if not self._setup_functions_complete:
-            self._setup_functions()
+            try:
+                self._setup_functions()
+            except:
+                traceback.print_exc()
+                print("Function setup failed!")
         return self._execute_code_dont_check_setup(code_blocks)
 
     def _get_code_history(self, lang):

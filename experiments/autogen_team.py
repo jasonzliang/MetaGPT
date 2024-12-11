@@ -67,7 +67,7 @@ BUILDER_LLM_CONFIG = {"temperature": 0.8,
     "max_agents": 4,
     "use_agent_library": False,
     "agent_lib_include_coding_instruct": False}
-CHAT_TIMEOUT = 150
+CHAT_TIMEOUT = 1000
 # TODO: FIX CACHING/CACHE SEED
 
 
@@ -96,6 +96,11 @@ def start_task(execution_task: str,
 
     orig_agent_sys_msgs = _register_functions(
         agent_list, imports, code_library, log_file)
+    if log_file is not None:
+        sys_msgs = [agent.system_message for agent in agent_list]
+        sys_msg_log_file = os.path.splitext(log_file)[0] + "_sys_msg.txt"
+        with open(sys_msg_log_file, 'w') as f:
+            f.write("\n\n".join(sys_msgs))
 
     if chat_llm_config['use_llm_lingua']:
         compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
@@ -201,7 +206,7 @@ def _register_functions(agent_list,
     if code_library is None or len(code_library) == 0:
         return None
 
-    functions = []; namespace = None
+    functions = []; loaded_code_library = []; namespace = None
     for i, func_dict in enumerate(code_library):
         try:
             if namespace is None:
@@ -210,16 +215,17 @@ def _register_functions(agent_list,
                 func_dict['code'],
                 func_dict['name'])
             functions.append(function)
+            loaded_code_library.append(func_dict)
         except:
             traceback.print_exc()
             print("Importing function %s failed!" % func_dict['name'])
-            return None
+    if len(functions) == 0: return None
 
     executor._functions = functions
+    func_list = [func_dict['code'] for func_dict in loaded_code_library]
     function_msg = executor.format_functions_for_prompt(
         prompt_template=FUNCTION_PROMPT_TEMPLATE)
-    executor._setup_functions(imports=imports,
-        func_list=[func_dict['code'] for func_dict in code_library],
+    executor._setup_functions(imports=imports, func_list=func_list,
         overwrite_func_file=True)
 
     new_sys_msgs = []
@@ -227,10 +233,6 @@ def _register_functions(agent_list,
         new_sys_msg = agent.system_message + "\n" + function_msg
         agent.update_system_message(new_sys_msg)
         new_sys_msgs.append(new_sys_msg)
-    if log_file is not None:
-        sys_msg_log_file = os.path.splitext(log_file)[0] + "_sys_msg.txt"
-        with open(sys_msg_log_file, 'w') as f:
-            f.write("\n\n".join(new_sys_msgs))
 
     return orig_agent_sys_msgs
 
