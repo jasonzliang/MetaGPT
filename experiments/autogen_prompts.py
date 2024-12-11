@@ -154,8 +154,8 @@ UPDATE_CODE_INSTRUCT_PROMPT = """# Your goal
 {code_performance}
 
 # Your answer
-- Let's think step by step about how to update the agent coding instruction to improve code accuracy.
-- Ensure the updated coding instruction not exceed 250 words and follows the template.
+- Let's think step by step about how to update and improve the agent's current coding instruction.
+- Ensure the updated coding instruction not exceed 250 words and loosely follows the template.
 
 # Template
 {default_sys_msg}
