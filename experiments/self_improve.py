@@ -564,16 +564,16 @@ if __name__ == "__main__":
     # visualize_performance(["results/12_5*",
     #     "results/11_29*",
     #     "results/self_improve_11_24/11_*no_update"])
-    if "lingua" in sys.argv[2]:
+    exp_name = sys.argv[2]
+    if "lingua" in sys.argv[2].lower():
         EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
-    if "library" in sys.argv[2]:
+    if "library" in sys.argv[2].lower():
         EVAL_BUILDER_LLM_CONFIG['use_agent_library'] = True
-    exp_name = sys.argv[2].lower()
     if not exp_name.startswith("results/"):
         exp_name = os.path.join("results", exp_name)
     self_improve_loop(
         team_role_fp=sys.argv[1],
         result_dir=exp_name,
-        update_teamwork=True if "update_teamwork" in exp_name else False,
-        coding_instruct=True if "coding_instruct" in exp_name else False
+        update_teamwork=True if "update_teamwork" in exp_name.lower() else False,
+        coding_instruct=True if "coding_instruct" in exp_name.lower() else False
     )

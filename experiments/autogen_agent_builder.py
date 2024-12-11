@@ -1234,7 +1234,7 @@ With following description: {function_description}
                 agent_library=agent_library,
                 max_agents=max_agents,
                 **kwargs)
-        print(f"{", ".join([agent['name'] for agent in agent_config_list])} are selected.", flush=True)
+        print(f"{', '.join([agent['name'] for agent in agent_config_list])} are selected.", flush=True)
 
         if coding is None:
             resp = (
