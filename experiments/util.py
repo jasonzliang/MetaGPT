@@ -141,6 +141,82 @@ def collect_stats_from_chat(result_dict, *args, **kwargs):
     # pprint.pprint(result_dict); time.sleep(999999)
 
 
+def extract_function_from_code_regex(code_string, function_name):
+    pattern = rf'''
+        ((?:@\w+\s*\n)*\s*)        # Optional decorators
+        (def\s+{re.escape(function_name)}\s*        # Function definition
+        \([^)]*\)                  # Parameters (anything inside parentheses)
+        \s*(?:->\ *\w+)?           # Optional return type annotation
+        \s*:)                      # Colon after function definition
+        \s*                        # Possible whitespace after colon
+        ((?:\ {4}.*?\n)*           # Function body (indented lines)
+        (?:\ {4}.*?)?)?            # Last line might not have newline
+    ''', re.VERBOSE | re.MULTILINE | re.DOTALL
+
+    match = re.search(pattern, code_string)
+
+    if match:
+        # Return full matched function definition including decorators and body
+        return match.group(0).rstrip()
+
+    return None
+
+
+def extract_function_from_code_tokenize(code_string, function_name):
+    try:
+        tokens = list(tokenize.generate_tokens(io.StringIO(code_string).readline))
+
+        # Find the start of the function
+        function_start_index = None
+        for i, token in enumerate(tokens):
+            if (token.type == tokenize.NAME and
+                token.string == 'def' and
+                tokens[i+1].string == function_name):
+                function_start_index = i
+                break
+
+        if function_start_index is None:
+            return None
+
+        # Collect the function code
+        function_lines = []
+        current_line = None
+        indent_level = None
+        in_function = False
+
+        for token in tokens[function_start_index:]:
+            if not in_function and token.type == tokenize.NAME and token.string == 'def':
+                in_function = True
+
+            if in_function:
+                # Track the first line of the function
+                if current_line is None:
+                    current_line = token.line
+
+                # Track initial indentation
+                if indent_level is None and token.type == tokenize.INDENT:
+                    indent_level = token.start[1]
+
+                # Collect lines
+                if token.type in [tokenize.NEWLINE, tokenize.NL]:
+                    function_lines.append(current_line)
+                    current_line = None
+
+                # Stop when dedent occurs at the original indentation level
+                if token.type == tokenize.DEDENT:
+                    break
+
+        # Add the last line if exists
+        if current_line:
+            function_lines.append(current_line)
+
+        return ''.join(function_lines).rstrip()
+
+    # except tokenize.TokenError:
+    except Exception as e:
+        return None
+
+
 def extract_function_from_code(code_string, function_name):
     """
     Extracts and returns the source code of the specified function from a given source code string.
@@ -153,18 +229,30 @@ def extract_function_from_code(code_string, function_name):
              or None if the function is not found
     """
     if code_string is None:
-        return None
+        return "def %s(): pass\n" % function_name
 
     try:
         # Parse the code into an AST
         tree = ast.parse(code_string)
 
         # Iterate through all nodes in the AST
+        function_code = None
         for node in ast.walk(tree):
             # Check if the node is a function definition
             if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name == function_name:
                 # Use get_source_segment to extract the exact source code
-                return ast.get_source_segment(code_string, node)
+                function_code = ast.get_source_segment(code_string, node)
+
+                if function_code is None:
+                    function_code = ast.unparse(node)
+
+        # Fall back methods
+        if function_code is None:
+            function_code = extract_function_from_code_tokenize(code_string, function_name)
+        if function_code is None:
+            function_code = extract_function_from_code_regex(code_string, function_name)
+        if function_code is None:
+            function_code = code_string
 
     except Exception as e:
         print(f'{function_name} not found with error: {e}')
