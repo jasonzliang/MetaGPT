@@ -60,6 +60,7 @@ spark_ai_python
 agentops
 tree_sitter
 tree_sitter_python
+httpx
 
 ### Packages added by Jason ###
 jsonpickle
@@ -76,4 +77,5 @@ wrapt_timeout_decorator
 gdown
 seaborn
 # git+https://github.com/jasonzliang/autogen.git
-# git+https://github.com/evalplus/evalplus.git
+# git+https://github.com/jasonzliang/evalplus.git
+# git+https://github.com/jasonzliang/SciCode.git
