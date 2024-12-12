@@ -939,6 +939,7 @@ With following description: {function_description}
                 agent_tuple[-1] = other_agent_config['insights']
             agent_set.add(tuple(agent_tuple))
 
+        # Find agents with longest description length
         agent_list = list(agent_set)
         if library_max_size is not None:
             assert library_max_size > 0
