@@ -218,6 +218,8 @@ def _register_functions(agent_list,
         except:
             traceback.print_exc()
             print("Importing function %s failed!" % func_dict['name'])
+            print(imports)
+            print(func_dict['code'])
     if len(functions) == 0: return None
 
     executor._functions = functions
