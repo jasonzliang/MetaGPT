@@ -213,6 +213,9 @@ def _register_functions(agent_list,
                 namespace = load_imports_from_string(imports)
             try:
                 func_name = extract_function_name(func_dict['code'])
+                if func_name != func_dict['name']:
+                    print("Extracted function name does not match header: "
+                        "%s/%s" % (func_name, func_dict['name']))
             except:
                 func_name = func_dict['name']
             function = eval_function_from_string(namespace,
