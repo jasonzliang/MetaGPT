@@ -806,7 +806,9 @@ def f_V(q, d, bg_eps, l1, l2):
 
     return form_factor
 """
-
-    eval_function_from_string(namespace, test_func, 'sanitize_result_dict')
+    from scicode.parse.parse import extract_function_name
+    test_func_name = extract_function_name(test_func)
+    print(test_func_name)
+    print(eval_function_from_string(namespace, test_func, test_func_name))
     # print(parse_comment_block(x))
     # yaml_dump(sys.argv[1], sys.argv[1].replace(".yaml", ".p.yaml"))

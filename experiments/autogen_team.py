@@ -23,6 +23,7 @@ from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from ruamel.yaml import YAML
 from wrapt_timeout_decorator import *
+from scicode.parse.parse import extract_function_name
 # import timeout_decorator
 
 from autogen_agent_builder import AgentBuilder
@@ -210,16 +211,18 @@ def _register_functions(agent_list,
         try:
             if namespace is None:
                 namespace = load_imports_from_string(imports)
+            try:
+                func_name = extract_function_name(func_dict['code'])
+            except:
+                func_name = func_dict['name']
             function = eval_function_from_string(namespace,
                 func_dict['code'],
-                func_dict['name'])
-            functions.append(function)
-            loaded_code_library.append(func_dict)
+                func_name)
+
+            functions.append(function); loaded_code_library.append(func_dict)
         except:
-            traceback.print_exc()
+            traceback.print_exc(); print(imports); print(func_dict['code'])
             print("Importing function %s failed!" % func_dict['name'])
-            print(imports)
-            print(func_dict['code'])
     if len(functions) == 0: return None
 
     executor._functions = functions
