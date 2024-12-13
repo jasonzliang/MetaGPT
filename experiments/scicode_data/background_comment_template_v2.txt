@@ -21,8 +21,9 @@ RESPONSE GUIDELINES:
 2. Then write the complete and executable Python program for the next step in a single block.
 3. Your response should focus exclusively on implementing the solution for the next step, adhering closely to the specified function header and the context provided by the initial steps.
 4. You are highly encouraged to import and call helper functions from PREVIOUS PROBLEM STEPS AND FUNCTION CODE to help implement the solution code.
-5. However, DO NOT include previous function code, example usage or test code in your response.
-6. Ensure your response code is in the format of ```python``` and includes the necessary background as a comment at the top.
+5. DO NOT include previous function code, example usage or test code in your response.
+6. Ensure your solution is in the format of ```python``` and includes the necessary background as a comment at the top.
+7. VERY IMPORTANT: The function name in your solution must match the name in the function header.
 
 Example:
 ```python

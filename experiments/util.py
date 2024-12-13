@@ -784,17 +784,29 @@ class OutputRedirector:
 
 
 if __name__ == "__main__":
-    x = '''def enable(self):
-    """
-    Enable output redirection to file and terminal.
-    """
-    # Open the file in write mode (overwriting previous content)
-    self.file = open(self.file_path, 'w')
+    imports = "import numpy as np"
+    namespace = load_imports_from_string(imports)
+    test_func = """
+def f_V(q, d, bg_eps, l1, l2):
+    '''Calculate the form factor f(q;l1,l2) for the Coulomb interaction in a semi-infinite layered electron gas (LEG) system.
 
-    # Create and set custom stdout and stderr streams
-    sys.stdout = self.TeeStream(self.original_stdout, self.file)
-    sys.stderr = self.TeeStream(self.original_stderr, self.file)
-'''
+    Inputs:
+    q: in-plane momentum (float, inverse angstrom)
+    d: layer spacing (float, angstrom)
+    bg_eps: LEG dielectric constant (float, dimensionless)
+    l1, l2: layer number where z = l*d (integers)
 
-    print(parse_comment_block(x))
+    Output:
+    form_factor: form factor representing the interaction (float)
+    '''
+
+    # Calculate the Fourier-transformed form factor
+    k_factor = q * d
+    form_factor = 2 * np.pi * bg_eps / (k_factor ** 2 + 2 * np.pi * bg_eps * (l1 - l2) / d)
+
+    return form_factor
+"""
+
+    eval_function_from_string(namespace, test_func, 'sanitize_result_dict')
+    # print(parse_comment_block(x))
     # yaml_dump(sys.argv[1], sys.argv[1].replace(".yaml", ".p.yaml"))
