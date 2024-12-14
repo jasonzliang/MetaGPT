@@ -217,7 +217,7 @@ $functions
 
 AGENT_LIBRARY_PROMPT = """# Your goal
 - Considering the following task, what experts are best suited for solving the task?
-- You can select from a list of experts, which contains their names and descriptions.
+- Select from a list of experts below that contains their names and detailed descriptions.
 - Consider which experts will have the best synergy and teamwork when working together, and that their roles do not overlap.
 
 # TASK
@@ -230,8 +230,8 @@ AGENT_LIBRARY_PROMPT = """# Your goal
 # END OF EXPERT LIST
 
 # Your answer
-- You should consider if the expert's name and description match the task.
-- If possible, you should select between {min_agents} to {max_agents} different experts.
+- Consider if the expert's name and description match the task.
+- If possible, select at least {min_agents} and at most {max_agents} different unique experts.
 - Only return a list of expert names separated by commas.
 - For example: Python_Expert, Algorithm_Expert, Debugging_Expert, etc
 """
