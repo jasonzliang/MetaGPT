@@ -1243,6 +1243,10 @@ With following description: {function_description}
                 **kwargs)
         print(f"{', '.join([agent['name'] for agent in agent_config_list])} are selected.", flush=True)
 
+        for agent_config in agent_config_list:
+            agent_config['model'] = self.agent_model
+            agent_config['tags'] = self.agent_model_tags
+
         if coding is None:
             resp = (
                 self._builder_model_create(
