@@ -205,10 +205,10 @@ FUNCTION_PROMPT_TEMPLATE = """## How to use library functions?
 - There are previously defined Python library functions in the module called '$module_name'.
 - You are able to call these functions by importing them from the module '$module_name'.
 - You should make use of these functions as much as possible when writing the solution code.
-- For example, if there is a function named 'tensor', you can import and call it by writing:
-from $module_name import tensor
-def foo(args):
-    result = tensor(args)
+- For example, if there is a function named 'foo', you can import and call it by writing:
+from $module_name import foo
+def bar(args):
+    result = foo(args)
     return result
 
 # List of functions in '$module_name'
