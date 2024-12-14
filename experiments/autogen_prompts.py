@@ -231,7 +231,7 @@ AGENT_LIBRARY_PROMPT = """# Your goal
 
 # Your answer
 - You should consider if the expert's name and description match the task.
-- If possible, you should select {max_agents} experts and make sure each expert is unique.
+- If possible, you should select between {min_agents} to {max_agents} different experts.
 - Only return a list of expert names separated by commas.
 - For example: Python_Expert, Algorithm_Expert, Debugging_Expert, etc
 """

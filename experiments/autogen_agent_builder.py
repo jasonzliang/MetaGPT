@@ -1096,6 +1096,7 @@ With following description: {function_description}
         building_task,
         agent_library,
         max_agents,
+        min_agents,
         **kwargs):
 
         def _desc(agent): return self._get_agent_desc(agent,
@@ -1117,7 +1118,7 @@ With following description: {function_description}
 
         retrieved_agents = []
         while True:
-            if len(retrieved_agents) >= max_agents: break
+            if len(retrieved_agents) >= min_agents: break
             agent_name_resp = (
                 self._builder_model_create(
                     messages=[
@@ -1126,7 +1127,8 @@ With following description: {function_description}
                             "content": AGENT_LIBRARY_PROMPT.format(
                                 task=building_task,
                                 agent_list=_format_agent_list(agent_dict),
-                                max_agents=max_agents
+                                max_agents=max_agents,
+                                min_agents=min_agents
                             ),
                         }
                     ]
@@ -1158,6 +1160,7 @@ With following description: {function_description}
         embedding_model: Optional[str] = "all-mpnet-base-v2",
         user_proxy: Optional[autogen.ConversableAgent] = None,
         max_agents: Optional[int] = None,
+        min_agents: Optional[int] = None,
         **kwargs,
     ) -> Tuple[List[autogen.ConversableAgent], Dict]:
         """
@@ -1199,7 +1202,9 @@ With following description: {function_description}
         from chromadb.utils import embedding_functions
 
         self.building_task = building_task
-        if max_agents is None: max_agents = self.max_agents; assert max_agents > 0
+        if max_agents is None: max_agents = self.max_agents
+        if min_agents is None: min_agents = max_agents
+        assert max_agents > 0 and min_agents > 0
         if top_k is None: top_k = max_agents; assert top_k > 0
         if code_execution_config is None:
             code_execution_config = self.code_execution_config
@@ -1234,6 +1239,7 @@ With following description: {function_description}
                 building_task=building_task,
                 agent_library=agent_library,
                 max_agents=max_agents,
+                min_agents=min_agents,
                 **kwargs)
         print(f"{', '.join([agent['name'] for agent in agent_config_list])} are selected.", flush=True)
 
