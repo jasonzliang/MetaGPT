@@ -524,14 +524,14 @@ EVAL_BUILDER_LLM_CONFIG = {
     'builder_model': LLM_MODEL,
     'custom_coding_instruct': True,
     'use_agent_library': False,
-    'agent_lib_include_coding_instruct': True,
+    'agent_lib_include_coding_instruct': False,
     'agent_lib_include_insights': True,
     'temperature': 0.9
 }
 
 EVAL_CHAT_LLM_CONFIG = {
     'model': LLM_MODEL,
-    'max_round': 69,
+    'max_round': 80,
     'temperature': 0.01,
     'use_llm_lingua': False,
 }
