@@ -159,28 +159,28 @@ def start_task(execution_task: str,
 def _get_chat_transforms(chat_llm_config):
     if chat_llm_config['use_llm_lingua']:
         compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
-        transforms = [transforms.TextMessageCompressor(
+        _transforms = [transforms.TextMessageCompressor(
             text_compressor=LLMLingua(),
             min_tokens=chat_llm_config['llm_lingua_len'],
             compression_params=compression_params,
             cache=None)]
     else:
-        transforms = [transforms.MessageTokenLimiter(
+        _transforms = [transforms.MessageTokenLimiter(
             min_tokens=chat_llm_config['min_hist_len'],
             max_tokens=chat_llm_config['max_hist_len'],
             max_tokens_per_message=chat_llm_config['max_msg_len'],
             model=chat_llm_config['model'])]
-    return transforms
+    return _transforms
 
 
 def _get_som_transforms(chat_llm_config):
     som_max_tokens = min(chat_llm_config['max_msg_len'] + 10000, 120000)
-    transforms = [transforms.TextMessageCompressor(
+    _transforms = [transforms.TextMessageCompressor(
         text_compressor=LLMLingua(),
         min_tokens=som_max_tokens,
         compression_params={'target_token': som_max_tokens},
         cache=None)]
-    return transforms
+    return _transforms
 
 
 def _filter_chat_llm_config(chat_llm_config):
