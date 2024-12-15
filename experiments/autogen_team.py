@@ -173,7 +173,7 @@ def _get_chat_transforms(chat_llm_config):
     return transforms
 
 
-get _get_som_transforms(chat_llm_config):
+def _get_som_transforms(chat_llm_config):
     som_max_tokens = min(chat_llm_config['max_msg_len'] + 10000, 120000)
     transforms = [transforms.TextMessageCompressor(
         text_compressor=LLMLingua(),
