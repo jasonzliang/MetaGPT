@@ -28,6 +28,5 @@ RESPONSE GUIDELINES:
 Example:
 ```python
 # Background: [Here, insert the necessary scientific knowledge required for the next step.]
-[Insert the Python import statements needed to load helper functions.]
 [Insert the Python code here based on the provided function header and dependencies.]
 ```

@@ -26,6 +26,5 @@ RESPONSE GUIDELINES:
 
 Example:
 ```python
-[Insert the Python import statements needed to load helper functions.]
 [Insert the Python code here based on the provided function header and dependencies.]
 ```
