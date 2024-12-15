@@ -174,12 +174,17 @@ def _get_chat_transforms(chat_llm_config):
 
 
 def _get_som_transforms(chat_llm_config):
-    som_max_tokens = min(chat_llm_config['max_msg_len'] + 10000, 120000)
-    _transforms = [transforms.TextMessageCompressor(
-        text_compressor=LLMLingua(),
-        min_tokens=som_max_tokens,
-        compression_params={'target_token': som_max_tokens},
-        cache=None)]
+    # som_max_tokens = min(chat_llm_config['max_msg_len'] + 10000, 120000)
+    # _transforms = [transforms.TextMessageCompressor(
+    #     text_compressor=LLMLingua(),
+    #     min_tokens=som_max_tokens,
+    #     compression_params={'target_token': som_max_tokens},
+    #     cache=None)]
+    _transforms = [transforms.MessageTokenLimiter(
+            min_tokens=None,
+            max_tokens=120000,
+            max_tokens_per_message=None,
+            model=chat_llm_config['model'])]
     return _transforms
 
 
