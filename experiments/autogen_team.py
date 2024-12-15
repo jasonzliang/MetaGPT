@@ -49,7 +49,7 @@ CHAT_LLM_CONFIG = {"temperature": 0.01,
     "model": "gpt-4o-mini",
     "cache_seed": None,
     # "cache": None,
-    "min_hist_len": 50000,
+    "min_hist_len": 40000,
     "max_hist_len": 100000,
     "max_msg_len": 10000,
     "use_llm_lingua": False,
@@ -102,23 +102,10 @@ def start_task(execution_task: str,
         with open(sys_msg_log_file, 'w') as f:
             f.write("\n\n".join(sys_msgs))
 
-    if chat_llm_config['use_llm_lingua']:
-        compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
-        _transforms = [transforms.TextMessageCompressor(
-            text_compressor=LLMLingua(),
-            min_tokens=chat_llm_config['llm_lingua_len'],
-            compression_params=compression_params,
-            cache=None)]
-    else:
-        _transforms = [transforms.MessageTokenLimiter(
-            min_tokens=chat_llm_config['min_hist_len'],
-            max_tokens=chat_llm_config['max_hist_len'],
-            max_tokens_per_message=chat_llm_config['max_msg_len'],
-            model=chat_llm_config['model'])]
-
-    context_handling = transform_messages.TransformMessages(transforms=_transforms)
+    # Limit maximum length of chat history to not exceed context limit
+    transforms = _get_chat_transforms(chat_llm_config)
+    context_handling = transform_messages.TransformMessages(transforms=transforms)
     for agent in agent_list: context_handling.add_to_agent(agent)
-    # context_handling.add_to_agent(user_proxy)
 
     group_chat = autogen.GroupChat(
         agents=agent_list,
@@ -129,16 +116,16 @@ def start_task(execution_task: str,
         send_introductions=True,
         allow_repeat_speaker=agent_list[:-1]) #if coding is True else agent_list)
 
-    _agent_llm_config = _filter_chat_llm_config(chat_llm_config)
+    som_llm_config = _filter_chat_llm_config(chat_llm_config)
 
     manager = autogen.GroupChatManager(
         groupchat=group_chat,
-        llm_config=_agent_llm_config)
+        llm_config=som_llm_config)
 
     society_of_mind_agent = SocietyOfMindAgent(
         "society_of_mind",
         chat_manager=manager,
-        llm_config=_agent_llm_config)
+        llm_config=som_llm_config)
 
     society_user_proxy = autogen.UserProxyAgent(
         "user_proxy",
@@ -146,6 +133,12 @@ def start_task(execution_task: str,
         code_execution_config=False,
         default_auto_reply="",
         is_termination_msg=lambda x: True)
+
+    # Fail safe if SOM agent token length is over 128k context limit
+    transforms = _get_som_transforms(chat_llm_config)
+    context_handling = transform_messages.TransformMessages(transforms=transforms)
+    context_handling.add_to_agent(society_of_mind_agent)
+    context_handling.add_to_agent(society_user_proxy)
 
     # with Cache.disk(cache_seed=None,
     #     cache_path_root='/tmp/cache_%s' % randomword(ID_LENGTH)) as cache:
@@ -161,6 +154,33 @@ def start_task(execution_task: str,
 
     return chat_result, chat_messages
     # return agent_list[0].initiate_chat(manager, message=execution_task)
+
+
+def _get_chat_transforms(chat_llm_config):
+    if chat_llm_config['use_llm_lingua']:
+        compression_params = {'target_token': chat_llm_config['llm_lingua_len']}
+        transforms = [transforms.TextMessageCompressor(
+            text_compressor=LLMLingua(),
+            min_tokens=chat_llm_config['llm_lingua_len'],
+            compression_params=compression_params,
+            cache=None)]
+    else:
+        transforms = [transforms.MessageTokenLimiter(
+            min_tokens=chat_llm_config['min_hist_len'],
+            max_tokens=chat_llm_config['max_hist_len'],
+            max_tokens_per_message=chat_llm_config['max_msg_len'],
+            model=chat_llm_config['model'])]
+    return transforms
+
+
+get _get_som_transforms(chat_llm_config):
+    som_max_tokens = min(chat_llm_config['max_msg_len'] + 10000, 120000)
+    transforms = [transforms.TextMessageCompressor(
+        text_compressor=LLMLingua(),
+        min_tokens=som_max_tokens,
+        compression_params={'target_token': som_max_tokens},
+        cache=None)]
+    return transforms
 
 
 def _filter_chat_llm_config(chat_llm_config):
