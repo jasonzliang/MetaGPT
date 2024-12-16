@@ -158,7 +158,7 @@ class Gencode:
                         prev_file_content = prev_file_path.read_text(encoding='utf-8')
                         assert prev_file_content is not None
                         func_header = prob_data["sub_steps"][prev_step]["function_header"]
-                        func_name = extract_function_name(func_header)
+                        func_name = extract_name_from_function(func_header)
                         func_code = extract_function_from_code(prev_file_content, func_name)
                         assert func_name is not None and func_code is not None
 
@@ -200,8 +200,9 @@ class Gencode:
             response_from_llm = self.llm_eval_func(f"{prob_id}.{num_steps}", prompt, result_dict)
 
         func_header = prob_data["sub_steps"][num_steps - 1]["function_header"]
-        func_name = extract_function_name(func_header)
-        func_code = extract_python_script(response_from_llm)
+        func_name = extract_name_from_function(func_header)
+        python_script = extract_python_script(response_from_llm)
+        func_code = extract_function_from_code(python_script, func_name)
         assert func_name is not None and func_code is not None
 
         self.previous_llm_code[num_steps - 1] = {

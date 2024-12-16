@@ -23,7 +23,7 @@ from evalplus.data.humaneval import get_human_eval_plus
 from evalplus.data.mbpp import get_mbpp_plus
 from ruamel.yaml import YAML
 from wrapt_timeout_decorator import *
-from scicode.parse.parse import extract_function_name
+# from scicode.parse.parse import extract_function_name
 # import timeout_decorator
 
 from autogen_agent_builder import AgentBuilder
@@ -35,6 +35,7 @@ from alg_util import randomword
 from util import get_time, killtree, extract_code_from_chat, format_prompt
 from util import yaml_dump, OutputRedirector
 from util import load_imports_from_string, eval_function_from_string
+from util import extract_name_from_function
 
 DEFAULT_MAIN_ROLE = \
 """Write a python function that can {instruction}.
@@ -64,8 +65,8 @@ BUILDER_LLM_CONFIG = {"temperature": 0.9,
     # "cache": None,
     "custom_coding_instruct": False,
     "user_for_system_msg": False,
-    "min_agents": 3,
-    "max_agents": 3,
+    "min_agents": 2,
+    "max_agents": 4,
     "use_agent_library": False}
 CHAT_TIMEOUT = 1000
 # TODO: FIX CACHING/CACHE SEED
@@ -180,10 +181,11 @@ def _get_som_transforms(chat_llm_config):
     #     min_tokens=som_max_tokens,
     #     compression_params={'target_token': som_max_tokens},
     #     cache=None)]
+    max_som_tokens = 120000
     _transforms = [transforms.MessageTokenLimiter(
-            min_tokens=None,
-            max_tokens=120000,
-            max_tokens_per_message=None,
+            min_tokens=max_som_tokens,
+            max_tokens=max_som_tokens,
+            max_tokens_per_message=max_som_tokens,
             model=chat_llm_config['model'])]
     return _transforms
 
@@ -237,10 +239,10 @@ def _register_functions(agent_list,
             if namespace is None:
                 namespace = load_imports_from_string(imports)
             try:
-                func_name = extract_function_name(func_dict['code'])
+                func_name = extract_name_from_function(func_dict['code'])
                 if func_name != func_dict['name']:
-                    print("Extracted function name does not match header: "
-                        "%s/%s" % (func_name, func_dict['name']))
+                    print("_register_functions: extracted function name (%s) and "
+                        "header (%s) do not match" % (func_name, func_dict['name']))
             except:
                 func_name = func_dict['name']
             function = eval_function_from_string(namespace,
@@ -250,7 +252,8 @@ def _register_functions(agent_list,
             functions.append(function); loaded_code_library.append(func_dict)
         except:
             traceback.print_exc(); print(imports); print(func_dict['code'])
-            print("Importing function %s failed!" % func_dict['name'])
+            print("_register_functions: importing function %s failed!" % \
+                func_dict['name'])
     if len(functions) == 0: return None
 
     executor._functions = functions

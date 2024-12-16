@@ -367,9 +367,12 @@ $functions"""
             if exitcode != 0:
                 break
 
-            extracted_code = extract_elements_from_code(code)
-            if extracted_code is not None:
-                self._code_history.append((lang, extracted_code))
+            try:
+                extracted_code = extract_elements_from_code(code)
+                if len(extracted_code) > 0:
+                    self._code_history.append((lang, extracted_code))
+            except:
+                pass
 
         code_file = str(file_names[0]) if len(file_names) > 0 else None
         return CommandLineCodeResult(exit_code=exitcode, output=logs_all, code_file=code_file)

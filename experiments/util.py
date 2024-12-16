@@ -247,10 +247,10 @@ def extract_function_from_code(code_string, function_name):
                 if function_code is None: function_code = ast.unparse(node)
 
         # Additional fall back methods using tokenize and regex
-        if function_code is None:
-            function_code = extract_function_from_code_tokenize(code_string, function_name)
-        if function_code is None:
-            function_code = extract_function_from_code_regex(code_string, function_name)
+        # if function_code is None:
+        #     function_code = extract_function_from_code_tokenize(code_string, function_name)
+        # if function_code is None:
+        #     function_code = extract_function_from_code_regex(code_string, function_name)
         if function_code is None:
             function_code = code_string
 
@@ -272,37 +272,56 @@ def extract_comments_from_code(text, incl_single_comments=False):
         list: A list of extracted comment blocks
     """
 
-    try:
-        # Regex pattern to match:
-        # 1. Text inside triple quotes (docstrings)
-        # 2. Single-line comments starting with #, including those after code
-        if incl_single_comments:
-            comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\'|(?:^|\s*)#[^\n]*)'
-        else:
-            comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\')'
+    # try:
+    # Regex pattern to match:
+    # 1. Text inside triple quotes (docstrings)
+    # 2. Single-line comments starting with #, including those after code
+    if incl_single_comments:
+        comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\'|(?:^|\s*)#[^\n]*)'
+    else:
+        comment_pattern = r'(""".*?"""|\'\'\'.*?\'\'\')'
 
-        # Re-use flags for multiline and dot matching
-        flags = re.MULTILINE | re.DOTALL
+    # Re-use flags for multiline and dot matching
+    flags = re.MULTILINE | re.DOTALL
 
-        # Find all comment blocks
-        comments = re.findall(comment_pattern, text, flags)
+    # Find all comment blocks
+    comments = re.findall(comment_pattern, text, flags)
 
-        # Clean up the comments
-        processed_comments = []
-        for comment in comments:
-            # Remove triple quotes from docstrings
-            cleaned_comment = re.sub(r'^(\'\'\'|""")|((\'\'\'|""")$)', '', comment).strip()
+    # Clean up the comments
+    processed_comments = []
+    for comment in comments:
+        # Remove triple quotes from docstrings
+        cleaned_comment = re.sub(r'^(\'\'\'|""")|((\'\'\'|""")$)', '', comment).strip()
 
-            # Ensure # comments are preserved
-            if cleaned_comment.startswith('#') or not cleaned_comment:
-                cleaned_comment = comment.strip()
+        # Ensure # comments are preserved
+        if cleaned_comment.startswith('#') or not cleaned_comment:
+            cleaned_comment = comment.strip()
 
-            if cleaned_comment:
-                processed_comments.append(cleaned_comment)
+        if cleaned_comment:
+            processed_comments.append(cleaned_comment)
 
-        return "\n".join(processed_comments)
-    except:
-        return text
+    return "\n".join(processed_comments)
+    # except:
+    #     return text
+
+
+def extract_name_from_function(code, raise_error=True):
+    """
+    Extract the function or class name from a given Python code string using AST.
+
+    Args:
+        code (str): String containing Python code
+
+    Returns:
+        Optional[str]: Name of the function or class if found, None otherwise
+    """
+    # Parse the code into an AST
+    tree = ast.parse(code)
+
+    # Look for the first function or class definition
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+            return node.name
 
 
 def load_imports_from_string(import_string):
@@ -405,36 +424,36 @@ def extract_elements_from_code(content):
         organized by type, or None if parsing fails
     """
 
-    try:
-        # Parse the Python code into an AST
-        tree = ast.parse(content)
-        # Extract imports, functions, and classes
-        imports = []; classes = []; functions = []
+    # try:
+    # Parse the Python code into an AST
+    tree = ast.parse(content)
+    # Extract imports, functions, and classes
+    imports = []; classes = []; functions = []
 
-        for node in ast.walk(tree):
-            # Get import statements
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
-                imports.append(ast.get_source_segment(content, node))
-            # Get class definitions
-            elif isinstance(node, ast.ClassDef):
-                classes.append(ast.get_source_segment(content, node))
-            # Get function definitions
-            elif isinstance(node, ast.FunctionDef):
-                functions.append(ast.get_source_segment(content, node))
+    for node in ast.walk(tree):
+        # Get import statements
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            imports.append(ast.get_source_segment(content, node))
+        # Get class definitions
+        elif isinstance(node, ast.ClassDef):
+            classes.append(ast.get_source_segment(content, node))
+        # Get function definitions
+        elif isinstance(node, ast.FunctionDef):
+            functions.append(ast.get_source_segment(content, node))
 
-        # Combine all extracted elements
-        extracted_code = ""
-        if len(imports) > 0:
-            extracted_code += "\n".join(imports) + "\n\n"
-        if len(classes) > 0:
-            extracted_code += "\n\n".join(classes) + "\n\n"
-        if len(functions) > 0:
-            extracted_code += "\n\n".join(functions) + "\n"
-        return extracted_code
+    # Combine all extracted elements
+    extracted_code = ""
+    if len(imports) > 0:
+        extracted_code += "\n".join(imports) + "\n\n"
+    if len(classes) > 0:
+        extracted_code += "\n\n".join(classes) + "\n\n"
+    if len(functions) > 0:
+        extracted_code += "\n\n".join(functions) + "\n"
+    return extracted_code
 
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
-        return None
+    # except Exception as e:
+    #     print(f"An error occurred: {str(e)}")
+    #     return None
 
 
 def extract_code_from_chat(chat_result):
@@ -787,27 +806,43 @@ if __name__ == "__main__":
     imports = "import numpy as np"
     namespace = load_imports_from_string(imports)
     test_func = """
-def f_V(q, d, bg_eps, l1, l2):
-    '''Calculate the form factor f(q;l1,l2) for the Coulomb interaction in a semi-infinite layered electron gas (LEG) system.
-
-    Inputs:
-    q: in-plane momentum (float, inverse angstrom)
-    d: layer spacing (float, angstrom)
-    bg_eps: LEG dielectric constant (float, dimensionless)
-    l1, l2: layer number where z = l*d (integers)
-
-    Output:
-    form_factor: form factor representing the interaction (float)
-    '''
-
-    # Calculate the Fourier-transformed form factor
-    k_factor = q * d
-    form_factor = 2 * np.pi * bg_eps / (k_factor ** 2 + 2 * np.pi * bg_eps * (l1 - l2) / d)
-
-    return form_factor
+class Slater:
+    def __init__(self, alpha):
+        '''Args:
+            alpha: exponential decay factor
+        '''
+    def value(self, configs):
+        '''Calculate unnormalized psi
+        Args:
+            configs (np.array): electron coordinates of shape (nconf, nelec, ndim)
+        Returns:
+            val (np.array): (nconf,)
+        '''
+    def gradient(self, configs):
+        '''Calculate (gradient psi) / psi
+        Args:
+            configs (np.array): electron coordinates of shape (nconf, nelec, ndim)
+        Returns:
+            grad (np.array): (nconf, nelec, ndim)
+        '''
+    def laplacian(self, configs):
+        '''Calculate (laplacian psi) / psi
+        Args:
+            configs (np.array): electron coordinates of shape (nconf, nelec, ndim)
+        Returns:
+            lap (np.array): (nconf, nelec)
+        '''
+    def kinetic(self, configs):
+        '''Calculate the kinetic energy / psi
+        Args:
+            configs (np.array): electron coordinates of shape (nconf, nelec, ndim)
+        Returns:
+            kin (np.array): (nconf,)
+        '''
 """
     from scicode.parse.parse import extract_function_name
-    test_func_name = extract_function_name(test_func)
+    # test_func_name = extract_function_name(test_func)
+    test_func_name = extract_name_from_function(test_func)
     print(test_func_name)
     print(eval_function_from_string(namespace, test_func, test_func_name))
     # print(parse_comment_block(x))
