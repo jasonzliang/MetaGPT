@@ -498,7 +498,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
 
 #### Unit tests ####
-LLM_MODEL = "gpt-4o-2024-11-20"
+LLM_MODEL = "gpt-4o"
 
 EVALPLUS_EVAL_CONFIG = {
     'max_problems': 999,
@@ -532,7 +532,7 @@ EVAL_BUILDER_LLM_CONFIG = {
 EVAL_CHAT_LLM_CONFIG = {
     'model': LLM_MODEL,
     'max_round': 75,
-    'temperature': 0.1,
+    'temperature': 0.01,
     'use_llm_lingua': False,
 }
 
