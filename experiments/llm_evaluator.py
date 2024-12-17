@@ -498,8 +498,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
 
 #### Unit tests ####
-# LLM_MODEL = "gpt-4o"
-LLM_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct"
+LLM_MODEL = "gpt-4o"
+# LLM_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct"
 
 EVALPLUS_EVAL_CONFIG = {
     'max_problems': 999,
