@@ -14,7 +14,7 @@ from scicode.gen.models import extract_python_script, get_model_function
 from scicode.parse.parse import extract_function_name, get_function_from_code, \
     read_from_jsonl
 
-from util import extract_function_from_code
+from util import extract_function_from_code, extract_name_from_function
 # from scicode.parse.parse import H5PY_FILE
 
 PROB_NUM = 65
