@@ -69,6 +69,7 @@ $functions"""
     def __init__(
         self,
         timeout: int = 60,
+        max_output_len: int = 128000,
         virtual_env_context: Optional[SimpleNamespace] = None,
         work_dir: Union[Path, str] = Path("."),
         functions: List[Union[FunctionWithRequirements[Any, A], Callable[..., Any], FunctionWithRequirementsStr]] = [],
@@ -119,10 +120,11 @@ $functions"""
         if not functions_module.isidentifier():
             raise ValueError("Module name must be a valid Python identifier")
 
-        self._functions_module = functions_module
         self._timeout = timeout
-        self._work_dir: Path = work_dir
+        self._max_output_len = max_output_len; assert self._max_output_len > 0
         self._virtual_env_context: Optional[SimpleNamespace] = virtual_env_context
+        self._work_dir: Path = work_dir
+        self._functions_module = functions_module
 
         self._functions = functions
         # Setup could take some time so we intentionally wait for the first code block to do it.
@@ -374,6 +376,7 @@ $functions"""
             except:
                 pass
 
+        logs_all = logs_all[:self._max_output_len]
         code_file = str(file_names[0]) if len(file_names) > 0 else None
         return CommandLineCodeResult(exit_code=exitcode, output=logs_all, code_file=code_file)
 

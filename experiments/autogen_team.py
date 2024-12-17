@@ -52,7 +52,7 @@ CHAT_LLM_CONFIG = {"temperature": 0.1,
     # "cache": None,
     "min_hist_len": 50000,
     "max_hist_len": 100000,
-    "max_msg_len": 10000,
+    "max_msg_len": 20000,
     "use_llm_lingua": False,
     "llm_lingua_len": 60000,
     "max_round": 15,
@@ -65,6 +65,7 @@ BUILDER_LLM_CONFIG = {"temperature": 0.9,
     # "cache": None,
     "custom_coding_instruct": False,
     "user_for_system_msg": False,
+    "max_code_exec_len": 5000,
     "min_agents": 2,
     "max_agents": 4,
     "use_agent_library": False}
@@ -307,9 +308,11 @@ def init_builder(building_task=None,
         assert a > 0 and b > 0 and a <= b; max_agents = random.randint(a, b)
     else: assert max_agents > 0
 
-    executor = LocalCommandLineCodeExecutor(timeout=10,
-            work_dir=work_dir,
-            functions_module='code_library')
+    executor = LocalCommandLineCodeExecutor(
+        timeout=10,
+        max_output_len=builder_llm_config['max_code_exec_len'],
+        work_dir=work_dir,
+        functions_module='code_library')
     builder = AgentBuilder(
         config_file_or_env=CONFIG_FILE_OR_ENV,
         builder_model=builder_llm_config['builder_model'],
