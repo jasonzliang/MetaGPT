@@ -43,7 +43,8 @@ Test the function and ensure that it performs correctly and efficiently.
 Return ```python your_code_here ``` with NO other texts,
 your code:
 """
-CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
+# CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
+CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST_NIM")
 if 'CONFIG_FILE_OR_ENV' in os.environ: # Overwrite config list from env
     CONFIG_FILE_OR_ENV = os.environ['CONFIG_FILE_OR_ENV']
 CHAT_LLM_CONFIG = {"temperature": 0.1,
