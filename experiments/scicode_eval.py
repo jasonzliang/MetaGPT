@@ -210,7 +210,8 @@ class Gencode:
         # write the response to a file if it doesn't exist
         output_file_path = self._get_output_file_path(prob_id, num_steps)
         if output_file_path.is_file() and output_file_path.stat().st_size > 0:
-            print("Output file exists, skipping: %s" % output_file_path); return
+            print("Output file exists, skipping: %s" % output_file_path)
+            return None
 
         if self.llm_eval_func is None:
             model_fct = get_model_function(model, **model_kwargs)
