@@ -197,7 +197,7 @@ class Gencode:
             model_fct = get_model_function(model, **model_kwargs)
             response_from_llm = model_fct(prompt)
         else:
-            result_dict['code_library'] = [self.previous_llm_code[i] for i in range(num_steps - 1)]
+            result_dict['code_library'] = [self.previous_llm_code[i] for i in range(num_steps - 1) if self.previous_llm_code[i] is not None]
             result_dict['imports'] = prob_data['required_dependencies']
             response_from_llm = self.llm_eval_func(
                 f"{prob_id}.{num_steps}", prompt, result_dict)

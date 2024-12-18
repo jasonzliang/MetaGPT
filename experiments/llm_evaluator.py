@@ -455,7 +455,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                             continue
                         code_file = gcode.generate_response_with_steps(
                             prob_data=problem,
-                            num_steps=i + 1,
+                            num_steps=i+1,
                             tot_steps=steps,
                             prompt_template=prompt_template,
                             result_dict=result_dict)

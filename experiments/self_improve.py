@@ -293,8 +293,10 @@ Stack trace/exception for test cases:\n%s""" % \
 # -Analyze agent descriptions for solved problems and merge them together (Done)
 # -Visualize stats (num gen to solve problem) as a bar graph (Done)
 # -Compressing agent chat history with LLMLingua text compressor (Done)
-# -Create a library of different expert agents to choose from (WIP)
+# -Create a library of different expert agents to choose from (Done)
+# -Cleanup code after chat to remove any errors or inconsistencies (Done)
 # -Create a hierarchical team where there is a leader that delegates tasks (WIP)
+# -Figure out why background comments are not being saved (WIP)
 # -Have multiple rounds of competition between agents, everyone give score to code
 # -Let agents “cheat” by looking at the ground truth code
 # -Change self_improve_loop in a class and arguments/configuration into yaml/dict
