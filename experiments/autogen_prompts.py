@@ -220,18 +220,36 @@ AGENT_LIBRARY_PROMPT = """# Your goal
 - Select from a list of experts below that contains their names and detailed descriptions.
 - Consider which experts will have the best synergy and teamwork when working together, and that their roles do not overlap.
 
-# TASK
+# Task
 {task}
 
-# START OF EXPERT LIST
+# Start of expert list
 
 {agent_list}
 
-# END OF EXPERT LIST
+# End of expert list
 
 # Your answer
 - Consider if the expert's name and description match the task.
 - If possible, select at least {min_agents} and at most {max_agents} different unique experts.
 - Only return a list of expert names separated by commas.
 - For example: Python_Expert, Algorithm_Expert, Debugging_Expert, etc
+"""
+
+CLEANUP_CODE_PROMPT = """# Your Goal
+- Consider the following Python code which contains imports, functions and classes.
+- Carefully check the code for any errors, mistakes, omissions, or inconsistencies.
+- If there are duplicate functions or classes, choose the most correct implementation and remove the rest.
+- Systemically find and fix all of the issues you discover.
+
+# Start of Python code
+
+{python_code}
+
+# End of Python code
+
+# Your answer
+- Write an updated version of the Python code that fixes all issues and will run successfully without crashing.
+- Ensure the fixed code has all of the import, function and class names that were originally present.
+- Ensure your response is in the format of ```python``` with no other extraneous output.
 """

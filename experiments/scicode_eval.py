@@ -69,16 +69,17 @@ class Gencode:
 
     def _save_response_with_steps(self,
         prob_data: dict,
-        response: str,
+        func_code: str,
         previous_code: str,
         num_steps: int) -> None:
 
         prob_id = prob_data["problem_id"]
-        python_code = extract_python_script(response)
-
+        # python_code = extract_python_script(response)
         output_file_path = self._get_output_file_path(prob_id, num_steps)
-        output_file_path.write_text(f'{previous_code}\n{python_code}',
+        output_file_path.write_text(f'{previous_code}\n\n{func_code}',
             encoding="utf-8")
+
+        return output_file_path
 
     @staticmethod
     def _process_problem_code(prob_data: dict, num_steps: int) -> str:
@@ -169,7 +170,8 @@ class Gencode:
                         }
                     else:
                         try:
-                            self.generate_response_with_steps(prob_data,
+                            self.generate_response_with_steps(
+                                prob_data,
                                 prev_step,
                                 tot_steps,
                                 prompt_template,
@@ -197,7 +199,8 @@ class Gencode:
         else:
             result_dict['code_library'] = [self.previous_llm_code[i] for i in range(num_steps - 1)]
             result_dict['imports'] = prob_data['required_dependencies']
-            response_from_llm = self.llm_eval_func(f"{prob_id}.{num_steps}", prompt, result_dict)
+            response_from_llm = self.llm_eval_func(
+                f"{prob_id}.{num_steps}", prompt, result_dict)
 
         func_header = prob_data["sub_steps"][num_steps - 1]["function_header"]
         func_name = extract_name_from_function(func_header)
@@ -210,7 +213,11 @@ class Gencode:
             'name': func_name,
             'header': func_header
         }
-        self._save_response_with_steps(prob_data, response_from_llm, previous_code, num_steps)
+        return self._save_response_with_steps(
+            prob_data,
+            func_code,
+            previous_code,
+            num_steps)
 
 
 def get_cli() -> argparse.ArgumentParser:

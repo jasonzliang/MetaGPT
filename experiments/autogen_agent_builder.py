@@ -19,7 +19,7 @@ import autogen
 
 from autogen_prompts import *
 from autogen_executor import LocalCommandLineCodeExecutor
-from util import yaml_dump, flatten
+from util import yaml_dump, flatten, parse_code
 
 logger = logging.getLogger(__name__)
 
@@ -500,158 +500,28 @@ With following description: {function_description}
 
         return self.builder_model.create(messages=messages)
 
-    def build(
-        self,
-        building_task: str,
-        default_llm_config: Dict,
-        list_of_functions: Optional[List[Dict]] = None,
-        coding: Optional[bool] = None,
-        code_execution_config: Optional[Dict] = None,
-        use_oai_assistant: Optional[bool] = False,
-        user_proxy: Optional[autogen.ConversableAgent] = None,
-        max_agents: Optional[int] = None,
-        **kwargs,
-    ) -> Tuple[List[autogen.ConversableAgent], Dict]:
-        """
-        Auto build agents based on the building task.
+    def cleanup_output(self, code_file):
+        assert os.path.exists(code_file)
+        with open(code_file, 'r') as f: python_code = f.read()
+        if len(python_code) == 0: return
 
-        Args:
-            building_task: instruction that helps build manager (gpt-4) to decide what agent should be built.
-            coding: use to identify if the user proxy (a code interpreter) should be added.
-            code_execution_config: specific configs for user proxy (e.g., last_n_messages, work_dir, ...).
-            default_llm_config: specific configs for LLM (e.g., config_list, seed, temperature, ...).
-            list_of_functions: list of functions to be associated with Agents
-            use_oai_assistant: use OpenAI assistant api instead of self-constructed agent.
-            user_proxy: user proxy's class that can be used to replace the default user proxy.
-
-        Returns:
-            agent_list: a list of agents.
-            cached_configs: cached configs.
-        """
-        self.building_task = building_task
-        if code_execution_config is None:
-            code_execution_config = self.code_execution_config
-        if max_agents is None: max_agents = self.max_agents; assert max_agents > 0
-
-        print(colored("==> Generating agents...", "green"), flush=True)
-        resp_agent_name = (
+        resp_code = (
             self._builder_model_create(
                 messages=[
                     {
                         "role": "user",
-                        "content": self.AGENT_NAME_PROMPT.format(task=building_task, max_agents=max_agents),
+                        "content": CLEANUP_CODE_PROMPT.format(
+                            python_code=python_code
+                        ),
                     }
                 ]
             )
             .choices[0]
             .message.content
         )
-        agent_name_list = [agent_name.strip().replace(" ", "_") \
-            for agent_name in resp_agent_name.split(",")]
-        if len(agent_name_list) > max_agents:
-            agent_name_list = agent_name_list[:max_agents]
-        print(f"{agent_name_list} are generated.", flush=True)
-
-        print(colored("==> Generating system message...", "green"), flush=True)
-        agent_sys_msg_list = []
-        for name in agent_name_list:
-            print(f"Preparing system message for {name}", flush=True)
-            resp_agent_sys_msg = (
-                self._builder_model_create(
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": self.AGENT_SYS_MSG_PROMPT.format(
-                                task=building_task,
-                                position=name,
-                                default_sys_msg=self.DEFAULT_DESCRIPTION,
-                            ),
-                        }
-                    ]
-                )
-                .choices[0]
-                .message.content
-            )
-            agent_sys_msg_list.append(resp_agent_sys_msg)
-
-        print(colored("==> Generating description...", "green"), flush=True)
-        agent_description_list = []
-        for name, sys_msg in list(zip(agent_name_list, agent_sys_msg_list)):
-            print(f"Preparing description for {name}", flush=True)
-            resp_agent_description = (
-                self._builder_model_create(
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": self.AGENT_DESCRIPTION_PROMPT.format(position=name, sys_msg=sys_msg),
-                        }
-                    ]
-                )
-                .choices[0]
-                .message.content
-            )
-            agent_description_list.append(resp_agent_description)
-
-        if self.custom_coding_instruct:
-            print(colored("==> Generating coding instructions...", "green"), flush=True)
-            agent_coding_instruct_list = []
-            for name, sys_msg in list(zip(agent_name_list, agent_sys_msg_list)):
-                print(f"Preparing coding instructions for {name}", flush=True)
-                resp_agent_coding_instruct = (
-                    self._builder_model_create(
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": self.AGENT_CODING_INSTRUCTION_PROMPT.format(
-                                    position=name,
-                                    sys_msg=sys_msg,
-                                    instruct_template=self.CODING_AND_TASK_SKILL_INSTRUCTION),
-                            }
-                        ]
-                    )
-                    .choices[0]
-                    .message.content
-                )
-                agent_coding_instruct_list.append(resp_agent_coding_instruct)
-        else:
-            agent_coding_instruct_list = [None] * len(agent_name_list)
-
-        agent_configs = []
-        for name, sys_msg, description, coding_instruction in list(zip(agent_name_list, agent_sys_msg_list, agent_description_list, agent_coding_instruct_list)):
-            agent_config = {
-                "name": name,
-                "model": self.agent_model,
-                "tags": self.agent_model_tags,
-                "system_message": sys_msg,
-                "description": description,
-            }
-            if coding_instruction is not None:
-                agent_config["coding_instruction"] = coding_instruction,
-            agent_configs.append(agent_config)
-
-        if coding is None:
-            resp = (
-                self._builder_model_create(
-                    messages=[{"role": "user", "content": self.CODING_PROMPT.format(task=building_task)}]
-                )
-                .choices[0]
-                .message.content
-            )
-            coding = True if resp == "YES" else False
-
-        self.cached_configs.update(
-            {
-                "building_task": building_task,
-                "agent_configs": agent_configs,
-                "coding": coding,
-                "default_llm_config": default_llm_config,
-                "code_execution_config": code_execution_config,
-            }
-        )
-
-        _config_check(self.cached_configs)
-        return self._build_agents(use_oai_assistant, list_of_functions,
-            user_proxy=user_proxy, **kwargs)
+        fixed_python_code = parse_code(resp_code)
+        # assert len(fixed_python_code) > 0
+        with open(code_file, 'w') as f: f.write(fixed_python_code)
 
     def update_agents(
         self,
@@ -996,6 +866,159 @@ With following description: {function_description}
 
         print(f"Added {len(agent_configs)} agents to library", flush=True)
         return agent_configs
+
+    def build(
+        self,
+        building_task: str,
+        default_llm_config: Dict,
+        list_of_functions: Optional[List[Dict]] = None,
+        coding: Optional[bool] = None,
+        code_execution_config: Optional[Dict] = None,
+        use_oai_assistant: Optional[bool] = False,
+        user_proxy: Optional[autogen.ConversableAgent] = None,
+        max_agents: Optional[int] = None,
+        **kwargs,
+    ) -> Tuple[List[autogen.ConversableAgent], Dict]:
+        """
+        Auto build agents based on the building task.
+
+        Args:
+            building_task: instruction that helps build manager (gpt-4) to decide what agent should be built.
+            coding: use to identify if the user proxy (a code interpreter) should be added.
+            code_execution_config: specific configs for user proxy (e.g., last_n_messages, work_dir, ...).
+            default_llm_config: specific configs for LLM (e.g., config_list, seed, temperature, ...).
+            list_of_functions: list of functions to be associated with Agents
+            use_oai_assistant: use OpenAI assistant api instead of self-constructed agent.
+            user_proxy: user proxy's class that can be used to replace the default user proxy.
+
+        Returns:
+            agent_list: a list of agents.
+            cached_configs: cached configs.
+        """
+        self.building_task = building_task
+        if code_execution_config is None:
+            code_execution_config = self.code_execution_config
+        if max_agents is None: max_agents = self.max_agents; assert max_agents > 0
+
+        print(colored("==> Generating agents...", "green"), flush=True)
+        resp_agent_name = (
+            self._builder_model_create(
+                messages=[
+                    {
+                        "role": "user",
+                        "content": self.AGENT_NAME_PROMPT.format(task=building_task, max_agents=max_agents),
+                    }
+                ]
+            )
+            .choices[0]
+            .message.content
+        )
+        agent_name_list = [agent_name.strip().replace(" ", "_") \
+            for agent_name in resp_agent_name.split(",")]
+        if len(agent_name_list) > max_agents:
+            agent_name_list = agent_name_list[:max_agents]
+        print(f"{agent_name_list} are generated.", flush=True)
+
+        print(colored("==> Generating system message...", "green"), flush=True)
+        agent_sys_msg_list = []
+        for name in agent_name_list:
+            print(f"Preparing system message for {name}", flush=True)
+            resp_agent_sys_msg = (
+                self._builder_model_create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": self.AGENT_SYS_MSG_PROMPT.format(
+                                task=building_task,
+                                position=name,
+                                default_sys_msg=self.DEFAULT_DESCRIPTION,
+                            ),
+                        }
+                    ]
+                )
+                .choices[0]
+                .message.content
+            )
+            agent_sys_msg_list.append(resp_agent_sys_msg)
+
+        print(colored("==> Generating description...", "green"), flush=True)
+        agent_description_list = []
+        for name, sys_msg in list(zip(agent_name_list, agent_sys_msg_list)):
+            print(f"Preparing description for {name}", flush=True)
+            resp_agent_description = (
+                self._builder_model_create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": self.AGENT_DESCRIPTION_PROMPT.format(position=name, sys_msg=sys_msg),
+                        }
+                    ]
+                )
+                .choices[0]
+                .message.content
+            )
+            agent_description_list.append(resp_agent_description)
+
+        if self.custom_coding_instruct:
+            print(colored("==> Generating coding instructions...", "green"), flush=True)
+            agent_coding_instruct_list = []
+            for name, sys_msg in list(zip(agent_name_list, agent_sys_msg_list)):
+                print(f"Preparing coding instructions for {name}", flush=True)
+                resp_agent_coding_instruct = (
+                    self._builder_model_create(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": self.AGENT_CODING_INSTRUCTION_PROMPT.format(
+                                    position=name,
+                                    sys_msg=sys_msg,
+                                    instruct_template=self.CODING_AND_TASK_SKILL_INSTRUCTION),
+                            }
+                        ]
+                    )
+                    .choices[0]
+                    .message.content
+                )
+                agent_coding_instruct_list.append(resp_agent_coding_instruct)
+        else:
+            agent_coding_instruct_list = [None] * len(agent_name_list)
+
+        agent_configs = []
+        for name, sys_msg, description, coding_instruction in list(zip(agent_name_list, agent_sys_msg_list, agent_description_list, agent_coding_instruct_list)):
+            agent_config = {
+                "name": name,
+                "model": self.agent_model,
+                "tags": self.agent_model_tags,
+                "system_message": sys_msg,
+                "description": description,
+            }
+            if coding_instruction is not None:
+                agent_config["coding_instruction"] = coding_instruction,
+            agent_configs.append(agent_config)
+
+        if coding is None:
+            resp = (
+                self._builder_model_create(
+                    messages=[{"role": "user", "content": self.CODING_PROMPT.format(task=building_task)}]
+                )
+                .choices[0]
+                .message.content
+            )
+            coding = True if resp == "YES" else False
+
+        self.cached_configs.update(
+            {
+                "building_task": building_task,
+                "agent_configs": agent_configs,
+                "coding": coding,
+                "default_llm_config": default_llm_config,
+                "code_execution_config": code_execution_config,
+            }
+        )
+
+        _config_check(self.cached_configs)
+        return self._build_agents(use_oai_assistant, list_of_functions,
+            user_proxy=user_proxy, **kwargs)
 
     def _default_retrieval(
         self,

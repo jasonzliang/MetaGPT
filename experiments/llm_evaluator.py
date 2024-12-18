@@ -357,6 +357,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         self.with_background = self.config.get("with_background", False)
         self.objective = self.config.get("objective", "problem_acc")
         assert self.objective in SCICODE_OBJ
+        self.cleanup_output = self.config.get("cleanup_output", False)
         # self.shuffle_seed = self.config.get("shuffle_seed", None)
 
     def _download_testdata(self):
@@ -448,16 +449,18 @@ class SciCodeEvaluator(EvalPlusEvaluator):
             while n_tries > 0:
                 try:
                     for i in range(steps):
-                        # if (prob_id == "13" and i == 5) or \
-                        #     (prob_id == "62" and i == 0) or \
-                        #     (prob_id == "76" and i == 2):
-                        #     continue
-                        gcode.generate_response_with_steps(
+                        if (prob_id == "13" and i == 5) or \
+                            (prob_id == "62" and i == 0) or \
+                            (prob_id == "76" and i == 2):
+                            continue
+                        code_file = gcode.generate_response_with_steps(
                             prob_data=problem,
                             num_steps=i + 1,
                             tot_steps=steps,
                             prompt_template=prompt_template,
                             result_dict=result_dict)
+                        if self.cleanup_output:
+                            self.autogen_builder.fix_output(code_file)
                     break
                 except:
                     stack_trace = traceback.format_exc()
@@ -513,7 +516,8 @@ SCICODE_EVAL_CONFIG = {
     'dataset': 'problems_all',
     'with_background': False,
     'problem_list': [],
-    'debug_mode': 0
+    'debug_mode': 0,
+    'cleanup_output': True
 }
 
 EVAL_LLM_CONFIG = {

@@ -477,7 +477,6 @@ def parse_code(rsp):
 
 
 def parse_code2(rsp):
-    # print(rsp); time.sleep(999999)
     if rsp is None: return None
     pattern = r"```python(.*)```"
     match = re.search(pattern, rsp, re.DOTALL)
