@@ -251,5 +251,6 @@ CLEANUP_CODE_PROMPT = """# Your Goal
 # Your answer
 - Write an updated version of the Python code that fixes all issues and will run successfully without crashing.
 - Ensure the updated code has all of the import, function and class names that are originally present.
+- Ensure the updated code preserves any comment blocks that are originally present.
 - Ensure your response is in the format of ```python``` with no other extraneous output.
 """
