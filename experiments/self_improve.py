@@ -43,7 +43,9 @@ SCICODE_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'problems_dev',
     'with_background': False,
-    'debug_mode': 0
+    'cleanup_output': True,
+    'include_bg_comments': True,
+    'debug_mode': 0,
 }
 
 EVAL_LLM_CONFIG = {

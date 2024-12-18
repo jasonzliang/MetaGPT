@@ -48,7 +48,7 @@ class Gencode:
         self.output_dir = output_dir
         self.prompt_dir = prompt_dir
         self.with_background = with_background
-        self.include_bg_comments = include_bg_comments
+        self.include_bg_comments = include_bg_comments or with_background
         self.previous_llm_code = []
 
     def _get_background_dir(self):
