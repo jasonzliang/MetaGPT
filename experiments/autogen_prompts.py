@@ -238,9 +238,9 @@ AGENT_LIBRARY_PROMPT = """# Your goal
 
 CLEANUP_CODE_PROMPT = """# Your Goal
 - Consider the following Python code which contains imports, functions and classes.
-- Carefully check the code for any errors, mistakes, omissions, or inconsistencies.
-- If there are duplicate functions or classes, choose the most correct implementation and remove the rest.
-- Systemically find and fix all of the issues you discover.
+- Carefully check the code for any errors, mistakes, omissions, and inconsistencies, especially syntax errors.
+- If there are duplicate functions or classes, choose the best implementation and remove the rest.
+- Systemically find and fix all of the issues that are discovered.
 
 # Start of Python code
 
@@ -249,7 +249,7 @@ CLEANUP_CODE_PROMPT = """# Your Goal
 # End of Python code
 
 # Your answer
-- Write an updated version of the Python code that fixes all issues and will run successfully without crashing.
+- Write an updated version of the Python code that fixes all issues and runs successfully without crashing.
 - Ensure the updated code has all of the import, function and class names that are originally present.
 - Ensure the updated code includes any background comment blocks that are originally present.
 - Ensure your response is in the format of ```python``` with no other extraneous output.
