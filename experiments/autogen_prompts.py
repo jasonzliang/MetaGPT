@@ -250,7 +250,7 @@ CLEANUP_CODE_PROMPT = """# Your Goal
 
 # Your answer
 - Write an updated version of the Python code that fixes all issues and runs successfully without crashing.
-- Ensure the updated code has all of the import, function and class names that are originally present.
-- Ensure the updated code includes any background comment blocks that are originally present.
+- Ensure the updated code has all of the import, function and class names from the original code.
+- Ensure the updated code includes all "# Background" comment blocks from the original code.
 - Ensure your response is in the format of ```python``` with no other extraneous output.
 """
