@@ -355,6 +355,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
             self.dataset + '.jsonl')
         assert os.path.exists(self.dataset_path)
         self.with_background = self.config.get("with_background", False)
+        self.include_bg_comments = self.config.get("include_bg_comments", True)
         self.objective = self.config.get("objective", "problem_acc")
         assert self.objective in SCICODE_OBJ
         self.cleanup_output = self.config.get("cleanup_output", False)
@@ -423,6 +424,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
             output_dir=os.path.join(result_dir, "generated_code"),
             prompt_dir=os.path.join(result_dir, "prompt"),
             with_background=self.with_background,
+            include_bg_comments=self.include_bg_comments,
             llm_eval_func=eval_func,
         )
         prompt_template = BACKGOUND_PROMPT_TEMPLATE if \
