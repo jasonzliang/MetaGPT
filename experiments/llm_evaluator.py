@@ -449,9 +449,9 @@ class SciCodeEvaluator(EvalPlusEvaluator):
             while n_tries > 0:
                 try:
                     for i in range(steps):
-                        if (prob_id == "13" and i == 5) or \
-                            (prob_id == "62" and i == 0) or \
-                            (prob_id == "76" and i == 2):
+                        if (task_id == "13" and i == 5) or \
+                            (task_id == "62" and i == 0) or \
+                            (task_id == "76" and i == 2):
                             continue
                         code_file = gcode.generate_response_with_steps(
                             prob_data=problem,
