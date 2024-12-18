@@ -460,7 +460,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                             prompt_template=prompt_template,
                             result_dict=result_dict)
                         if self.cleanup_output:
-                            self.autogen_builder.fix_output(code_file)
+                            self.autogen_builder.cleanup_output(code_file)
                     break
                 except:
                     stack_trace = traceback.format_exc()
