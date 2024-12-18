@@ -304,6 +304,57 @@ def extract_comments_from_code(text, incl_single_comments=False):
     # except:
     #     return text
 
+def extract_background_from_code(code, index=0):
+    """
+    Extract contiguous blocks of comments that begin with '# Background'
+    from Python code.
+
+    Args:
+        code (str): Python source code as a string
+        index (int): Index of comment block
+    Returns:
+        list: Comment block at index
+    """
+    # Split code into lines and strip whitespace
+    lines = code.split('\n')
+
+    # Variables to track comment blocks
+    comment_blocks = []
+    current_block = []
+    in_block = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Check for start of new background comment block
+        if stripped.lower().startswith('# background'):
+            # If we were already in a block, save it first
+            if in_block and current_block:
+                comment_blocks.append('\n'.join(current_block))
+                current_block = []
+
+            in_block = True
+            current_block.append(stripped)
+
+        # Continue existing comment block
+        elif in_block and stripped.startswith('#'):
+            current_block.append(stripped)
+
+        # End of comment block
+        elif in_block:
+            comment_blocks.append('\n'.join(current_block))
+            current_block = []
+            in_block = False
+
+    # Add final block if code ends with a comment block
+    if in_block and current_block:
+        comment_blocks.append('\n'.join(current_block))
+
+    try:
+        return comment_blocks[index]
+    except:
+        return None
+
 
 def extract_name_from_function(code, raise_error=True):
     """
@@ -805,6 +856,16 @@ if __name__ == "__main__":
     imports = "import numpy as np"
     namespace = load_imports_from_string(imports)
     test_func = """
+# Background
+# blah blah blah
+# blah blah blah
+#
+# blah blah blah
+
+# Background
+# asdf
+# adsf asdf
+
 class Slater:
     def __init__(self, alpha):
         '''Args:
@@ -839,10 +900,11 @@ class Slater:
             kin (np.array): (nconf,)
         '''
 """
-    from scicode.parse.parse import extract_function_name
-    # test_func_name = extract_function_name(test_func)
-    test_func_name = extract_name_from_function(test_func)
-    print(test_func_name)
-    print(eval_function_from_string(namespace, test_func, test_func_name))
+    print(extract_background_from_code(test_func, 0))
+    # from scicode.parse.parse import extract_function_name
+    # # test_func_name = extract_function_name(test_func)
+    # test_func_name = extract_name_from_function(test_func)
+    # print(test_func_name)
+    # print(eval_function_from_string(namespace, test_func, test_func_name))
     # print(parse_comment_block(x))
     # yaml_dump(sys.argv[1], sys.argv[1].replace(".yaml", ".p.yaml"))

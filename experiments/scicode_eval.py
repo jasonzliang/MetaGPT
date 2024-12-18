@@ -15,6 +15,7 @@ from scicode.parse.parse import extract_function_name, get_function_from_code, \
     read_from_jsonl
 
 from util import extract_function_from_code, extract_name_from_function
+from util import extract_background_from_code
 # from scicode.parse.parse import H5PY_FILE
 
 PROB_NUM = 65
@@ -90,20 +91,28 @@ class Gencode:
 
     def _process_problem_steps(self, problem_data: dict, num_steps: int):
         """Process problem data and return previous steps and next steps"""
+        def get_background(i):
+            description = problem_data["sub_steps"][i]["step_description_prompt"]
+            if self.with_background:
+                background = problem_data["sub_steps"][i]["step_background"]
+            else:
+                background = self.previous_llm_code[i]['background']
+
+            if background is not None:
+                return description + '\n' + background
+            else:
+                return description
+
         output_lines = []
         next_step = []
         previous_code = []
         for i in range(num_steps - 1):
-            output_lines.append(problem_data["sub_steps"][i]["step_description_prompt"] + '\n' +
-                                problem_data["sub_steps"][i]["step_background"] if self.with_background
-                                else problem_data["sub_steps"][i]["step_description_prompt"])
+            output_lines.append(get_background(i))
             output_lines.append(self.previous_llm_code[i]['code'])
             previous_code.append(self.previous_llm_code[i]['code'])
             output_lines.append("------")
 
-        next_step.append(problem_data["sub_steps"][num_steps - 1]["step_description_prompt"] + '\n' +
-                         problem_data["sub_steps"][num_steps - 1]["step_background"] if self.with_background
-                         else problem_data["sub_steps"][num_steps - 1]["step_description_prompt"])
+        next_step.append(get_background(num_steps - 1))
         next_step.append(self._process_problem_code(problem_data, num_steps))
         output_str = "\n\n".join(output_lines[:-1])  # Remove the last "------"
         next_step_str = "\n\n".join(next_step)
@@ -161,12 +170,14 @@ class Gencode:
                         func_header = prob_data["sub_steps"][prev_step]["function_header"]
                         func_name = extract_name_from_function(func_header)
                         func_code = extract_function_from_code(prev_file_content, func_name)
+                        background = extract_background_from_code(prev_file_content, index=-1)
                         assert func_name is not None and func_code is not None
 
                         self.previous_llm_code[prev_step] = {
                             'code': func_code,
                             'name': func_name,
-                            'header': func_header
+                            'header': func_header,
+                            'background': background
                         }
                     else:
                         try:
@@ -206,12 +217,14 @@ class Gencode:
         func_name = extract_name_from_function(func_header)
         python_script = extract_python_script(response_from_llm)
         func_code = extract_function_from_code(python_script, func_name)
+        background = extract_background_from_code(python_script, index=0)
         assert func_name is not None and func_code is not None
 
         self.previous_llm_code[num_steps - 1] = {
             'code': func_code,
             'name': func_name,
-            'header': func_header
+            'header': func_header,
+            'background': background
         }
         return self._save_response_with_steps(
             prob_data,
