@@ -66,7 +66,7 @@ BUILDER_LLM_CONFIG = {"temperature": 0.9,
     # "cache": None,
     "custom_coding_instruct": False,
     "user_for_system_msg": False,
-    "max_code_exec_len": 5000,
+    "max_code_exec_len": 3500,
     "min_agents": 3,
     "max_agents": 3,
     "use_agent_library": False}
