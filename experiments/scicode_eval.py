@@ -70,6 +70,7 @@ class Gencode:
 
     def _save_response_with_steps(self,
         prob_data: dict,
+        background: str,
         func_code: str,
         previous_code: str,
         num_steps: int) -> None:
@@ -77,8 +78,11 @@ class Gencode:
         prob_id = prob_data["problem_id"]
         # python_code = extract_python_script(response)
         output_file_path = self._get_output_file_path(prob_id, num_steps)
-        output_file_path.write_text(f'{previous_code}\n{func_code}',
-            encoding="utf-8")
+        if background is not None:
+            output = f'{previous_code}\n{background}\n{func_code}'
+        else:
+            output = f'{previous_code}\n{func_code}'
+        output_file_path.write_text(output, encoding="utf-8")
 
         return output_file_path
 
@@ -91,32 +95,36 @@ class Gencode:
 
     def _process_problem_steps(self, problem_data: dict, num_steps: int):
         """Process problem data and return previous steps and next steps"""
-        def get_background(i):
+        def _get_background(i, include_desc=True):
+            return_list = []
             description = problem_data["sub_steps"][i]["step_description_prompt"]
+            if include_desc: return_list.append(description)
+
+            background = None
             if self.with_background:
                 background = problem_data["sub_steps"][i]["step_background"]
-            else:
+            elif self.previous_llm_code[i] is not None:
                 background = self.previous_llm_code[i]['background']
 
-            if background is not None:
-                return description + '\n' + background
-            else:
-                return description
+            if background is not None: return_list.append(background)
+            return "\n\n".join(return_list)
 
-        output_lines = []
-        next_step = []
-        previous_code = []
+        output_lines = []; next_step = []; previous_code = []
         for i in range(num_steps - 1):
-            output_lines.append(get_background(i))
+            output_lines.append(_get_background(i))
             output_lines.append(self.previous_llm_code[i]['code'])
-            previous_code.append(self.previous_llm_code[i]['code'])
             output_lines.append("------")
 
-        next_step.append(get_background(num_steps - 1))
+            previous_code.append(_get_background(i, include_desc=False))
+            previous_code.append(self.previous_llm_code[i]['code'])
+
+        next_step.append(_get_background(num_steps - 1))
         next_step.append(self._process_problem_code(problem_data, num_steps))
+
         output_str = "\n\n".join(output_lines[:-1])  # Remove the last "------"
         next_step_str = "\n\n".join(next_step)
         previous_code_str = "\n\n".join(previous_code)
+
         return output_str, next_step_str, previous_code_str
 
     def _generate_prompt_with_steps(self, prob_data: dict, num_steps: int,
@@ -228,6 +236,7 @@ class Gencode:
         }
         return self._save_response_with_steps(
             prob_data,
+            background,
             func_code,
             previous_code,
             num_steps)
