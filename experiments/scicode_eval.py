@@ -37,7 +37,7 @@ class Gencode:
     def __init__(self, output_dir: Path,
                  prompt_dir: Path,
                  with_background: bool,
-                 include_bg_in_code: bool = True,
+                 include_bg_comments: bool = True,
                  model: str = None,
                  temperature: float = None,
                  llm_eval_func: callable = None):
@@ -48,7 +48,7 @@ class Gencode:
         self.output_dir = output_dir
         self.prompt_dir = prompt_dir
         self.with_background = with_background
-        self.include_bg_in_code = include_bg_in_code
+        self.include_bg_comments = include_bg_comments
         self.previous_llm_code = []
 
     def _get_background_dir(self):
@@ -108,7 +108,7 @@ class Gencode:
             elif self.previous_llm_code[i] is not None:
                 background = self.previous_llm_code[i]['background']
 
-            if self.include_bg_in_code and background is not None:
+            if self.include_bg_comments and background is not None:
                 return_list.append(background)
             return "\n\n".join(return_list)
 
