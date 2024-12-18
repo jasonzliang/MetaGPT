@@ -79,7 +79,7 @@ class Gencode:
         # python_code = extract_python_script(response)
         output_file_path = self._get_output_file_path(prob_id, num_steps)
         if background is not None:
-            output = f'{previous_code}\n{background}\n{func_code}'
+            output = f'{previous_code}\n{background}\n\n{func_code}'
         else:
             output = f'{previous_code}\n{func_code}'
         output_file_path.write_text(output, encoding="utf-8")
