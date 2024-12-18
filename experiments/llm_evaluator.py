@@ -358,7 +358,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         self.include_bg_comments = self.config.get("include_bg_comments", True)
         self.objective = self.config.get("objective", "problem_acc")
         assert self.objective in SCICODE_OBJ
-        self.cleanup_output = self.config.get("cleanup_output", False)
+        self.cleanup_output = self.config.get("cleanup_output", True)
         # self.shuffle_seed = self.config.get("shuffle_seed", None)
 
     def _download_testdata(self):
@@ -519,7 +519,8 @@ SCICODE_EVAL_CONFIG = {
     'with_background': False,
     'problem_list': ['13'],
     'debug_mode': 0,
-    'cleanup_output': True
+    'cleanup_output': True,
+    'include_bg_comments': True
 }
 
 EVAL_LLM_CONFIG = {
