@@ -76,7 +76,7 @@ class Gencode:
         prob_id = prob_data["problem_id"]
         # python_code = extract_python_script(response)
         output_file_path = self._get_output_file_path(prob_id, num_steps)
-        output_file_path.write_text(f'{previous_code}\n\n{func_code}',
+        output_file_path.write_text(f'{previous_code}\n{func_code}',
             encoding="utf-8")
 
         return output_file_path
@@ -107,7 +107,7 @@ class Gencode:
         next_step.append(self._process_problem_code(problem_data, num_steps))
         output_str = "\n\n".join(output_lines[:-1])  # Remove the last "------"
         next_step_str = "\n\n".join(next_step)
-        previous_code_str = "\n".join(previous_code)
+        previous_code_str = "\n\n".join(previous_code)
         return output_str, next_step_str, previous_code_str
 
     def _generate_prompt_with_steps(self, prob_data: dict, num_steps: int,
