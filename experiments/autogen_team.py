@@ -143,8 +143,8 @@ def start_task(execution_task: str,
     context_handling.add_to_agent(society_of_mind_agent)
     context_handling.add_to_agent(society_user_proxy)
 
-    # with Cache.disk(cache_seed=None,
-    #     cache_path_root='/tmp/cache_%s' % randomword(ID_LENGTH)) as cache:
+    # with Cache.disk(cache_seed=None, cache_path_root='/tmp/cache_%s_%s' % \
+    #     (randomword(ID_LENGTH), time.time())) as cache:
     chat_result = society_user_proxy.initiate_chat(
         society_of_mind_agent,
         message=execution_task,

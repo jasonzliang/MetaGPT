@@ -265,13 +265,13 @@ class EvalPlusEvaluator(object):
         return result_dict
 
     def _init_builder(self, team_role, builder_llm_config):
-        return init_builder(building_task=None,
-                # work_dir='/tmp/eval_%s' % randomword(ID_LENGTH),
-                use_builder_dict=True,
-                builder_dict=team_role,
-                builder_llm_config=builder_llm_config,
-                clear_cache=True,
-                debug_mode=self.debug_mode > 0)
+        return init_builder(
+            building_task=None,
+            use_builder_dict=True,
+            builder_dict=team_role,
+            builder_llm_config=builder_llm_config,
+            clear_cache=True,
+            debug_mode=self.debug_mode > 0)
 
     def _eval_indv_team_role(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
