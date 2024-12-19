@@ -323,6 +323,7 @@ $functions"""
             code_hash = md5(code.encode()).hexdigest()
             filename = f"tmp_code_{code_hash}.{'py' if lang.startswith('python') else lang}"
             written_file = (self._work_dir / filename).resolve()
+
             with written_file.open("w", encoding="utf-8") as f:
                 f.write(self._get_code_history(lang))
                 f.write(code)
