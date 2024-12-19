@@ -562,7 +562,8 @@ def _setup_evaluator(
     return Evaluator(eval_config, evaluator_dir=eval_dir)
 
 
-def _setup_indv(main_role_fp,
+def _setup_indv(
+    main_role_fp,
     team_role_fp,
     evolve_mode,
     builder_llm_config=EVAL_BUILDER_LLM_CONFIG,
@@ -604,7 +605,8 @@ def _setup_indv(main_role_fp,
     return indv
 
 
-def test_evaluator(main_role_fp=None,
+def test_evaluator(
+    main_role_fp=None,
     team_role_fp=None,
     evolve_mode="team",
     n_indv=1,
