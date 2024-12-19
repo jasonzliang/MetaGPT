@@ -608,7 +608,7 @@ def test_evaluator(main_role_fp=None,
     team_role_fp=None,
     evolve_mode="team",
     n_indv=1,
-    indv_id_seed=0,
+    indv_id_seed=None,
     num_gen=1,
     eval_suffix=get_time(space=False),
     scicode=True):
@@ -629,6 +629,8 @@ def test_evaluator(main_role_fp=None,
             if indv_id_seed is not None:
                 child._set_id(i, seed=indv_id_seed + counter,
                     suffix=eval_suffix)
+            else:
+                child._set_id(i, seed=None, suffix=eval_suffix)
             counter += 1; population.append(child)
 
         result_dicts = _eval.evaluate(population, gen=i); _eval.reset()
