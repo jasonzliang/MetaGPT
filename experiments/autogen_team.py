@@ -29,7 +29,7 @@ from wrapt_timeout_decorator import *
 from autogen_agent_builder import AgentBuilder
 from autogen_society_of_mind import SocietyOfMindAgent
 from autogen_executor import LocalCommandLineCodeExecutor
-from autogen_prompts import FUNCTION_PROMPT_TEMPLATE
+from autogen_prompts import FUNCTION_PROMPT_TEMPLATE, FUNCTION_PROMPT_TEMPLATE_V2
 from alg_util import ID_LENGTH
 from alg_util import randomword
 from util import get_time, killtree, extract_code_from_chat, format_prompt
@@ -262,8 +262,10 @@ def _register_functions(agent_list,
     func_list = [func_dict['code'] for func_dict in loaded_code_library]
     executor._setup_functions(imports=imports, func_list=func_list,
         overwrite_func_file=True)
-    function_msg = executor.format_functions_for_prompt(
-        prompt_template=FUNCTION_PROMPT_TEMPLATE)
+    # function_msg = executor.format_functions_for_prompt(
+    #     prompt_template=FUNCTION_PROMPT_TEMPLATE)
+    function_msg = FUNCTION_PROMPT_TEMPLATE_V2.format(
+        module_name=executor.functions_module)
 
     new_sys_msgs = []
     for agent in agent_list_noproxy:

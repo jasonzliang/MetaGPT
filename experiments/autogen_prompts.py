@@ -215,6 +215,17 @@ def bar(args):
 $functions
 """
 
+FUNCTION_PROMPT_TEMPLATE_V2 = """## How to use library functions?
+- The code from PREVIOUS PROBLEM STEPS are available as library functions.
+- You are able to call these functions by importing them from the module '{module_name}'.
+- You should make use of these functions to help you write the solution code.
+- For example, if there is a function named 'foo', you can import and call it by writing:
+from {module_name} import foo
+def bar(args):
+    result = foo(args)
+    return result
+"""
+
 AGENT_LIBRARY_PROMPT = """# Your goal
 - Considering the following task, what experts are best suited for solving the task?
 - Select from a list of experts below that contains their names and detailed descriptions.
