@@ -264,14 +264,16 @@ def _register_functions(agent_list,
         overwrite_func_file=True)
     # function_msg = executor.format_functions_for_prompt(
     #     prompt_template=FUNCTION_PROMPT_TEMPLATE)
-    function_msg = FUNCTION_PROMPT_TEMPLATE_V2.format(
-        module_name=executor.functions_module)
+    # function_msg = FUNCTION_PROMPT_TEMPLATE_V2.format(
+    #     module_name=executor.functions_module)
 
-    for agent in agent_list_noproxy:
-        new_sys_msg = agent.system_message + "\n" + function_msg
-        agent.update_system_message(new_sys_msg)
+    # for agent in agent_list_noproxy:
+    #     new_sys_msg = agent.system_message + "\n" + function_msg
+    #     agent.update_system_message(new_sys_msg)
 
-    return orig_agent_sys_msgs
+    # return orig_agent_sys_msgs
+    return None
+
 
 
 def _build_from_library(
