@@ -275,7 +275,6 @@ def _register_functions(agent_list,
     return None
 
 
-
 def _build_from_library(
     building_task,
     agent_library,
