@@ -220,7 +220,7 @@ def _register_functions(agent_list,
     imports,
     code_library,
     log_file=None,
-    work_dir='/tmp/eval_%s' % randomword(ID_LENGTH)):
+    work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())):
     agent_list_noproxy = []; orig_agent_sys_msgs = []; user_proxy = None
     for agent in agent_list:
         assert isinstance(agent, autogen.ConversableAgent)
@@ -294,7 +294,7 @@ def _build_from_library(
 
 
 def init_builder(building_task=None,
-    work_dir='/tmp/eval_%s' % randomword(ID_LENGTH),
+    work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time()),
     use_builder_dict=False,
     builder_cfg=None,
     builder_dict=None,
@@ -478,7 +478,7 @@ Combine and merge these experts to create a new and improved team for generating
 def run_evalplus(
     result_dir="results/evalplus_results_%s" % get_time(space=False),
     builder_cfg="config/autogen_builder_cfg2.json",
-    work_dir="/tmp/eval_%s" % randomword(ID_LENGTH),
+    work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time()),
     clear_cache=True,
     humaneval=True,
     max_agents=3,
