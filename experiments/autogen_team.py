@@ -293,7 +293,8 @@ def _build_from_library(
     return agent_list
 
 
-def init_builder(building_task=None,
+def init_builder(
+    building_task=None,
     work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time()),
     use_builder_dict=False,
     builder_cfg=None,
