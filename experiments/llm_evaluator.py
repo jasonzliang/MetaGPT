@@ -610,7 +610,7 @@ def test_evaluator(
     team_role_fp=None,
     evolve_mode="team",
     n_indv=1,
-    indv_id_seed=None,
+    indv_id_seed=0,
     num_gen=1,
     eval_suffix=get_time(space=False),
     scicode=True):
