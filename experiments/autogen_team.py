@@ -267,11 +267,9 @@ def _register_functions(agent_list,
     function_msg = FUNCTION_PROMPT_TEMPLATE_V2.format(
         module_name=executor.functions_module)
 
-    new_sys_msgs = []
     for agent in agent_list_noproxy:
         new_sys_msg = agent.system_message + "\n" + function_msg
         agent.update_system_message(new_sys_msg)
-        new_sys_msgs.append(new_sys_msg)
 
     return orig_agent_sys_msgs
 
