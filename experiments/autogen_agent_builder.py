@@ -369,7 +369,8 @@ With following description: {function_description}
             agent_coding_instruct = agent_config["coding_instruction"]
         elif include_coding_instruct: # and "coding_instruction" not in agent_config:
             agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
-            print("%s has 'coding_instruction' entry, but using default instead." % name)
+            if "coding_instruction" in agent_config:
+                print("%s has 'coding_instruction' entry, but using default instead." % name)
         # elif include_coding_instruct:
         #     raise Exception("If agents have 'coding_instruction' entry, "
         #         "set builder's custom_coding_instruct to True'")
