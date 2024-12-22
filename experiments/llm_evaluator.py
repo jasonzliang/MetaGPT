@@ -518,7 +518,7 @@ SCICODE_EVAL_CONFIG = {
     'dataset': 'problems_all',
     'with_background': False,
     'problem_list': [],
-    'cleanup_output': True,
+    'cleanup_output': False,
     'include_bg_comments': True,
     'debug_mode': 0,
 }
@@ -530,7 +530,7 @@ EVAL_LLM_CONFIG = {
 EVAL_BUILDER_LLM_CONFIG = {
     'agent_model': LLM_MODEL,
     'builder_model': LLM_MODEL,
-    'custom_coding_instruct': False,
+    'custom_coding_instruct': True,
     'use_agent_library': False,
     'agent_lib_include_coding_instruct': False,
     'agent_lib_include_insights': True,
