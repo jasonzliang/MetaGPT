@@ -138,7 +138,7 @@ Once all these conditions are met, you can end the conversation by replying only
 **You have to keep believing that everyone else's answers are wrong until they provide clear enough evidence.**
 - Verifying with step-by-step backward reasoning.
 - Write test cases according to the general task.
-- When calling a function, make sure it will not cause an "NameError: name <function name> is not defined" exception.
+- Ensure that calling a function does not result in a "NameError: name <function name> is not defined" exception.
 
 ## How to use code?
 - Suggest python code (in a python coding block) or shell script (in a sh coding block) for the Computer_terminal to execute.
