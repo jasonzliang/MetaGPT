@@ -265,3 +265,23 @@ CLEANUP_CODE_PROMPT = """# Your Goal
 - Ensure the updated code includes all "# Background" comment blocks from the original code.
 - Ensure your response is in the format of ```python``` with no other extraneous output.
 """
+
+CLEANUP_CODE_PROMPT_V2 = """# Input Python code to analyze and improve:
+{python_code}
+
+# Instructions:
+1. Analyze and fix any coding errors, mistakes, and inconsistencies
+2. Preserve all original:
+  - Import statements
+  - Function/class names
+  - "# Background" comments
+3. Return output in this format only:
+```python
+[cleaned code here]
+```
+
+# Output requirements:
+- Must execute without errors
+- Maintain original functionality
+- Use consistent style
+"""

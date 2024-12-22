@@ -527,14 +527,51 @@ def parse_code(rsp):
     return code_text
 
 
-def parse_code2(rsp):
-    if rsp is None: return None
-    pattern = r"```python(.*)```"
-    match = re.search(pattern, rsp, re.DOTALL)
-    if match:
-        return match.group(1)
-    else:
-        return None
+# def parse_code2(rsp):
+#     if rsp is None: return None
+#     pattern = r"```python(.*)```"
+#     match = re.search(pattern, rsp, re.DOTALL)
+#     if match:
+#         return match.group(1)
+#     else:
+#         return None
+def parse_code2(text):
+    """
+    Extracts content from markdown code blocks.
+
+    Args:
+        text (str): The markdown text containing code blocks
+
+    Returns:
+        list: List of tuples (language, content) where language might be None
+              if not specified in the code block
+
+    Note:
+        - Preserves internal whitespace
+        - Handles escaped backticks within code
+        - Skips invalid/incomplete code blocks
+    """
+    pattern = r"```[ \t]*(\w+)?[ \t]*\r?\n(.*?)\r?\n[ \t]*```"
+    matches = re.finditer(pattern, text, re.DOTALL)
+
+    # results = []
+    for match in matches:
+        try:
+            language = match.group(1)
+            # Remove only the trailing newline if it exists, preserve other whitespace
+            content = match.group(2).rstrip('\r\n')
+
+            # Skip empty code blocks
+            if not content.strip(): continue
+            if language.lower() == "python": return content
+            # results.append((language, content))
+
+        except (IndexError, AttributeError):
+            # Skip malformed matches
+            continue
+
+    # return results
+    return None
 
 
 def parse_prompt_template(rsp):

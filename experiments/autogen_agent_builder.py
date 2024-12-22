@@ -19,7 +19,7 @@ import autogen
 
 from autogen_prompts import *
 from autogen_executor import LocalCommandLineCodeExecutor
-from util import yaml_dump, flatten, parse_code
+from util import yaml_dump, flatten, parse_code2
 
 logger = logging.getLogger(__name__)
 
@@ -535,7 +535,7 @@ With following description: {function_description}
                 messages=[
                     {
                         "role": "user",
-                        "content": CLEANUP_CODE_PROMPT.format(
+                        "content": CLEANUP_CODE_PROMPT_V2.format(
                             python_code=python_code
                         ),
                     }
@@ -544,9 +544,9 @@ With following description: {function_description}
             .choices[0]
             .message.content
         )
-        fixed_python_code = parse_code(resp_code)
-        # assert len(fixed_python_code) > 0
-        with open(code_file, 'w') as f: f.write(fixed_python_code)
+        fixed_python_code = parse_code2(resp_code)
+        if fixed_python_code is not None:
+            with open(code_file, 'w') as f: f.write(fixed_python_code)
 
     def update_agents(
         self,
