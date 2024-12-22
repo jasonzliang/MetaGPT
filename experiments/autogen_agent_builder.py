@@ -73,16 +73,37 @@ class AgentBuilder:
 
     online_server_name = "online"
 
-    DEFAULT_PROXY_AUTO_REPLY = 'There is no code from the last 1 message for me to execute. Group chat manager should let other participants to continue the conversation. If the group chat manager want to end the conversation, you should let other participant reply me only with "TERMINATE"'
+    # DEFAULT_PROXY_AUTO_REPLY = 'There is no code from the last 1 message for me to execute. Group chat manager should let other participants to continue the conversation. If the group chat manager want to end the conversation, you should let other participant reply me only with "TERMINATE"'
+
+    DEFAULT_PROXY_AUTO_REPLY = 'There is no code from the last 1 message for me to execute. Group chat manager should let other participants continue the conversation. Participants should only reply with "TERMINATE" when they have confirmed that the original problem has been fully resolved and a working solution has been verified.'
+
+#     GROUP_CHAT_DESCRIPTION = """# Group chat instruction
+# You are now working in a group chat with different expert and a group chat manager.
+# You should refer to the previous message from other participant members or yourself, follow their topic and reply to them.
+
+# **Your role is**: {name}
+# Group chat members: {members}{user_proxy_desc}
+
+# When the task is complete and the result has been carefully verified, after obtaining agreement from the other members, you can end the conversation by replying only with "TERMINATE".
+
+# # Your profile
+# {sys_msg}
+# """
 
     GROUP_CHAT_DESCRIPTION = """# Group chat instruction
-You are now working in a group chat with different expert and a group chat manager.
-You should refer to the previous message from other participant members or yourself, follow their topic and reply to them.
+You are now working in a group chat with different experts and a group chat manager.
+You should refer to the previous messages from other participant members or yourself, follow their topic and reply to them.
 
 **Your role is**: {name}
 Group chat members: {members}{user_proxy_desc}
 
-When the task is complete and the result has been carefully verified, after obtaining agreement from the other members, you can end the conversation by replying only with "TERMINATE".
+The conversation should only be terminated under these conditions:
+1. The task has been fully completed
+2. The solution has been thoroughly tested and verified to be correct
+3. All group members have explicitly confirmed the solution works as intended
+4. There is clear consensus among participants that no further improvements are needed
+
+Once all these conditions are met, you can end the conversation by replying only with "TERMINATE".
 
 # Your profile
 {sys_msg}
@@ -106,8 +127,8 @@ When the task is complete and the result has been carefully verified, after obta
 - [(Optional) Complete this part with other information]
 """
 
-# - If missing python packages, you can install the package by suggesting a `pip install` code in the ```sh ... ``` block.
 # - Very important: Before writing test cases, first write the code for the task or function being tested.
+# - When calling a function, ensure that the function has been properly defined first.
     CODING_AND_TASK_SKILL_INSTRUCTION = """## Useful instructions for task-solving
 - Solve the task step by step if you need to.
 - When you find an answer, verify the answer carefully. Include verifiable evidence with possible test case in your response if possible.
@@ -117,7 +138,7 @@ When the task is complete and the result has been carefully verified, after obta
 **You have to keep believing that everyone else's answers are wrong until they provide clear enough evidence.**
 - Verifying with step-by-step backward reasoning.
 - Write test cases according to the general task.
-- Before calling a function, ensure that the function has been properly defined first. Make sure to prevent "NameError: name <function_name> is not defined" exceptions.
+- When calling a function, make sure it will not cause an "NameError: name <function name> is not defined" exception.
 
 ## How to use code?
 - Suggest python code (in a python coding block) or shell script (in a sh coding block) for the Computer_terminal to execute.
@@ -326,6 +347,7 @@ With following description: {function_description}
         include_insights=True,
         include_coding_instruct=True):
 
+        name = agent_config['name']
         if not full_desc:
             return agent_config["description"]
         system_message = [agent_config["system_message"]]
@@ -338,23 +360,24 @@ With following description: {function_description}
         if len(insights) > 0:
             system_message.append(insights)
         else:
-            print(colored("Empty insights for %s" % agent_config["name"], "red"), flush=True)
+            print(colored("Empty insights for %s" % name, "red"), flush=True)
 
         # if custom_coding_instruct, accept custom or default coding instructions
         agent_coding_instruct = ""
         if include_coding_instruct and self.custom_coding_instruct is True and \
             "coding_instruction" in agent_config:
             agent_coding_instruct = agent_config["coding_instruction"]
-        elif include_coding_instruct and "coding_instruction" not in agent_config:
+        elif include_coding_instruct: # and "coding_instruction" not in agent_config:
             agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
-        elif include_coding_instruct:
-            raise Exception("If agents have 'coding_instruction' entry, "
-                "set builder's custom_coding_instruct to True'")
+            print("%s has 'coding_instruction' entry, but using default instead." % name)
+        # elif include_coding_instruct:
+        #     raise Exception("If agents have 'coding_instruction' entry, "
+        #         "set builder's custom_coding_instruct to True'")
 
         if len(agent_coding_instruct) > 0:
             system_message.append(agent_coding_instruct)
         else:
-            print(colored("Empty coding instruction for %s" % agent_config["name"], "red"), flush=True)
+            print(colored("Empty coding instruction for %s" % name, "red"), flush=True)
 
         return "\n\n".join(system_message)
 
