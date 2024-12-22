@@ -20,8 +20,11 @@ CALLING HELPER FUNCTIONS:
 You are highly encouraged to import and call helper functions from PREVIOUS PROBLEM STEPS AND FUNCTION CODE to write the solution code. For example, if there is a function named 'foo', you can import and call the function like so:
 
 from code_library import foo
+
 def bar(args):
+    # YOUR_CODE_HERE
     result = foo(args)
+    # YOUR_CODE_HERE
     return result
 
 RESPONSE GUIDELINES:
