@@ -267,10 +267,11 @@ CLEANUP_CODE_PROMPT = """# Your Goal
 """
 
 CLEANUP_CODE_PROMPT_V2 = """# Input Python code to analyze and improve:
+
 {python_code}
 
 # Instructions:
-1. Analyze and fix any coding errors, mistakes, and inconsistencies
+1. Analyze and fix any coding/syntax errors, mistakes, and inconsistencies
 2. Preserve all original:
   - Import statements
   - Function/class names
