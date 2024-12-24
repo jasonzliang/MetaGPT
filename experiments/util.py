@@ -527,14 +527,6 @@ def parse_code(rsp):
     return code_text
 
 
-# def parse_code2(rsp):
-#     if rsp is None: return None
-#     pattern = r"```python(.*)```"
-#     match = re.search(pattern, rsp, re.DOTALL)
-#     if match:
-#         return match.group(1)
-#     else:
-#         return None
 def parse_code2(text):
     """
     Extracts content from markdown code blocks.
@@ -580,6 +572,12 @@ def parse_prompt_template(rsp):
     code_text = match.group(1) if match else rsp
     code_text = code_text.lstrip().rstrip()
     return code_text
+
+
+def convert_to_comments(text: str) -> str:
+    """Convert a multiline string into Python comments using # symbols."""
+    lines = text.strip().split('\n')
+    return '\n'.join(f"# {line}" if line.strip() else "#" for line in lines)
 
 
 def killtree(pid, including_parent=True):
