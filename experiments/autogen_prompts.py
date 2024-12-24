@@ -275,6 +275,7 @@ CLEANUP_CODE_PROMPT_V2 = """# Input Python code to analyze and improve:
 2. Preserve all original:
   - Import statements
   - Function/class names
+  - "# Background" comments
 3. Return output in this format only:
 
 ```python
