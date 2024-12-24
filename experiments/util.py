@@ -576,6 +576,12 @@ def parse_prompt_template(rsp):
 
 def convert_to_comments(text: str) -> str:
     """Convert a multiline string into Python comments using # symbols."""
+
+    # Type checking
+    if not isinstance(text, str): raise TypeError("Input must be a string")
+    # Handle empty or whitespace-only input
+    if not text.strip(): return ""
+
     lines = text.strip().split('\n')
     return '\n'.join(f"# {line}" if line.strip() else "#" for line in lines)
 
@@ -935,7 +941,8 @@ class Slater:
             kin (np.array): (nconf,)
         '''
 """
-    print(extract_background_from_code(test_func, 0))
+    print(convert_to_comments(""))
+    # print(extract_background_from_code(test_func, 0))
     # from scicode.parse.parse import extract_function_name
     # # test_func_name = extract_function_name(test_func)
     # test_func_name = extract_name_from_function(test_func)
