@@ -582,8 +582,13 @@ def convert_to_comments(text: str) -> str:
     # Handle empty or whitespace-only input
     if not text.strip(): return ""
 
-    lines = text.strip().split('\n')
-    return '\n'.join(f"# {line}" if line.strip() else "#" for line in lines)
+    lines = text.strip().split('\n'); new_lines = []
+    for line in lines:
+        if not line.strip(): new_lines.append("#"); continue
+        if line.startswith("#"): new_lines.append(line)
+        else: new_lines.append(f"# {line}")
+
+    return '\n'.join(new_lines)
 
 
 def killtree(pid, including_parent=True):
