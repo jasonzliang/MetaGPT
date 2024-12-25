@@ -15,7 +15,7 @@ from scicode.parse.parse import extract_function_name, get_function_from_code, \
     read_from_jsonl
 
 from util import extract_function_from_code, extract_name_from_function
-from util import extract_background_from_code
+from util import extract_background_from_code, convert_to_comments
 # from scicode.parse.parse import H5PY_FILE
 
 PROB_NUM = 65
@@ -109,7 +109,7 @@ class Gencode:
                 background = self.previous_llm_code[i]['background']
 
             if self.include_bg_comments and background is not None:
-                return_list.append(background)
+                return_list.append(convert_to_comments(background))
             return "\n\n".join(return_list)
 
         output_lines = []; next_step = []; previous_code = []
