@@ -17,7 +17,7 @@ Use only the following dependencies in your solution. Do not include these depen
 {dependencies}
 
 CALLING HELPER FUNCTIONS:
-You are highly encouraged to import and call helper functions from PREVIOUS PROBLEM STEPS AND FUNCTION CODE to write the solution code. For example, if there is a function named 'foo', you can import and call the function like so:
+You are highly encouraged to import and call helper functions from the module 'code_library'. These functions are described and defined under PREVIOUS PROBLEM STEPS AND FUNCTION CODE. For example:
 
 from code_library import foo
 
