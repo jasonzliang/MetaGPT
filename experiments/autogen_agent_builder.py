@@ -535,7 +535,7 @@ With following description: {function_description}
                 messages=[
                     {
                         "role": "user",
-                        "content": CLEANUP_CODE_PROMPT_V2.format(
+                        "content": CLEANUP_CODE_PROMPT.format(
                             python_code=python_code
                         ),
                     }
