@@ -90,8 +90,8 @@ class SocietyOfMindAgent(ConversableAgent):
         code_execution_config: Union[Dict, Literal[False]] = False,
         llm_config: Optional[Union[Dict, Literal[False]]] = False,
         default_auto_reply: Optional[Union[str, Dict, None]] = "",
-        default_response: str = DEFAULT_RESPONSE,
-        default_task_desc: str = DEFAULT_TASK_DESC,
+        default_response: str = DEFAULT_RESPONSE_V3,
+        default_task_desc: str = DEFAULT_TASK_DESC_V3,
         **kwargs,
     ):
         super().__init__(

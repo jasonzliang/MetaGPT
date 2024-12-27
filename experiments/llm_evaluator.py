@@ -534,7 +534,7 @@ EVAL_BUILDER_LLM_CONFIG = {
     'custom_coding_instruct': True,
     'use_agent_library': False,
     'agent_lib_include_coding_instruct': True,
-    'agent_lib_include_insights': True,
+    'agent_lib_include_insights': False,
     'temperature': 0.9
 }
 

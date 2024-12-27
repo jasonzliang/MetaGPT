@@ -17,14 +17,14 @@ Use only the following dependencies in your solution. Do not include these depen
 {dependencies}
 
 CALLING HELPER FUNCTIONS:
-You are highly encouraged to import and call helper functions from the module 'code_library'. These functions are described and defined under PREVIOUS PROBLEM STEPS AND FUNCTION CODE. For example:
+You are highly encouraged to import and call helper functions from the module 'code_library'. These functions are described and defined under PREVIOUS PROBLEM STEPS AND FUNCTION CODE. Your solution will likely require these helper functions in order to be correct.
 
-from code_library import foo
+Example (note <helper_function> and <solution_function> are placeholder names):
 
-def bar(args):
-    # YOUR_CODE_HERE
-    result = foo(args)
-    # YOUR_CODE_HERE
+from code_library import <helper_function>
+
+def <solution_function>(args):
+    result = <helper_function>(args)
     return result
 
 RESPONSE GUIDELINES:
@@ -32,8 +32,8 @@ RESPONSE GUIDELINES:
 2. Then write the complete and executable Python program for the next step in a single block.
 3. Your response should focus exclusively on implementing the solution for the next step, adhering closely to the specified function header and the context provided by the initial steps.
 4. DO NOT include previous function code, example usage or test code in your response.
-5. Ensure your solution is in the format of ```python``` and includes the necessary background as a comment at the top.
-6. The function name in your solution must match the name in the function header.
+5. The function name in your solution must match the name in the function header.
+6. Ensure your solution is in the format of ```python``` and includes the necessary background as a comment at the top.
 
 Example:
 ```python
