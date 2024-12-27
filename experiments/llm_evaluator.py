@@ -447,7 +447,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
             mlogger.info("\n\n#### Task ID: %s Problem:\n%s" % \
                 (task_id, problem['problem_description_main']))
-            n_tries = self.n_tries; err_str = ""
+            n_tries = self.n_tries; err_str = ""; code_file = None
             while n_tries > 0:
                 try:
                     for i in range(steps):
@@ -477,6 +477,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                         with open(err_fp, 'w') as f: f.write(err_str)
                         n_failures += 1
 
+        # if self.cleanup_output: self.autogen_builder.cleanup_output(code_file)
         if n_failures >= self.max_failures: os.system("touch %s" % fail_flag)
         return result_dict
 
