@@ -43,7 +43,7 @@ SCICODE_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'problems_dev',
     'with_background': False,
-    'cleanup_output': True,
+    'cleanup_output': False,
     'include_bg_comments': True,
     'debug_mode': 0,
 }

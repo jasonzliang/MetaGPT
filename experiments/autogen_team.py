@@ -55,7 +55,7 @@ CHAT_LLM_CONFIG = {"temperature": 0.1,
     "max_hist_len": 100000,
     "max_msg_len": 16000,
     "use_llm_lingua": False,
-    "llm_lingua_len": 60000,
+    "llm_lingua_len": 20000,
     "max_round": 15,
     "max_speaker_select_retries": 9}
 CHAT_LLM_CFG_KEYS = ['api_key', 'base_url', 'cache', 'cache_seed', 'model', 'temperature']
@@ -220,7 +220,8 @@ def _register_functions(agent_list,
     imports,
     code_library,
     log_file=None,
-    work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())):
+    work_dir=None):
+
     agent_list_noproxy = []; orig_agent_sys_msgs = []; user_proxy = None
     for agent in agent_list:
         assert isinstance(agent, autogen.ConversableAgent)
@@ -231,6 +232,8 @@ def _register_functions(agent_list,
             assert user_proxy is None; user_proxy = agent
     assert len(agent_list_noproxy) > 0; assert user_proxy is not None
 
+    if work_dir is None:
+        work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
     executor = user_proxy._code_executor; executor.reset(work_dir)
     if code_library is None or len(code_library) == 0:
         return None
@@ -294,8 +297,8 @@ def _build_from_library(
 
 def init_builder(
     building_task=None,
-    work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time()),
     use_builder_dict=False,
+    work_dir=None,
     builder_cfg=None,
     builder_dict=None,
     builder_llm_config=BUILDER_LLM_CONFIG,
@@ -311,6 +314,8 @@ def init_builder(
         assert a > 0 and b > 0 and a <= b; max_agents = random.randint(a, b)
     else: assert max_agents > 0
 
+    if work_dir is None:
+        work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
     executor = LocalCommandLineCodeExecutor(
         timeout=10,
         max_output_len=builder_llm_config['max_code_exec_len'],
