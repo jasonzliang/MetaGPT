@@ -358,7 +358,9 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         self.include_bg_comments = self.config.get("include_bg_comments", True)
         self.objective = self.config.get("objective", "problem_acc")
         assert self.objective in SCICODE_OBJ
-        self.cleanup_output = self.config.get("cleanup_output", True)
+        self.cleanup_code = self.config.get("cleanup_code", True)
+        self.cleanup_code_final = self.config.get("cleanup_code_final", False)
+        if self.cleanup_code_final: self.cleanup_code = False
         # self.shuffle_seed = self.config.get("shuffle_seed", None)
 
     def _download_testdata(self):
@@ -461,8 +463,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                             tot_steps=steps,
                             prompt_template=prompt_template,
                             result_dict=result_dict)
-                        if self.cleanup_output:
-                            self.autogen_builder.cleanup_output(code_file)
+                        if self.cleanup_code:
+                            self.autogen_builder.cleanup_code(code_file)
                     break
                 except:
                     stack_trace = traceback.format_exc()
@@ -477,7 +479,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                         with open(err_fp, 'w') as f: f.write(err_str)
                         n_failures += 1
 
-        # if self.cleanup_output: self.autogen_builder.cleanup_output(code_file)
+        if self.cleanup_code_final: self.autogen_builder.cleanup_code(code_file)
         if n_failures >= self.max_failures: os.system("touch %s" % fail_flag)
         return result_dict
 
@@ -519,7 +521,7 @@ SCICODE_EVAL_CONFIG = {
     'dataset': 'problems_all',
     'with_background': False,
     'problem_list': [],
-    'cleanup_output': False,
+    'cleanup_code': False,
     'include_bg_comments': True,
     'debug_mode': 0,
 }
@@ -534,7 +536,7 @@ EVAL_BUILDER_LLM_CONFIG = {
     'custom_coding_instruct': True,
     'use_agent_library': False,
     'agent_lib_include_coding_instruct': True,
-    'agent_lib_include_insights': False,
+    'agent_lib_include_insights': True,
     'temperature': 0.9
 }
 
@@ -683,7 +685,7 @@ if __name__ == "__main__":
     if 'background' in sys.argv[2].lower():
         SCICODE_EVAL_CONFIG['with_background'] = True
     if 'cleanup' in sys.argv[2]:
-        SCICODE_EVAL_CONFIG['cleanup_output'] = True
+        SCICODE_EVAL_CONFIG['cleanup_code'] = True
     test_evaluator(team_role_fp=sys.argv[1], eval_suffix=sys.argv[2])
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")

@@ -284,8 +284,8 @@ $functions"""
         code_str = ""
         for _lang, code in self._code_history:
             if lang != _lang: continue
-            code_str += code
-        return code_str + "\n"
+            code_str += code + '\n'
+        return code_str
 
     def _execute_code_dont_check_setup(self, code_blocks: List[CodeBlock]) -> CommandLineCodeResult:
         logs_all = ""
