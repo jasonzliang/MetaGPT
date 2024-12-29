@@ -30,7 +30,7 @@ BACKGOUND_PROMPT_TEMPLATE = Path("scicode_data", "multistep_template_v2.txt").re
 
 H5PY_FILE = os.path.join("scicode_data/test_data.h5")
 CLEANUP_TMP_FILES = False
-TEST_TIMEOUT = 120
+TEST_TIMEOUT = 300
 
 
 class Gencode:
