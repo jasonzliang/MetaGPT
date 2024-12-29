@@ -359,6 +359,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         self.objective = self.config.get("objective", "problem_acc")
         assert self.objective in SCICODE_OBJ
         self.cleanup_output = self.config.get("cleanup_output", True)
+        self.cleanup_final = self.cofnig.get("cleanup_final", False)
         # self.shuffle_seed = self.config.get("shuffle_seed", None)
 
     def _download_testdata(self):
@@ -533,7 +534,7 @@ EVAL_BUILDER_LLM_CONFIG = {
     'custom_coding_instruct': True,
     'use_agent_library': False,
     'agent_lib_include_coding_instruct': True,
-    'agent_lib_include_insights': False,
+    'agent_lib_include_insights': True,
     'temperature': 0.9
 }
 
