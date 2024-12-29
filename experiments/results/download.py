@@ -6,7 +6,7 @@ import time
 SERVER_IP = "biggpu"
 EXPERIMENT_NAME = "*"
 SERVER_DIR = "~/Desktop/MetaGPT/experiments/results"
-EXCLUDE_DIRS = ["old_results"]
+EXCLUDE_DIRS = []
 LOCAL_DIR = SERVER_DIR
 
 if __name__ == "__main__":
