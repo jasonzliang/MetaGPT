@@ -524,7 +524,7 @@ With following description: {function_description}
 
         return self.builder_model.create(messages=messages)
 
-    def cleanup_output(self, code_file):
+    def cleanup_code(self, code_file):
         if code_file is None: return
         assert os.path.exists(code_file)
         with open(code_file, 'r') as f: python_code = f.read()
