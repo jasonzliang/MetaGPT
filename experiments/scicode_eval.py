@@ -458,16 +458,16 @@ from scicode.parse.parse import process_hdf5_to_tuple
                            correct_prob[i] == tot_prob[i]
                            and tot_prob[i] != 0)
 
-    print(f'correct problems: {correct_prob_num}/{DEV_PROB_NUM if dev_set else PROB_NUM}')
-    print(f'correct steps: {len(correct_step)}/{DEV_STEP_NUM if dev_set else STEP_NUM}')
+    print(f'Correct problems: {correct_prob_num}/{DEV_PROB_NUM if dev_set else PROB_NUM}')
+    print(f'Correct steps: {len(correct_step)}/{DEV_STEP_NUM if dev_set else STEP_NUM}')
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     with open(f'{output_dir}/{model_name}_{_get_background_dir(with_background)}.txt', 'w') as f:
-        f.write(f'correct problems: {correct_prob_num}/{DEV_PROB_NUM if dev_set else PROB_NUM}\n')
-        f.write(f'correct steps: {len(correct_step)}/{DEV_STEP_NUM if dev_set else STEP_NUM}\n\n')
-        f.write(f'duration: {test_time} seconds\n')
-        f.write('\ncorrect problems: ')
+        f.write(f'Correct problems: {correct_prob_num}/{DEV_PROB_NUM if dev_set else PROB_NUM}\n')
+        f.write(f'Correct steps: {len(correct_step)}/{DEV_STEP_NUM if dev_set else STEP_NUM}\n\n')
+        f.write(f'Duration: {test_time} seconds\n')
+        f.write('\nCorrect problems: ')
         f.write(f'\n\n{[i + 1 for i in range(ALL_PROB_NUM) if correct_prob[i] == tot_prob[i] and tot_prob[i] != 0]}\n')
 
     with open(f'{output_dir}/{model_name}_{_get_background_dir(with_background)}.json', 'w', encoding='utf-8') as f:
