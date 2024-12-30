@@ -570,7 +570,7 @@ def compare_scicode_evals(
 
         # Customize the plot
         plt.grid(True, axis='y', color='lightgray', alpha=0.5)
-        plt.title('Comparison of %s for N=%s SciCode Eval (Background: %s)' % \
+        plt.title('Comparison of %s for %s SciCode Eval (Background: %s)' % \
             (key, n, with_background))
         plt.xlabel('Evaluation Date (Days)')
         plt.ylabel(key)
