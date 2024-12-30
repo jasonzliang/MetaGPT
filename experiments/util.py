@@ -6,6 +6,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 import datetime
 import functools
+import glob
 import json
 import os
 import math
@@ -619,6 +620,17 @@ def convert_to_comments(text: str) -> str:
         else: new_lines.append(f"# {line}")
 
     return '\n'.join(new_lines)
+
+
+def glob_result_dirs(result_dirs):
+    if isinstance(result_dirs, str): result_dirs = [result_dirs]
+    _result_dirs = []
+    for result_dir in result_dirs:
+        _result_dirs.extend(glob.glob(result_dir))
+    result_dirs = list(set(_result_dirs))
+    assert len(result_dirs) > 0
+    result_dirs = sorted(result_dirs, key=lambda x: os.path.basename(x))
+    return result_dirs
 
 
 def killtree(pid, including_parent=True):

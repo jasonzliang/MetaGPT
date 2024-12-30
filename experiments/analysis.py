@@ -12,12 +12,14 @@ import sys
 import time
 import traceback
 
+from adjustText import adjust_text
 import matplotlib
 matplotlib.rcParams["pdf.fonttype"] = 42
 matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt
 import numpy as np
 from ruamel.yaml import YAML
+import seaborn as sns
 from scipy.stats import ttest_ind
 
 from analysis_util import get_fitness_file, load_checkpoint, get_checkpoints
@@ -25,8 +27,8 @@ from analysis_util import generate_evalplus_weights_file
 from analysis_util import COLORS, LINEWIDTH, FIG_SIZE, PLOT_FMT, PROP_CYCLER
 from role_ga import Individual
 from llm_operators import DEFAULT_MAIN_ROLE, DEFAULT_MAIN_ROLE_V2
-from self_improve import _load_checkpoint
-from util import extract_evalplus, datetime_to_epoch
+from self_improve import _load_checkpoint as load_self_improve_chkpt
+from util import extract_evalplus, datetime_to_epoch, glob_result_dirs
 from util import get_indv_config, get_eval_config
 
 # Directory to get results from
@@ -425,11 +427,11 @@ def visualize_self_improve_perf(
     key_filter=('gen_solved', None, 0),
     out_dir='results/'):
 
-    if use_glob: result_dirs = _glob_result_dirs(_glob_result_dirs)
+    if use_glob: result_dirs = glob_result_dirs(result_dirs)
 
     solution_dict = defaultdict(list); solved_counter = defaultdict(list)
     for result_dir in result_dirs:
-        checkpoint_dict = _load_checkpoint(result_dir)
+        checkpoint_dict = load_self_improve_chkpt(result_dir)
         assert checkpoint_dict is not None
         for solution in checkpoint_dict['solution_set']['solutions']:
             if solution['gen_solved'] is not None:
@@ -485,12 +487,112 @@ def visualize_self_improve_perf(
 def compare_scicode_evals(
     result_dirs,
     use_glob=True,
+    with_background=False,
+    test_set=True,
+    label_top_k=8,
     out_dir='results/'):
-    pass
+
+    def _scatter_label(ax, n, x, y):
+        texts = []
+        for i in range(n):
+            texts.append(ax.text(x[i], y[i], i+1,
+                horizontalalignment='left', size='large', color='black',
+                weight='semibold'))
+        adjust_text(texts,
+           arrowprops=dict(arrowstyle='->', color='gray', lw=0.5),
+           expand=(6, 6))
+
+    if use_glob: result_dirs = glob_result_dirs(result_dirs)
+    if with_background: result_name = 'scicode_eval_with_background.txt'
+    else: result_name = 'scicode_eval_without_background.txt'
+    if test_set: gd_total = (288, 65)
+    else: gd_total = (50, 15)
+
+    result_list = []
+    for result_dir in result_dirs:
+        result_file = glob.glob(os.path.join(result_dir, result_name))
+        if len(result_file) == 0: continue
+        else: result_file = result_file[0]
+
+        result_dict = {'name': os.path.basename(result_dir),
+            'time': os.path.getmtime(result_file)}
+
+        with open(result_file, 'r') as f:
+            for line in f.readlines():
+                if line.lower().startswith("correct"):
+                    try:
+                        value = int(line.split(':')[1].strip().split('/')[0])
+                        total = int(line.split(':')[1].strip().split('/')[1])
+                    except:
+                        continue
+
+                    if "steps" in line:
+                        result_dict['solved_sub_problems'] = value
+                        result_dict['sub_problems_total'] = total
+                    elif "problems" in line:
+                        result_dict['solved_problems'] = value
+                        result_dict['problems_total'] = total
+
+        try:
+            assert 'solved_problems' in result_dict
+            assert 'solved_sub_problems' in result_dict
+            assert result_dict['sub_problems_total'] == gd_total[0]
+            assert result_dict['problems_total'] == gd_total[1]
+        except:
+            continue
+
+        pprint.pprint(result_dict)
+        result_list.append(result_dict)
+
+    n = len(result_list); assert 0 <= label_top_k <= n
+    if n == 0: return
+    min_time = min(x['time'] for x in result_list)
+    for result_dict in result_list:
+        result_dict['time'] = (result_dict['time'] - min_time) / 86400.0
+
+    for key in ['solved_problems', 'solved_sub_problems']:
+        result_list = sorted(result_list, reverse=True, key=lambda x: x[key])
+        plt.figure(figsize=(20, 8))
+
+        _result_list = result_list[label_top_k:]
+        ax = sns.scatterplot(
+            x=[x['time'] for x in _result_list],
+            y=[x[key] for x in _result_list],
+            color='red')
+
+        _result_list = result_list[:label_top_k]
+        x = [x['time'] for x in _result_list]
+        y = [x[key] for x in _result_list]
+        labels = ["%s. %s (%s, %s)" % (i+1, x['name'], x['solved_sub_problems'],
+            x['solved_problems']) for i, x in enumerate(_result_list)]
+        ax = sns.scatterplot(x=x, y=y, color='blue')
+        _scatter_label(ax, len(_result_list), x, y)
+
+        # Customize the plot
+        plt.grid(True, axis='y', color='lightgray', alpha=0.5)
+        plt.title('Comparison of %s for N=%s SciCode Eval (Background: %s)' % \
+            (key, n, with_background))
+        plt.xlabel('Evaluation Date (Days)')
+        plt.ylabel(key)
+
+        if len(labels) > 0:
+            plt.legend(title='Top Evaluations:\n%s' % '\n'.join(labels),
+                bbox_to_anchor=(1.01, 1),
+                loc='upper left')
+        plt.tight_layout()
+
+        # Save the plot to file
+        out_file = os.path.join(out_dir, "scicode_BG-%s_K-%s_N-%s.png" % \
+            (with_background, key, n))
+        plt.savefig(out_file, dpi=200, bbox_inches='tight')
+        plt.close()
 
 
 if __name__ == "__main__":
-    compare_scicode_evals()
+    result_dirs = ['results/evalG*', 'results/self_improve_11_24/evalG*',
+        'results/self_improve_11_29/evalG*', 'results/old_results/evalG*']
+    compare_scicode_evals(result_dirs, with_background=True)
+    compare_scicode_evals(result_dirs, with_background=False)
     # compare_experiments_main()
     # multirun_evalplus_exp(sys.argv[1],
     #     use_true_fitness=True,

@@ -29,7 +29,7 @@ from llm_evaluator import _setup_indv, _setup_evaluator
 from llm_operators import DEFAULT_MAIN_ROLE_MIN
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
 from util import format_prompt, clear_autogen_cache, collect_stats_from_chat
-from util import calc_weighted_evalplus_score, yaml_dump
+from util import calc_weighted_evalplus_score, yaml_dump, glob_result_dirs
 from util import EVALPLUS_OBJ, SCICODE_OBJ, SLEEP_TIME
 
 EVALPLUS_EVAL_CONFIG = {
@@ -419,17 +419,6 @@ def self_improve_loop(team_role_fp=None,
     print("Self-improve loop finished")
 
 
-def _glob_result_dirs(result_dirs):
-    if isinstance(result_dirs, str): result_dirs = [result_dirs]
-    _result_dirs = []
-    for result_dir in result_dirs:
-        _result_dirs.extend(glob.glob(result_dir))
-    result_dirs = list(set(_result_dirs))
-    assert len(result_dirs) > 0
-    result_dirs = sorted(result_dirs, key=lambda x: os.path.basename(x))
-    return result_dirs
-
-
 def find_successful_agents(result_dirs,
     merge_agents=True,
     create_agent_lib=True,
@@ -440,7 +429,7 @@ def find_successful_agents(result_dirs,
     merge_insights_with_desc=False,
     output_dir=None):
 
-    result_dirs = _glob_result_dirs(result_dirs)
+    result_dirs = glob_result_dirs(result_dirs)
     if output_dir is None: output_dir = result_dirs[0]
 
     if evaluator is None:
