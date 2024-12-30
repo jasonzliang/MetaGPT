@@ -19,8 +19,8 @@ matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt
 import numpy as np
 from ruamel.yaml import YAML
-import seaborn as sns
 from scipy.stats import ttest_ind
+import seaborn as sns
 
 from analysis_util import get_fitness_file, load_checkpoint, get_checkpoints
 from analysis_util import generate_evalplus_weights_file

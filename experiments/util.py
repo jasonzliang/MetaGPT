@@ -623,6 +623,7 @@ def convert_to_comments(text: str) -> str:
 
 
 def glob_result_dirs(result_dirs):
+    """Return a sorted list of directories from a list of glob patterns"""
     if isinstance(result_dirs, str): result_dirs = [result_dirs]
     _result_dirs = []
     for result_dir in result_dirs:
