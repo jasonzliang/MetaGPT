@@ -25,6 +25,7 @@ from analysis_util import generate_evalplus_weights_file
 from analysis_util import COLORS, LINEWIDTH, FIG_SIZE, PLOT_FMT, PROP_CYCLER
 from role_ga import Individual
 from llm_operators import DEFAULT_MAIN_ROLE, DEFAULT_MAIN_ROLE_V2
+from self_improve import _load_checkpoint
 from util import extract_evalplus, datetime_to_epoch
 from util import get_indv_config, get_eval_config
 
@@ -424,8 +425,7 @@ def visualize_self_improve_perf(
     key_filter=('gen_solved', None, 0),
     out_dir='results/'):
 
-    if use_glob:
-        result_dirs = _glob_result_dirs(_glob_result_dirs)
+    if use_glob: result_dirs = _glob_result_dirs(_glob_result_dirs)
 
     solution_dict = defaultdict(list); solved_counter = defaultdict(list)
     for result_dir in result_dirs:
@@ -486,6 +486,7 @@ def compare_scicode_evals(
     result_dirs,
     use_glob=True,
     out_dir='results/'):
+    pass
 
 
 if __name__ == "__main__":
