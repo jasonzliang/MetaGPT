@@ -20,8 +20,8 @@ import numpy as np
 from ruamel.yaml import YAML
 from scipy.stats import ttest_ind
 
-from analysis_util import \
-    get_fitness_file, load_checkpoint, get_checkpoints
+from analysis_util import get_fitness_file, load_checkpoint, get_checkpoints
+from analysis_util import generate_evalplus_weights_file
 from analysis_util import COLORS, LINEWIDTH, FIG_SIZE, PLOT_FMT, PROP_CYCLER
 from role_ga import Individual
 from llm_operators import DEFAULT_MAIN_ROLE, DEFAULT_MAIN_ROLE_V2
@@ -113,111 +113,7 @@ def _get_experiment_dirs():
     return sorted(expanded_dirs)
 
 
-# def combine_labels(experiment_dict):
-#     combined_dict = defaultdict(list)
-
-#     for (experiment_name, experiment_label), result_dict \
-#         in experiment_dict.items():
-
-#         combined_dict[experiment_label].append(result_dict)
-
-#     new_experiment_dict = {}
-#     for experiment_label, result_dicts in combined_dict.items():
-#         if len(result_dicts) > COMBINE_LABELS:
-#             result_dicts = random.sample(result_dicts, COMBINE_LABELS)
-
-#         best_values = [rs.get('best') for rs in result_dicts]
-#         print("Combined label: %s result lengths: %s" % (experiment_label,
-#             [len(bv) for bv in best_values]))
-#         max_length = max([len(bv) for bv in best_values])
-#         for bv in best_values:
-#             if len(bv) < max_length:
-#                 bv.extend([np.nan]*(max_length - len(bv)))
-
-#         combined_result_dict = {}
-#         combined_result_dict['best'] = np.nanmean(best_values, axis=0)
-#         combined_result_dict['best_std'] = np.nanstd(best_values, axis=0)
-#         combined_result_dict['num_trials'] = len(result_dicts)
-
-#         intervals = np.array([rs.get('interval') for rs in result_dicts])
-#         assert np.all(intervals == intervals[0])
-#         combined_result_dict['interval'] = intervals[0]
-
-#         if OVERRIDE_INTERVAL is not None:
-#             assert combined_result_dict['interval'] % OVERRIDE_INTERVAL == 0 \
-#                 or OVERRIDE_INTERVAL % combined_result_dict['interval'] == 0
-#             ratio = int(OVERRIDE_INTERVAL/combined_result_dict['interval'])
-#             if ratio > 1:
-#                 combined_result_dict['best'] = \
-#                     combined_result_dict['best'][::ratio]
-#                 combined_result_dict['best_std'] = \
-#                     combined_result_dict['best_std'][::ratio]
-#             elif ratio == 0:
-#                 ratio = int(combined_result_dict['interval']/OVERRIDE_INTERVAL)
-#                 combined_result_dict['interval'] = OVERRIDE_INTERVAL
-#                 combined_result_dict['best'] = \
-#                     np.repeat(combined_result_dict['best'], ratio)
-#                 combined_result_dict['best_std'] = \
-#                     np.repeat(combined_result_dict['best_std'], ratio)
-
-#         new_experiment_dict[(experiment_label, experiment_label)] = \
-#             combined_result_dict
-#     return new_experiment_dict
-
-
-# def t_test(experiment_dict):
-#     def print_stats(label, result_dict):
-#         if 'best_std' not in result_dict or 'best' not in result_dict:
-#             return
-#         std = result_dict.get("best_std")[-1] * 100
-#         best = result_dict.get("best")[-1] * 100
-#         print("%s: %.2f (%.2f)" % (label, best, std))
-
-#     baselines = []
-#     experiments = []
-#     for (experiment_name, experiment_label), result_dict in \
-#         experiment_dict.items():
-#         if 'Baseline' in experiment_label:
-#             baselines.append((experiment_label, result_dict))
-#         else:
-#             experiments.append((experiment_label, result_dict))
-
-#     for exp_label, result_dict in experiments:
-#         print_stats(exp_label, result_dict)
-#     for b_label, b_result_dict in baselines:
-#         print_stats(b_label, b_result_dict)
-
-#     for exp_label, result_dict in experiments:
-#         if 'best_std' not in result_dict or 'best' not in result_dict:
-#             continue
-
-#         best_baselines = [(l, max(rd.get('best'))) for l, rd in baselines]
-#         exceeded = set()
-#         total_epochs = len(result_dict.get('best')) * \
-#             result_dict.get('interval')
-#         for i, value in enumerate(result_dict.get('best')):
-#             epochs = (i + 1) * result_dict.get('interval')
-#             for l, bb in best_baselines:
-#                 if value >= bb and l not in exceeded:
-#                     print("Training percentage to exceed baseline %s: %s/%s" % \
-#                         (l, epochs, total_epochs))
-#                     exceeded.add(l)
-
-#         for b_label, b_result_dict in baselines:
-
-#             s, p = ttest_ind_from_stats(
-#                 result_dict.get('best')[-1],
-#                 result_dict.get('best_std')[-1],
-#                 result_dict.get('num_trials'),
-#                 b_result_dict.get('best')[-1],
-#                 b_result_dict.get('best_std')[-1],
-#                 b_result_dict.get('num_trials'),
-#                 equal_var=False)
-
-#             print("T-test %s/%s: %.2f" % (exp_label, b_label, p))
-
-
-def _compare_experiments():
+def _compare_evo_experiments():
     experiment_dict = {}
     for experiment_label, experiment_dir in _get_experiment_dirs():
         experiment_name = os.path.basename(experiment_dir)
@@ -231,18 +127,11 @@ def _compare_experiments():
 
         experiment_dict[(experiment_name, experiment_label)] = result_dict
 
-    # if COMBINE_LABELS is not None:
-    #     assert not PLOT_WALL_TIME
-    #     experiment_dict = combine_labels(experiment_dict)
-
     if FILTER_TOP_EXPERIMENTS is not None:
         experiment_dict = dict(sorted(experiment_dict.items(), reverse=True,
             key=lambda x: max(x[1].get('best')))[:FILTER_TOP_EXPERIMENTS])
 
-    assert len(experiment_dict) > 0
-    # t_test(experiment_dict)
-
-    plt.figure(figsize=FIG_SIZE)
+    assert len(experiment_dict) > 0; plt.figure(figsize=FIG_SIZE)
     for i, ((experiment_name, experiment_label),
         result_dict) in enumerate(sorted(experiment_dict.items())):
 
@@ -290,7 +179,7 @@ def _compare_experiments():
     plt.savefig(OUT_FILE, bbox_inches='tight', dpi=200)
 
 
-def compare_experiments_main():
+def compare_evo_experiments_main():
     _experiment_dirs = [
         [('Single-agent + weighted fitness/coding instruct (8/20)', 'results/8_20_multirole_coding_prompt'),
         ('Multi-agent + weighted fitness/coding instruct (8/19)', 'results/8_19_multirole_coding_prompt')],
@@ -315,10 +204,11 @@ def compare_experiments_main():
         exp_names = '-'.join([os.path.basename(y) for x, y in EXPERIMENT_DIRS])
         OUT_FILE = ('results/%s_MAXGEN-%s_RANGE-%s_METRIC-%s.%s' % \
             (exp_names, MAX_GEN, FITNESS_RANGE, FITNESS_METRIC, PLOT_FMT))[:255]
-        _compare_experiments()
+        _compare_evo_experiments()
 
 
-def multirun_evalplus(use_prompt=True,
+def multirun_evalplus(
+    use_prompt=True,
     main_prompt=DEFAULT_MAIN_ROLE_V2,
     team_prompt='config/8_3_best_multirole.json',
     evolve_mode='team',
@@ -382,8 +272,7 @@ def multirun_evalplus(use_prompt=True,
             YAML().dump(population[0].config, f)
 
         if experiment_dir is not None:
-            eval_config = get_eval_config(experiment_dir,
-                config_name=config_name)
+            eval_config = get_eval_config(experiment_dir, config_name)
         else: eval_config = {}
         eval_config['n_workers'] = n_workers; eval_config['dataset'] = dataset
         print("Running %s trials with evaluator" % n_trials); time.sleep(3)
@@ -426,7 +315,8 @@ def multirun_evalplus(use_prompt=True,
     return result_dir
 
 
-def multirun_evalplus_exp(experiment_dir,
+def multirun_evalplus_exp(
+    experiment_dir,
     top_n=1,
     min_samples=3,
     agg_func=np.median, # np.mean, np.median, np.max, lambda x: x[-1]
@@ -476,75 +366,8 @@ def multirun_evalplus_exp(experiment_dir,
     return result_dirs
 
 
-def generate_evalplus_weights_file(jsons_dir,
-    result_dir=".",
-    min_weight=0.0,
-    max_weight=1.0,
-    use_quantile_weights=True,
-    quantiles_probs=[0.25, 0.5, 0.75, 1.0],
-    quantile_weights=[0.25, 0.5, 0.75, 1.0]):
-
-    def normalize(v):
-        return v * (max_weight - min_weight) + min_weight
-
-    def get_weights(score_count, total_count):
-        for k, v in score_count.items():
-            score_count[k] = normalize(v/total_count)
-
-        if use_quantile_weights:
-            assert len(quantiles_probs) == len(quantile_weights)
-            quantiles = np.quantile(list(score_count.values()), quantiles_probs)
-            # print("Quantiles: %s" % quantiles)
-            weights_dict = {}
-            for k, v in score_count.items():
-                for q, qw in zip(quantiles, quantile_weights):
-                    if q >= v:
-                        weights_dict[k] = qw; break
-            return weights_dict
-        else:
-            return score_count
-
-    base_count = {}; plus_count = {}; _b = {}; _p = {}; total_count = 0.0
-    for eval_json in glob.glob(os.path.join(jsons_dir, "**/eval_results.json"),
-        recursive=True):
-
-        print("Processing %s" % eval_json); total_count += 1.0
-        with open(eval_json, 'r') as f: eval_dict = json.load(f)
-
-        for task_id, result in eval_dict['eval'].items():
-            if task_id not in base_count:
-                base_count[task_id] = 0.0; _b[task_id] = 0.0
-            if task_id not in plus_count:
-                plus_count[task_id] = 0.0; _p[task_id] = 0.0
-
-            if result[0]['base_status'] != "pass": base_count[task_id] += 1.0
-            else: _b[task_id] += 1.0
-            if result[0]['plus_status'] != "pass": plus_count[task_id] += 1.0
-            else: _p[task_id] += 1.0
-
-    for k in base_count:
-        assert k in _b; assert _b[k] + base_count[k] == total_count
-    for k in plus_count:
-        assert k in _p; assert _p[k] + plus_count[k] == total_count
-    print("Processed %d results" % total_count)
-
-    base_weights = get_weights(base_count, total_count)
-    plus_weights = get_weights(plus_count, total_count)
-    bw = list(base_weights.values()); pw = list(plus_weights.values())
-    weights_dict = {'base_weights': base_weights,
-        'plus_weights': plus_weights,
-        'base_weights_mean': np.mean(bw),
-        'base_weights_std': np.std(bw),
-        'plus_weights_mean': np.mean(pw),
-        'plus_weights_std': np.std(pw)}
-
-    outfile = os.path.join(result_dir,
-        os.path.basename(jsons_dir) + "_weights.json")
-    with open(outfile, 'w') as f: json.dump(weights_dict, f, indent=4)
-    pprint.pprint(weights_dict)
-
-
-def compare_agent_chat_stats(experiment_dir,
+def compare_agent_chat_stats(
+    experiment_dir,
     top_n=5,
     agg_func=np.mean,
     gen_range=(10, None),
@@ -593,9 +416,81 @@ def compare_agent_chat_stats(experiment_dir,
     print("Bottom code count agents:\n%s" % worst_code_count)
     print("\n")
 
+
+def visualize_self_improve_perf(
+    result_dirs,
+    use_glob=True,
+    key='num_tries',
+    key_filter=('gen_solved', None, 0),
+    out_dir='results/'):
+
+    if use_glob:
+        result_dirs = _glob_result_dirs(_glob_result_dirs)
+
+    solution_dict = defaultdict(list); solved_counter = defaultdict(list)
+    for result_dir in result_dirs:
+        checkpoint_dict = _load_checkpoint(result_dir)
+        assert checkpoint_dict is not None
+        for solution in checkpoint_dict['solution_set']['solutions']:
+            if solution['gen_solved'] is not None:
+                name = os.path.basename(result_dir)
+                solved_counter[name].append(solution['num_tries'])
+
+            prob_id = solution['prob_id']; assert key in solution
+            _key, _cond, _value = key_filter
+            if solution[_key] == _cond:
+                solution_dict[prob_id].append(_value)
+            else:
+                solution_dict[prob_id].append(solution[key])
+
+    categories = []; values = []
+    for _key, _values in solution_dict.items():
+        categories.append(_key); values += _values
+    num_probs = len(solution_dict); groups = []
+    for result_dir in result_dirs:
+        name = os.path.basename(result_dir)
+        n_solved = len(solved_counter[name])
+        avg_tries = "%.2f" % np.mean(solved_counter[name])
+        groups.append(name + " (%s/%s, avg tries: %s)" % \
+            (n_solved, num_probs, avg_tries))
+
+    # Create Pandas DataFrame
+    data = {
+        'categories': np.repeat(categories, len(groups)),
+        'groups': np.tile(groups, len(categories)),
+        'values': values,
+    }
+    assert len(data['categories']) == len(data['groups']) == len(data['values'])
+    df = pd.DataFrame(data)
+    plt.figure(figsize=(10 + len(result_dirs), 6))
+    ax = sns.barplot(x='categories', y='values', hue='groups', data=df)
+
+    # Customize the plot
+    for i in range(1, len(categories)):
+        plt.axvline(x=i - 0.5, color='gray', linestyle='--', alpha=0.5)
+    plt.grid(True, axis='y', color='lightgray', alpha=0.5)
+    plt.title('Comparison of Problem %s for Self-Improve Experiments' % key)
+    plt.xlabel('Problem ID')
+    plt.ylabel(key)
+    plt.legend(title='Experiments', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+
+    # Save the plot to file
+    out_file = os.path.join(out_dir, "comp_%s_%s.png" % \
+        (key, os.path.basename(result_dirs[0])))
+    plt.savefig(out_file, dpi=200, bbox_inches='tight')
+    plt.close()
+
+
+def compare_scicode_evals(
+    result_dirs,
+    use_glob=True,
+    out_dir='results/'):
+
+
 if __name__ == "__main__":
+    compare_scicode_evals()
     # compare_experiments_main()
-    multirun_evalplus()
     # multirun_evalplus_exp(sys.argv[1],
     #     use_true_fitness=True,
     #     eval_indv=False)

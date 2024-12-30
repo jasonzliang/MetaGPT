@@ -297,8 +297,8 @@ Stack trace/exception for test cases:\n%s""" % \
 # -Compressing agent chat history with LLMLingua text compressor (Done)
 # -Create a library of different expert agents to choose from (Done)
 # -Cleanup code after chat to remove any errors or inconsistencies (Done)
+# -Figure out why background comments are not being saved (Done)
 # -Create a hierarchical team where there is a leader that delegates tasks (WIP)
-# -Figure out why background comments are not being saved (WIP)
 # -Have multiple rounds of competition between agents, everyone give score to code
 # -Let agents “cheat” by looking at the ground truth code
 # -Change self_improve_loop in a class and arguments/configuration into yaml/dict
@@ -499,75 +499,7 @@ def find_successful_agents(result_dirs,
         with open(out_file, 'w') as f: json.dump(agent_library, f, indent=4)
 
 
-def visualize_performance(result_dirs,
-    use_glob=True,
-    key='num_tries',
-    key_filter=('gen_solved', None, 0),
-    out_dir='results/'):
-
-    if use_glob:
-        result_dirs = _glob_result_dirs(_glob_result_dirs)
-
-    solution_dict = defaultdict(list); solved_counter = defaultdict(list)
-    for result_dir in result_dirs:
-        checkpoint_dict = _load_checkpoint(result_dir)
-        assert checkpoint_dict is not None
-        for solution in checkpoint_dict['solution_set']['solutions']:
-            if solution['gen_solved'] is not None:
-                name = os.path.basename(result_dir)
-                solved_counter[name].append(solution['num_tries'])
-
-            prob_id = solution['prob_id']; assert key in solution
-            _key, _cond, _value = key_filter
-            if solution[_key] == _cond:
-                solution_dict[prob_id].append(_value)
-            else:
-                solution_dict[prob_id].append(solution[key])
-
-    categories = []; values = []
-    for _key, _values in solution_dict.items():
-        categories.append(_key); values += _values
-    num_probs = len(solution_dict); groups = []
-    for result_dir in result_dirs:
-        name = os.path.basename(result_dir)
-        n_solved = len(solved_counter[name])
-        avg_tries = "%.2f" % np.mean(solved_counter[name])
-        groups.append(name + " (%s/%s, avg tries: %s)" % \
-            (n_solved, num_probs, avg_tries))
-
-    # Create Pandas DataFrame
-    data = {
-        'categories': np.repeat(categories, len(groups)),
-        'groups': np.tile(groups, len(categories)),
-        'values': values,
-    }
-    assert len(data['categories']) == len(data['groups']) == len(data['values'])
-    df = pd.DataFrame(data)
-    plt.figure(figsize=(10 + len(result_dirs), 6))
-    ax = sns.barplot(x='categories', y='values', hue='groups', data=df)
-
-    # Customize the plot
-    for i in range(1, len(categories)):
-        plt.axvline(x=i - 0.5, color='gray', linestyle='--', alpha=0.5)
-    plt.grid(True, axis='y', color='lightgray', alpha=0.5)
-    plt.title('Comparison of Problem %s for Self-Improve Experiments' % key)
-    plt.xlabel('Problem ID')
-    plt.ylabel(key)
-    plt.legend(title='Experiments', bbox_to_anchor=(1.05, 1), loc='upper left')
-    plt.tight_layout()
-
-    # Save the plot to file
-    out_file = os.path.join(out_dir, "comp_%s_%s.png" % \
-        (key, os.path.basename(result_dirs[0])))
-    plt.savefig(out_file, dpi=200, bbox_inches='tight')
-    plt.close()
-
-
 if __name__ == "__main__":
-    # find_successful_agents(["results/12_5*"], merge_agents=False)
-    # visualize_performance(["results/12_5*",
-    #     "results/11_29*",
-    #     "results/self_improve_11_24/11_*no_update"])
     exp_name = sys.argv[2]
     if "lingua" in sys.argv[2].lower():
         EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True

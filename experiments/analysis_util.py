@@ -36,14 +36,14 @@ def is_outlier(points, threshold=3.5):
 
     Parameters:
     -----------
-        points : An numobservations by numdimensions array of observations
+        points : An num-observations by num-dimensions array of observations
         threshold : The modified z-score to use as a threshold. Observations with
             a modified z-score (based on the median absolute deviation) greater
             than this value will be classified as outliers.
 
     Returns:
     --------
-        mask : A numobservations-length boolean array.
+        mask : A num-observations-length boolean array.
 
     References:
     ----------
@@ -159,6 +159,74 @@ def load_checkpoint(checkpoint, gen=False, cache=True):
         return_data = return_data[0]
     print("Parsed following checkpoint: %s" % os.path.basename(checkpoint))
     return return_data
+
+
+def generate_evalplus_weights_file(jsons_dir,
+    result_dir=".",
+    min_weight=0.0,
+    max_weight=1.0,
+    use_quantile_weights=True,
+    quantiles_probs=[0.25, 0.5, 0.75, 1.0],
+    quantile_weights=[0.25, 0.5, 0.75, 1.0]):
+
+    def normalize(v):
+        return v * (max_weight - min_weight) + min_weight
+
+    def get_weights(score_count, total_count):
+        for k, v in score_count.items():
+            score_count[k] = normalize(v/total_count)
+
+        if use_quantile_weights:
+            assert len(quantiles_probs) == len(quantile_weights)
+            quantiles = np.quantile(list(score_count.values()), quantiles_probs)
+            # print("Quantiles: %s" % quantiles)
+            weights_dict = {}
+            for k, v in score_count.items():
+                for q, qw in zip(quantiles, quantile_weights):
+                    if q >= v:
+                        weights_dict[k] = qw; break
+            return weights_dict
+        else:
+            return score_count
+
+    base_count = {}; plus_count = {}; _b = {}; _p = {}; total_count = 0.0
+    for eval_json in glob.glob(os.path.join(jsons_dir, "**/eval_results.json"),
+        recursive=True):
+
+        print("Processing %s" % eval_json); total_count += 1.0
+        with open(eval_json, 'r') as f: eval_dict = json.load(f)
+
+        for task_id, result in eval_dict['eval'].items():
+            if task_id not in base_count:
+                base_count[task_id] = 0.0; _b[task_id] = 0.0
+            if task_id not in plus_count:
+                plus_count[task_id] = 0.0; _p[task_id] = 0.0
+
+            if result[0]['base_status'] != "pass": base_count[task_id] += 1.0
+            else: _b[task_id] += 1.0
+            if result[0]['plus_status'] != "pass": plus_count[task_id] += 1.0
+            else: _p[task_id] += 1.0
+
+    for k in base_count:
+        assert k in _b; assert _b[k] + base_count[k] == total_count
+    for k in plus_count:
+        assert k in _p; assert _p[k] + plus_count[k] == total_count
+    print("Processed %d results" % total_count)
+
+    base_weights = get_weights(base_count, total_count)
+    plus_weights = get_weights(plus_count, total_count)
+    bw = list(base_weights.values()); pw = list(plus_weights.values())
+    weights_dict = {'base_weights': base_weights,
+        'plus_weights': plus_weights,
+        'base_weights_mean': np.mean(bw),
+        'base_weights_std': np.std(bw),
+        'plus_weights_mean': np.mean(pw),
+        'plus_weights_std': np.std(pw)}
+
+    outfile = os.path.join(result_dir,
+        os.path.basename(jsons_dir) + "_weights.json")
+    with open(outfile, 'w') as f: json.dump(weights_dict, f, indent=4)
+    pprint.pprint(weights_dict)
 
 
 # def collect_ancestry_chain(experiment_dir, indv_id, initial_gen):
