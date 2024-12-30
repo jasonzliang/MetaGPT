@@ -46,37 +46,55 @@ SCICODE_OBJ = {'problem_acc': lambda x: x,
 SLEEP_TIME = 5
 
 
-def flatten(xss):
-    return [x for xs in xss for x in xs]
-
-
-def delete_contents_in_directory(directory_path, verbose=False):
-    with os.scandir(directory_path) as entries:
-        for entry in entries:
-            if verbose: print("Deleting %s" % entry.path)
-            try:
-                if entry.is_file(): os.unlink(entry.path)
-                else: shutil.rmtree(entry.path)
-            except:
-                if verbose: print("Deletion error\n%s" % traceback.format_exc())
-
-
-def clear_autogen_cache():
-    os.system("rm -rf .cache >/dev/null 2>&1")
-    delete_contents_in_directory("/tmp/")
-    # os.system("rm -rf /tmp/* >/dev/null 2>&1")
-
-
-def format_prompt(prompt, instruction):
+def extract_evalplus(result_file, logger=None):
+    assert os.path.exists(result_file); result_dict = {}
     try:
-        prompt = prompt.format(instruction=instruction)
+        with open(result_file, 'r') as f:
+            lines = f.readlines()
+
+        for i, line in enumerate(lines):
+            if "(base tests)" in line:
+                score = float(lines[i+1].rstrip().rsplit()[1])
+                assert 0.0 <= score <= 1.0
+                result_dict['base_score'] = score
+            if "(base + extra tests)" in line:
+                score = float(lines[i+1].rstrip().rsplit()[1])
+                assert 0.0 <= score <= 1.0
+                result_dict['plus_score'] = score
+            # Linux performance metrics
+            if platform.system() == 'Linux':
+                if "Maximum resident set size (kbytes)" in line:
+                    result_dict['memory_usage_mb'] = float(line.split()[-1])/1e3
+                if "Elapsed (wall clock) time" in line:
+                    result_dict['wall_time_sec'] = time_to_sec(line.split()[-1])
+                if "User time" in line:
+                    result_dict['user_time_sec'] = float(line.split()[-1])
+                if "System time" in line:
+                    result_dict['sys_time_sec'] = float(line.split()[-1])
+            else: # MacOS performance metrics
+                if "peak memory footprint" in line:
+                    result_dict['memory_usage_mb'] = float(line.split()[0])/1e6
+                if "instructions retired" in line:
+                    result_dict['num_instructions'] = float(line.split()[0])
+                if "real" in line and "user" in line and "sys" in line:
+                    result_dict['wall_time_sec'] = float(line.split()[0])
+                    result_dict['user_time_sec'] = float(line.split()[2])
+                    result_dict['sys_time_sec'] = float(line.split()[4])
+
+        assert "base_score" in result_dict and "plus_score" in result_dict
+        result_dict['hybrid_score'] = \
+            0.5 * result_dict["base_score"] + 0.5 * result_dict["plus_score"]
     except:
-        try: # If {instruction} not found, search for first braces
-            special_word = prompt[prompt.find("{"):prompt.find("}")+1]
-            prompt = prompt.replace(special_word, instruction)
-        except: # Last resort, just use problem directly
-            prompt = instruction
-    return prompt
+        stack_trace = traceback.format_exc()
+        with open(result_file + ".err", "w") as f: f.write(stack_trace)
+        if logger is None:
+            print("Evalplus extraction failed: %s" % result_file)
+            print(stack_trace)
+        else:
+            logger.info("Evalplus extraction failed: %s" % result_file)
+            logger.info(stack_trace)
+    finally:
+        return result_dict
 
 
 def calc_weighted_evalplus_score(result_dir,
@@ -574,6 +592,18 @@ def parse_prompt_template(rsp):
     return code_text
 
 
+def format_prompt(prompt, instruction):
+    try:
+        prompt = prompt.format(instruction=instruction)
+    except:
+        try: # If {instruction} not found, search for first braces
+            special_word = prompt[prompt.find("{"):prompt.find("}")+1]
+            prompt = prompt.replace(special_word, instruction)
+        except: # Last resort, just use problem directly
+            prompt = instruction
+    return prompt
+
+
 def convert_to_comments(text: str) -> str:
     """Convert a multiline string into Python comments using # symbols."""
 
@@ -601,55 +631,25 @@ def killtree(pid, including_parent=True):
         parent.kill()
 
 
-def extract_evalplus(result_file, logger=None):
-    assert os.path.exists(result_file); result_dict = {}
-    try:
-        with open(result_file, 'r') as f:
-            lines = f.readlines()
+def flatten(xss):
+    return [x for xs in xss for x in xs]
 
-        for i, line in enumerate(lines):
-            if "(base tests)" in line:
-                score = float(lines[i+1].rstrip().rsplit()[1])
-                assert 0.0 <= score <= 1.0
-                result_dict['base_score'] = score
-            if "(base + extra tests)" in line:
-                score = float(lines[i+1].rstrip().rsplit()[1])
-                assert 0.0 <= score <= 1.0
-                result_dict['plus_score'] = score
-            # Linux performance metrics
-            if platform.system() == 'Linux':
-                if "Maximum resident set size (kbytes)" in line:
-                    result_dict['memory_usage_mb'] = float(line.split()[-1])/1e3
-                if "Elapsed (wall clock) time" in line:
-                    result_dict['wall_time_sec'] = time_to_sec(line.split()[-1])
-                if "User time" in line:
-                    result_dict['user_time_sec'] = float(line.split()[-1])
-                if "System time" in line:
-                    result_dict['sys_time_sec'] = float(line.split()[-1])
-            else: # MacOS performance metrics
-                if "peak memory footprint" in line:
-                    result_dict['memory_usage_mb'] = float(line.split()[0])/1e6
-                if "instructions retired" in line:
-                    result_dict['num_instructions'] = float(line.split()[0])
-                if "real" in line and "user" in line and "sys" in line:
-                    result_dict['wall_time_sec'] = float(line.split()[0])
-                    result_dict['user_time_sec'] = float(line.split()[2])
-                    result_dict['sys_time_sec'] = float(line.split()[4])
 
-        assert "base_score" in result_dict and "plus_score" in result_dict
-        result_dict['hybrid_score'] = \
-            0.5 * result_dict["base_score"] + 0.5 * result_dict["plus_score"]
-    except:
-        stack_trace = traceback.format_exc()
-        with open(result_file + ".err", "w") as f: f.write(stack_trace)
-        if logger is None:
-            print("Evalplus extraction failed: %s" % result_file)
-            print(stack_trace)
-        else:
-            logger.info("Evalplus extraction failed: %s" % result_file)
-            logger.info(stack_trace)
-    finally:
-        return result_dict
+def delete_contents_in_directory(directory_path, verbose=False):
+    with os.scandir(directory_path) as entries:
+        for entry in entries:
+            if verbose: print("Deleting %s" % entry.path)
+            try:
+                if entry.is_file(): os.unlink(entry.path)
+                else: shutil.rmtree(entry.path)
+            except:
+                if verbose: print("Deletion error\n%s" % traceback.format_exc())
+
+
+def clear_autogen_cache():
+    os.system("rm -rf .cache >/dev/null 2>&1")
+    delete_contents_in_directory("/tmp/")
+    # os.system("rm -rf /tmp/* >/dev/null 2>&1")
 
 
 def time_to_sec(time_str):
@@ -901,7 +901,8 @@ class OutputRedirector:
 if __name__ == "__main__":
     imports = "import numpy as np"
     namespace = load_imports_from_string(imports)
-    test_func = """
+    test_func = \
+"""
 # Background
 # blah blah blah
 # blah blah blah
@@ -912,39 +913,6 @@ if __name__ == "__main__":
 # asdf
 # adsf asdf
 
-class Slater:
-    def __init__(self, alpha):
-        '''Args:
-            alpha: exponential decay factor
-        '''
-    def value(self, configs):
-        '''Calculate unnormalized psi
-        Args:
-            configs (np.array): electron coordinates of shape (nconf, nelec, ndim)
-        Returns:
-            val (np.array): (nconf,)
-        '''
-    def gradient(self, configs):
-        '''Calculate (gradient psi) / psi
-        Args:
-            configs (np.array): electron coordinates of shape (nconf, nelec, ndim)
-        Returns:
-            grad (np.array): (nconf, nelec, ndim)
-        '''
-    def laplacian(self, configs):
-        '''Calculate (laplacian psi) / psi
-        Args:
-            configs (np.array): electron coordinates of shape (nconf, nelec, ndim)
-        Returns:
-            lap (np.array): (nconf, nelec)
-        '''
-    def kinetic(self, configs):
-        '''Calculate the kinetic energy / psi
-        Args:
-            configs (np.array): electron coordinates of shape (nconf, nelec, ndim)
-        Returns:
-            kin (np.array): (nconf,)
-        '''
 """
     print(convert_to_comments(""))
     # print(extract_background_from_code(test_func, 0))
