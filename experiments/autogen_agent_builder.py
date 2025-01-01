@@ -73,41 +73,41 @@ class AgentBuilder:
 
     online_server_name = "online"
 
-    # DEFAULT_PROXY_AUTO_REPLY = 'There is no code from the last 1 message for me to execute. Group chat manager should let other participants to continue the conversation. If the group chat manager want to end the conversation, you should let other participant reply me only with "TERMINATE"'
+    DEFAULT_PROXY_AUTO_REPLY = 'There is no code from the last 1 message for me to execute. Group chat manager should let other participants to continue the conversation. If the group chat manager want to end the conversation, you should let other participant reply me only with "TERMINATE"'
 
-    DEFAULT_PROXY_AUTO_REPLY = 'There is no code from the last 1 message for me to execute. Group chat manager should let other participants continue the conversation. Participants should only reply with "TERMINATE" when they have confirmed that the original problem has been fully resolved and a working solution has been verified.'
-
-#     GROUP_CHAT_DESCRIPTION = """# Group chat instruction
-# You are now working in a group chat with different expert and a group chat manager.
-# You should refer to the previous message from other participant members or yourself, follow their topic and reply to them.
-
-# **Your role is**: {name}
-# Group chat members: {members}{user_proxy_desc}
-
-# When the task is complete and the result has been carefully verified, after obtaining agreement from the other members, you can end the conversation by replying only with "TERMINATE".
-
-# # Your profile
-# {sys_msg}
-# """
+    # DEFAULT_PROXY_AUTO_REPLY = 'There is no code from the last 1 message for me to execute. Group chat manager should let other participants continue the conversation. Participants should only reply with "TERMINATE" when they have confirmed that the original problem has been fully resolved and a working solution has been verified.'
 
     GROUP_CHAT_DESCRIPTION = """# Group chat instruction
-You are now working in a group chat with different experts and a group chat manager.
-You should refer to the previous messages from other participant members or yourself, follow their topic and reply to them.
+You are now working in a group chat with different expert and a group chat manager.
+You should refer to the previous message from other participant members or yourself, follow their topic and reply to them.
 
 **Your role is**: {name}
 Group chat members: {members}{user_proxy_desc}
 
-The conversation should only be terminated under these conditions:
-1. The task has been fully completed
-2. The solution has been thoroughly tested and verified to be correct
-3. All group members have explicitly confirmed the solution works as intended
-4. There is clear consensus among participants that no further improvements are needed
-
-Once all these conditions are met, you can end the conversation by replying only with "TERMINATE".
+When the task is complete and the result has been carefully verified, after obtaining agreement from the other members, you can end the conversation by replying only with "TERMINATE".
 
 # Your profile
 {sys_msg}
 """
+
+#     GROUP_CHAT_DESCRIPTION = """# Group chat instruction
+# You are now working in a group chat with different experts and a group chat manager.
+# You should refer to the previous messages from other participant members or yourself, follow their topic and reply to them.
+
+# **Your role is**: {name}
+# Group chat members: {members}{user_proxy_desc}
+
+# The conversation should only be terminated under these conditions:
+# 1. The task has been fully completed
+# 2. The solution has been thoroughly tested and verified to be correct
+# 3. All group members have explicitly confirmed the solution works as intended
+# 4. There is clear consensus among participants that no further improvements are needed
+
+# Once all these conditions are met, you can end the conversation by replying only with "TERMINATE".
+
+# # Your profile
+# {sys_msg}
+# """
 
     DEFAULT_DESCRIPTION = """## Your role
 [Complete this part with expert's name and skill description]
@@ -144,13 +144,13 @@ Once all these conditions are met, you can end the conversation by replying only
 - Suggest python code (in a python coding block) or shell script (in a sh coding block) for the Computer_terminal to execute.
 - If missing python packages, you can install the package by suggesting a `pip install` code in the ```sh ... ``` block.
 - When using code, you must indicate the script type in the coding block.
-- Do not suggest a coding block which requires users to modify.
+- Do not the coding block which requires users to modify.
 - Do not suggest a coding block if it's not intended to be executed by the Computer_terminal.
 - The Computer_terminal cannot modify your code.
 - **Use 'print' function for the output when relevant**.
 - Check the execution result returned by the Computer_terminal.
 - Do not ask Computer_terminal to copy and paste the result.
-- If the result indicates there is an error, fix the error and output the code again."""
+- If the result indicates there is an error, fix the error and output the code again. """
 
     CODING_PROMPT = """Does the following task need programming (i.e., access external API or tool by coding) to solve,
 or coding may help the following task become easier?
