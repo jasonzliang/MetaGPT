@@ -589,8 +589,10 @@ def compare_scicode_evals(
 
 
 if __name__ == "__main__":
-    result_dirs = ['results/evalG*', 'results/self_improve_11_24/evalG*',
-        'results/self_improve_11_29/evalG*', 'results/old_results/evalG*']
+    # result_dirs = ['results/evalG*', 'results/self_improve_11_24/evalG*',
+    #     'results/self_improve_11_29/evalG*', 'results/old_results/evalG*']
+    result_dirs = ['results/evalG*library*', 'results/self_improve_11_24/evalG*library*',
+        'results/self_improve_11_29/evalG*library*', 'results/old_results/evalG*']
     compare_scicode_evals(result_dirs, with_background=True)
     compare_scicode_evals(result_dirs, with_background=False)
     # compare_experiments_main()
