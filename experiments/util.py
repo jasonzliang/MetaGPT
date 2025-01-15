@@ -2,7 +2,7 @@ import ast
 import asyncio
 import calendar
 import copy
-from collections import defaultdict
+from collections import defaultdict, abc
 from contextlib import contextmanager
 import datetime
 import functools
@@ -919,7 +919,7 @@ def recursive_update(default_dict: dict, update_dict: Optional[dict]) -> dict:
 
     for key, value in update_dict.items():
         default_value = default_dict.get(key)
-        if isinstance(default_value, dict) and isinstance(value, dict):
+        if isinstance(default_value, abc.Mapping) and isinstance(value, abc.Mapping):
             # Recursively update nested dictionaries
             default_dict[key] = recursive_update(default_value, value)
         else:
@@ -946,11 +946,3 @@ if __name__ == "__main__":
 
 """
     print(convert_to_comments(""))
-    # print(extract_background_from_code(test_func, 0))
-    # from scicode.parse.parse import extract_function_name
-    # # test_func_name = extract_function_name(test_func)
-    # test_func_name = extract_name_from_function(test_func)
-    # print(test_func_name)
-    # print(eval_function_from_string(namespace, test_func, test_func_name))
-    # print(parse_comment_block(x))
-    # yaml_dump(sys.argv[1], sys.argv[1].replace(".yaml", ".p.yaml"))

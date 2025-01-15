@@ -34,6 +34,8 @@ def exponential_smoothing(series, alpha):
     return results
 
 def recursive_update(d, u):
+    if u is None: return d
+
     for k, v in u.items():
         if isinstance(v, abc.Mapping):
             d[k] = recursive_update(d.get(k, {}), v)
