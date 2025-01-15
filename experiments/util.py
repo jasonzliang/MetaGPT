@@ -911,6 +911,23 @@ class OutputRedirector:
             self.file = None
 
 
+def recursive_update(default_dict: dict, update_dict: Optional[dict]) -> dict:
+    """Recursively updates the default_dict with values from update_dict."""
+    if update_dict is None:
+        return default_dict
+
+    for key, value in update_dict.items():
+        default_value = default_dict.get(key)
+        if isinstance(default_value, dict) and isinstance(value, dict):
+            # Recursively update nested dictionaries
+            default_dict[key] = recursive_update(default_value, value)
+        else:
+            # Update the value or add new key
+            default_dict[key] = value
+
+    return default_dict
+
+
 if __name__ == "__main__":
     imports = "import numpy as np"
     namespace = load_imports_from_string(imports)

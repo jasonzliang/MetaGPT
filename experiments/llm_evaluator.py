@@ -41,7 +41,7 @@ from scicode_eval import Gencode, test_code
 from util import EVALPLUS_OBJ, SCICODE_OBJ, SLEEP_TIME
 from util import extract_evalplus, extract_code_from_chat, killtree, get_time
 from util import format_prompt, clear_autogen_cache, collect_stats_from_chat
-from util import calc_weighted_evalplus_score, yaml_dump
+from util import calc_weighted_evalplus_score, yaml_dump, recursive_update
 
 
 class EvalPlusEvaluator(object):
@@ -288,14 +288,17 @@ class EvalPlusEvaluator(object):
                 debug_mode=self.debug_mode > 0)
 
     def _setup_llm_configs(self, indv):
-        builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
+        builder_llm_config = copy.deepcopy(BUILDER_LLM_CONFIG)
         builder_llm_config.update(indv.llm_config.get("builder_llm_config", {}))
-        chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
+        chat_llm_config = copy.deepcopy(CHAT_LLM_CONFIG)
         chat_llm_config.update(indv.llm_config.get("chat_llm_config", {}))
-        captain_llm_config = copy.copy(CAPTAIN_LLM_CONFIG)
-        captain_llm_config.update(indv.llm_config.get("captain_llm_config", {}))
+        captain_llm_config = copy.deepcopy(CAPTAIN_LLM_CONFIG)
+        captain_llm_config = recursive_update(captain_llm_config,
+            indv.llm_config.get("captain_llm_config", {}))
+
         mlogger.info("Indv: %s\nChat config: %s\nBuilder config: %s\nCaptain config: %s" % \
             (indv.id, chat_llm_config, builder_llm_config, captain_llm_config))
+
         return chat_llm_config, builder_llm_config, captain_llm_config
 
     def _eval_indv_team_role(self, indv):
@@ -633,7 +636,9 @@ def _setup_indv(
     _chat_llm_config = copy.deepcopy(CHAT_LLM_CONFIG)
     _chat_llm_config.update(chat_llm_config)
     _captain_llm_config = copy.deepcopy(CAPTAIN_LLM_CONFIG)
-    _captain_llm_config.update(captain_llm_config)
+    _captain_llm_config = recursive_update(_captain_llm_config,
+        captain_llm_config)
+
     indv.llm_config = copy.deepcopy(indv_llm_config)
     indv.llm_config['builder_llm_config'] = _builder_llm_config
     indv.llm_config['chat_llm_config'] = _chat_llm_config
