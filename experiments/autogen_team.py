@@ -366,7 +366,7 @@ def _code_executor(executor_dir=None):
         timeout=CODE_EXECUTION_CONFIG['exec_timeout'],
         max_output_len=CODE_EXECUTION_CONFIG['exec_max_output_len'],
         work_dir=executor_dir,
-        functions_module=CODE_EXECUTION_CONFIG['exec_timeout'])
+        functions_module=CODE_EXECUTION_CONFIG['exec_library_name'])
     return executor
 
 
