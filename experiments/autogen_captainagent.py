@@ -12,8 +12,8 @@ import autogen
 from autogen import UserProxyAgent
 from autogen.agentchat.conversable_agent import ConversableAgent
 
-from .agent_builder import AgentBuilder
-from .tool_retriever import ToolBuilder, format_ag2_tool, get_full_tool_description
+from autogen.agentchat.contrib.captainagent.agent_builder import AgentBuilder
+from autogen.agentchat.contrib.captainagent.tool_retriever import ToolBuilder, format_ag2_tool, get_full_tool_description
 
 
 class CaptainAgent(ConversableAgent):
@@ -360,11 +360,14 @@ Collect information from the general task, follow the suggestions from manager t
             }
         )
         self._agent_config_save_path = agent_config_save_path
+        if not os.path.exists(self._agent_config_save_path):
+            os.makedirs(self._agent_config_save_path, exist_ok=True)
         self._nested_config = nested_config.copy()
         self._code_execution_config = code_execution_config
         self.build_history = {}
         self.tool_history = {}
         self.build_times = 0
+        self.complete_chat_history = []
 
     def _run_autobuild(self, group_name: str, execution_task: str, building_task: str = "") -> str:
         """Build a group of agents by AutoBuild to solve the task.
@@ -460,7 +463,8 @@ Collect information from the general task, follow the suggestions from manager t
 
         if self._agent_config_save_path is not None:
             building_task_md5 = hashlib.md5(building_task.encode("utf-8")).hexdigest()
-            with open(f"{self._agent_config_save_path}/build_history_{building_task_md5}.json", "w") as f:
+            with open(f"{self._agent_config_save_path}/build_history_{building_task_md5}.json",
+                "w") as f:
                 json.dump(self.build_history, f)
 
         self.build_times += 1
@@ -471,20 +475,21 @@ Collect information from the general task, follow the suggestions from manager t
             allow_repeat_speaker=agent_list[:-1] if agent_configs["coding"] is True else agent_list,
             **self._nested_config["group_chat_config"],
         )
-        manager = autogen.GroupChatManager(
+        self.manager = autogen.GroupChatManager(
             groupchat=nested_group_chat,
             llm_config=self._nested_config["group_chat_llm_config"],
         )
         key = list(self.chat_messages.keys())[0]
         general_task = self.chat_messages[key][0]["content"]
         agent_list[0].initiate_chat(
-            manager, message=self.AUTOBUILD_TASK_DESC.format(general_task=general_task, manager_task=execution_task)
+            self.manager, message=self.AUTOBUILD_TASK_DESC.format(general_task=general_task, manager_task=execution_task)
         )
         chat_history = []
         key = list(agent_list[0].chat_messages.keys())[0]
         chat_messages = agent_list[0].chat_messages[key]
         for item in chat_messages:
             chat_history.append(item)
+        self.complete_chat_history.extend(chat_history)
 
         # Review the group chat history
         summary_model = builder.builder_model

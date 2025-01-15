@@ -27,6 +27,7 @@ from wrapt_timeout_decorator import *
 # import timeout_decorator
 
 from autogen_agent_builder import AgentBuilder
+from autogen_captainagent import CaptainAgent
 from autogen_society_of_mind import SocietyOfMindAgent
 from autogen_executor import LocalCommandLineCodeExecutor
 from autogen_prompts import FUNCTION_PROMPT_TEMPLATE, FUNCTION_PROMPT_TEMPLATE_V2
@@ -47,6 +48,11 @@ CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST")
 # CONFIG_FILE_OR_ENV = os.path.expanduser("~/.autogen/OAI_CONFIG_LIST_NIM")
 if 'CONFIG_FILE_OR_ENV' in os.environ: # Overwrite config list from env
     CONFIG_FILE_OR_ENV = os.environ['CONFIG_FILE_OR_ENV']
+CODE_EXECUTION_CONFIG = {
+    "exec_max_output_len": 4000,
+    "exec_timeout": 10,
+    "exec_library_name": "code_library"}
+CHAT_LLM_CFG_KEYS = ['api_key', 'base_url', 'cache', 'cache_seed', 'model', 'temperature']
 CHAT_LLM_CONFIG = {"temperature": 0.1,
     "model": "gpt-4o-mini",
     "cache_seed": None,
@@ -58,7 +64,6 @@ CHAT_LLM_CONFIG = {"temperature": 0.1,
     "llm_lingua_len": 16000,
     "max_round": 15,
     "max_speaker_select_retries": 9}
-CHAT_LLM_CFG_KEYS = ['api_key', 'base_url', 'cache', 'cache_seed', 'model', 'temperature']
 BUILDER_LLM_CONFIG = {"temperature": 0.9,
     "builder_model": "gpt-4o",
     "agent_model": "gpt-4o-mini",
@@ -66,10 +71,26 @@ BUILDER_LLM_CONFIG = {"temperature": 0.9,
     # "cache": None,
     "custom_coding_instruct": False,
     "user_for_system_msg": False,
-    "max_code_exec_len": 4000,
     "min_agents": 3,
     "max_agents": 3,
     "use_agent_library": False}
+CAPTAIN_LLM_CONFIG = {
+    "nested_config": {
+        "autobuild_init_config": {
+            "config_file_or_env": "OAI_CONFIG_LIST",
+            "builder_model": "gpt-4o",
+            "agent_model": "gpt-4o",
+        },
+        "autobuild_build_config": {
+            "default_llm_config": {"temperature": 1, "top_p": 0.95, "max_tokens": 4096},
+            "code_execution_config": "PUT_CODE_EXECUTOR_HERE",
+            "coding": True,
+        },
+        "group_chat_config": {"max_round": 15},
+        "group_chat_llm_config": "PUT_CHAT_LLM_CONFIG_HERE",
+        "max_turns": 5,
+    }
+}
 CHAT_TIMEOUT = 300
 # TODO: FIX CACHING/CACHE SEED
 
@@ -79,6 +100,7 @@ CHAT_TIMEOUT = 300
     dec_allow_eval=False, dec_hard_timeout=False, dec_mp_reset_signals=True)
 def start_task(execution_task: str,
     agent_list: list,
+    use_captain_agent: bool = False,
     chat_llm_config: dict = CHAT_LLM_CONFIG,
     builder: Optional[AgentBuilder] = None,
     builder_llm_config: dict = BUILDER_LLM_CONFIG,
@@ -89,6 +111,58 @@ def start_task(execution_task: str,
     if log_file is not None:
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         redirector = OutputRedirector(log_file); redirector.enable()
+
+    if use_captain_agent:
+        chat_result, chat_messages = _start_task_captain_agent(
+            execution_task,
+            agent_list,
+            log_file)
+    else:
+        chat_result, chat_messages = _start_task_builder_agents(
+            execution_task,
+            agent_list,
+            chat_llm_config,
+            builder,
+            builder_llm_config,
+            code_library,
+            imports,
+            log_file)
+
+    if log_file is not None:
+        redirector.disable(); yaml_dump(chat_messages, log_file)
+    return chat_result, chat_messages
+
+
+def _start_task_captain_agent(
+    execution_task: str,
+    agent_list: list,
+    log_file: Optional[str] = None):
+
+    assert len(agent_list) == 1 and agent_list[0].name == "captain_agent"
+    captain_agent = agent_list[0]
+
+    captain_user_proxy = UserProxyAgent(name="captain_user_proxy",
+        human_input_mode="NEVER")
+    chat_result = captain_user_proxy.initiate_chat(captain_agent,
+        message=execution_task)
+
+    if log_file is not None:
+        sys_msg_log_file = os.path.splitext(log_file)[0] + "_sys_msg.txt"
+        yaml_dump(captain_agent.executor.build_history, sys_msg_log_file)
+    chat_messages = captain_agent.executor.complete_chat_history
+    return chat_result, chat_messages
+
+
+def _start_task_builder_agents(
+    execution_task: str,
+    agent_list: list,
+    chat_llm_config: dict = CHAT_LLM_CONFIG,
+    builder: Optional[AgentBuilder] = None,
+    builder_llm_config: dict = BUILDER_LLM_CONFIG,
+    code_library: Optional[list] = None,
+    imports: Optional[str] = None,
+    log_file: Optional[str] = None):
+
     if builder_llm_config['use_agent_library']:
         assert builder is not None and isinstance(agent_list[0], dict)
         agent_list = _build_from_library(
@@ -152,11 +226,7 @@ def start_task(execution_task: str,
     chat_messages = manager._groupchat.messages
 
     _restore_sys_msg(agent_list, orig_agent_sys_msgs)
-    if log_file is not None:
-        redirector.disable(); yaml_dump(chat_messages, log_file)
-
     return chat_result, chat_messages
-    # return agent_list[0].initiate_chat(manager, message=execution_task)
 
 
 def _get_chat_transforms(chat_llm_config):
@@ -177,12 +247,6 @@ def _get_chat_transforms(chat_llm_config):
 
 
 def _get_som_transforms(chat_llm_config):
-    # som_max_tokens = min(chat_llm_config['max_msg_len'] + 10000, 120000)
-    # _transforms = [transforms.TextMessageCompressor(
-    #     text_compressor=LLMLingua(),
-    #     min_tokens=som_max_tokens,
-    #     compression_params={'target_token': som_max_tokens},
-    #     cache=None)]
     max_som_tokens = 120000
     _transforms = [transforms.MessageTokenLimiter(
             min_tokens=max_som_tokens,
@@ -190,6 +254,12 @@ def _get_som_transforms(chat_llm_config):
             max_tokens_per_message=max_som_tokens,
             model=chat_llm_config['model'])]
     return _transforms
+
+
+def _filter_builder_llm_config(builder_llm_config):
+    _builder_llm_config = {'temperature': builder_llm_config['temperature'],
+        'cache_seed': builder_llm_config['cache_seed']}
+    return _builder_llm_config
 
 
 def _filter_chat_llm_config(chat_llm_config):
@@ -200,12 +270,6 @@ def _filter_chat_llm_config(chat_llm_config):
         if key in CHAT_LLM_CFG_KEYS:
             _chat_llm_config[key] = chat_llm_config[key]
     return {"config_list": config_list, **_chat_llm_config}
-
-
-def _filter_builder_llm_config(builder_llm_config):
-    _builder_llm_config = {'temperature': builder_llm_config['temperature'],
-        'cache_seed': builder_llm_config['cache_seed']}
-    return _builder_llm_config
 
 
 def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
@@ -295,6 +359,40 @@ def _build_from_library(
     return agent_list
 
 
+def _code_executor(executor_dir=None):
+    if executor_dir is None:
+        executor_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
+    executor = LocalCommandLineCodeExecutor(
+        timeout=CODE_EXECUTION_CONFIG['exec_timeout'],
+        max_output_len=CODE_EXECUTION_CONFIG['exec_max_output_len'],
+        work_dir=executor_dir,
+        functions_module=CODE_EXECUTION_CONFIG['exec_timeout'])
+    return executor
+
+
+def init_captain_agent(
+    captain_agent_dir=None,
+    work_dir=None,
+    chat_llm_config=CHAT_LLM_CONFIG,
+    captain_llm_config=CAPTAIN_LLM_CONFIG):
+
+    _chat_llm_config = _filter_chat_llm_config(chat_llm_config)
+    captain_llm_config['nested_config']['autobuild_build_config']['code_execution_config'] = \
+        _code_executor(work_dir)
+    captain_llm_config['nested_config']['group_chat_llm_config'] = _chat_llm_config
+
+    ## build agents
+    captain_agent = CaptainAgent(
+        name="captain_agent",
+        llm_config=_chat_llm_config,
+        nested_config=captain_llm_config['nested_config'],
+        code_execution_config={'executor': _code_executor(work_dir)},
+        # If you'd like to save the created agents in nested chat for further
+        # use, specify the save directory here
+        agent_config_save_path=captain_agent_dir)
+    return captain_agent
+
+
 def init_builder(
     building_task=None,
     use_builder_dict=False,
@@ -314,13 +412,6 @@ def init_builder(
         assert a > 0 and b > 0 and a <= b; max_agents = random.randint(a, b)
     else: assert max_agents > 0
 
-    if work_dir is None:
-        work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
-    executor = LocalCommandLineCodeExecutor(
-        timeout=10,
-        max_output_len=builder_llm_config['max_code_exec_len'],
-        work_dir=work_dir,
-        functions_module='code_library')
     builder = AgentBuilder(
         config_file_or_env=CONFIG_FILE_OR_ENV,
         builder_model=builder_llm_config['builder_model'],
@@ -328,7 +419,7 @@ def init_builder(
         max_agents=max_agents,
         custom_coding_instruct=builder_llm_config['custom_coding_instruct'],
         user_for_system_msg=builder_llm_config['user_for_system_msg'],
-        code_execution_config={'executor': executor},
+        code_execution_config={'executor': _code_executor(work_dir)},
         use_cache=False,
         debug_mode=debug_mode)
 
@@ -347,12 +438,6 @@ def init_builder(
 
         print("init_builder: creating new builder")
         assert building_task is not None
-        # code_execution_config = {
-        #     "last_n_messages": 1,
-        #     "timeout": 10,
-        #     "use_docker": False,
-        #     "work_dir": work_dir
-        # }
         agent_list, agent_configs = builder.build(
             building_task=building_task,
             default_llm_config=_builder_llm_config,
@@ -384,7 +469,7 @@ def init_builder(
 
     # overwrite code execution config to use executor for code blocks in future chat
     agent_list, agent_configs = builder.load(config_dict=builder_dict,
-        code_execution_config={'executor': executor})
+        code_execution_config={'executor': _code_executor(work_dir)})
 
     if use_builder_dict:
         return agent_list, agent_configs, builder, builder_dict

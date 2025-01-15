@@ -31,8 +31,8 @@ from scicode.parse.parse import read_from_jsonl
 
 from alg_util import MIN_FITNESS, EPSILON, ID_LENGTH, MIN_POP_SIZE
 from alg_util import randomword
-from autogen_team import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG
-from autogen_team import init_builder, start_task
+from autogen_team import BUILDER_LLM_CONFIG, CHAT_LLM_CONFIG, CAPTAIN_LLM_CONFIG
+from autogen_team import init_builder, start_task, init_captain_agent
 from llm_operators import DEFAULT_MAIN_ROLE, DEFAULT_MAIN_ROLE_V2
 from llm_operators import DEFAULT_MAIN_ROLE_MIN
 from llm_operators import create_new_team
@@ -65,6 +65,8 @@ class EvalPlusEvaluator(object):
         assert self.max_problems > 0
         self.problem_list = self.config.get("problem_list", [])
         if len(self.problem_list) > 0: self.max_problems = sys.maxsize
+        self.use_captain_agent = self.config.get("use_captain_agent", False)
+
         # 0 = Normal, 1 = Print more debug messages, 2 = 1 + Dummy fitness
         self.debug_mode = self.config.get("debug_mode", 0)
         if self.debug_mode:
@@ -265,29 +267,47 @@ class EvalPlusEvaluator(object):
         yaml_dump(result_dict, os.path.join(result_dir, "result_dict.yaml"))
         return result_dict
 
-    def _init_builder(self, team_role, builder_llm_config):
-        return init_builder(
-            building_task=None,
-            use_builder_dict=True,
-            builder_dict=team_role,
-            builder_llm_config=builder_llm_config,
-            clear_cache=True,
-            debug_mode=self.debug_mode > 0)
+    def _init_builder(self,
+        team_role,
+        chat_llm_config,
+        builder_llm_config,
+        captain_llm_config):
+        if self.use_captain_agent:
+            captain_agent = init_captain_agent(
+                captain_agent_dir=os.path.join(self.evaluator_dir, "captain_agent"),
+                chat_llm_config=chat_llm_config,
+                captain_llm_config=captain_llm_config)
+            return captain_agent, None, None, None
+        else:
+            return init_builder(
+                building_task=None,
+                use_builder_dict=True,
+                builder_dict=team_role,
+                builder_llm_config=builder_llm_config,
+                clear_cache=True,
+                debug_mode=self.debug_mode > 0)
+
+    def _setup_llm_configs(self, indv):
+        builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
+        builder_llm_config.update(indv.llm_config.get("builder_llm_config", {}))
+        chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
+        chat_llm_config.update(indv.llm_config.get("chat_llm_config", {}))
+        captain_llm_config = copy.copy(CAPTAIN_LLM_CONFIG)
+        captain_llm_config.update(indv.llm_config.get("captain_llm_config", {}))
+        mlogger.info("Indv: %s\nChat config: %s\nBuilder config: %s\nCaptain config: %s" % \
+            (indv.id, chat_llm_config, builder_llm_config, captain_llm_config))
+        return chat_llm_config, builder_llm_config, captain_llm_config
 
     def _eval_indv_team_role(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
         # if indv.evolve_mode != "both": main_role = DEFAULT_MAIN_ROLE
         assert team_role is not None
 
-        builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
-        builder_llm_config.update(indv.llm_config.get("builder_llm_config", {}))
-        chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
-        chat_llm_config.update(indv.llm_config.get("chat_llm_config", {}))
-        mlogger.info("Indv: %s\nChat config: %s\nBuilder config: %s" % \
-            (indv.id, chat_llm_config, builder_llm_config))
-
+        chat_llm_config, builder_llm_config, captain_llm_config = \
+            self._setup_llm_configs(indv)
         agent_list, _, builder, _ = \
-            self._init_builder(team_role, builder_llm_config)
+            self._init_builder(team_role, chat_llm_config, builder_llm_config,
+                captain_llm_config)
         self.autogen_builder = builder
         # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
@@ -300,6 +320,7 @@ class EvalPlusEvaluator(object):
             chat_result, groupchat_messages = start_task(
                 execution_task=prompt,
                 agent_list=agent_list,
+                use_captain_agent=self.use_captain_agent,
                 chat_llm_config=chat_llm_config,
                 builder=self.autogen_builder,
                 builder_llm_config=builder_llm_config,
@@ -378,15 +399,11 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         # if indv.evolve_mode != "both": main_role = DEFAULT_MAIN_ROLE
         assert team_role is not None
 
-        builder_llm_config = copy.copy(BUILDER_LLM_CONFIG)
-        builder_llm_config.update(indv.llm_config.get("builder_llm_config", {}))
-        chat_llm_config = copy.copy(CHAT_LLM_CONFIG)
-        chat_llm_config.update(indv.llm_config.get("chat_llm_config", {}))
-        mlogger.info("Indv: %s\nChat config: %s\nBuilder config: %s" % \
-            (indv.id, chat_llm_config, builder_llm_config))
-
+        chat_llm_config, builder_llm_config, captain_llm_config = \
+            self._setup_llm_configs(indv)
         agent_list, _, builder, _ = \
-            self._init_builder(team_role, builder_llm_config)
+            self._init_builder(team_role, chat_llm_config, builder_llm_config,
+                captain_llm_config)
         self.autogen_builder = builder
         # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
@@ -525,6 +542,7 @@ SCICODE_EVAL_CONFIG = {
     'cleanup_code': False,
     'include_bg_comments': True,
     'debug_mode': 0,
+    'use_captain_agent': False,
 }
 
 EVAL_LLM_CONFIG = {
@@ -548,6 +566,16 @@ EVAL_CHAT_LLM_CONFIG = {
     'use_llm_lingua': False,
 }
 
+EVAL_CAPTAIN_LLM_CONFIG = {
+    "nested_config": {
+        "autobuild_init_config": {
+            "config_file_or_env": "OAI_CONFIG_LIST",
+            "builder_model": LLM_MODEL,
+            "agent_model": LLM_MODEL,
+        },
+        "group_chat_config": {"max_round": 75},
+    }
+}
 
 def _setup_evaluator(
     n_workers,
@@ -572,6 +600,7 @@ def _setup_indv(
     evolve_mode,
     builder_llm_config=EVAL_BUILDER_LLM_CONFIG,
     chat_llm_config=EVAL_CHAT_LLM_CONFIG,
+    captain_llm_config=EVAL_CAPTAIN_LLM_CONFIG,
     indv_llm_config=EVAL_LLM_CONFIG,
     clear_cache=False):
 
@@ -603,9 +632,12 @@ def _setup_indv(
     _builder_llm_config.update(builder_llm_config)
     _chat_llm_config = copy.deepcopy(CHAT_LLM_CONFIG)
     _chat_llm_config.update(chat_llm_config)
+    _captain_llm_config = copy.deepcopy(CAPTAIN_LLM_CONFIG)
+    _captain_llm_config.update(captain_llm_config)
     indv.llm_config = copy.deepcopy(indv_llm_config)
     indv.llm_config['builder_llm_config'] = _builder_llm_config
     indv.llm_config['chat_llm_config'] = _chat_llm_config
+    indv.llm_config['captain_llm_config'] = _captain_llm_config
     return indv
 
 
