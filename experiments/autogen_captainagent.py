@@ -132,14 +132,14 @@ Note that the previous experts will forget everything after you obtain the respo
     DEFAULT_DESCRIPTION = "A helpful AI assistant that can build a group of agents at a proper time to solve a task."
 
     # This is used to prompt the LLM to summarize the conversation history between CaptainAgent's tool execution history
-    # DEFAULT_SUMMARY_PROMPT = "Read the following conversation history between an expert and a group of agent experts, summarize the conversation history. Your summarization should include the initial task, the experts' plan and the attempt, finally the results of the conversation. If the experts arrived at a conclusion, state it as it is without any modification."
-    DEFAULT_SUMMARY_PROMPT = \
-"""- An expert and a group of experts are working together to solve a coding problem.
-- Read the following conversation history between the expert and group of agent experts.
-- Extract the best working solution code from the discussion in the format of ```python```.
-- Include only the essential implementation, removing any debugging, testing, or exploratory code.
-- The solution should be complete, well-structured, and ready to use.
-- Ensure the function name in the solution matches the function header name from the problem description."""
+    DEFAULT_SUMMARY_PROMPT = "Read the following conversation history between an expert and a group of agent experts, summarize the conversation history. Your summarization should include the initial task, the experts' plan and the attempt, finally the results of the conversation. If the experts arrived at a conclusion, state it as it is without any modification."
+#     DEFAULT_SUMMARY_PROMPT = \
+# """- An expert and a group of experts are working together to solve a coding problem.
+# - Read the following conversation history between the expert and group of agent experts.
+# - Extract the best working solution code from the discussion in the format of ```python```.
+# - Include only the essential implementation, removing any debugging, testing, or exploratory code.
+# - The solution should be complete, well-structured, and ready to use.
+# - Ensure the function name in the solution matches the function header name from the problem description."""
 
     def __init__(
         self,

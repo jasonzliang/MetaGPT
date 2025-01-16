@@ -115,19 +115,19 @@ def start_task(execution_task: str,
 
     if use_captain_agent:
         chat_result, chat_messages = _start_task_captain_agent(
-            execution_task,
-            agent_list,
-            log_file)
+            execution_task=execution_task,
+            agent_list=agent_list,
+            log_file=log_file)
     else:
         chat_result, chat_messages = _start_task_builder_agents(
-            execution_task,
-            agent_list,
-            chat_llm_config,
-            builder,
-            builder_llm_config,
-            code_library,
-            imports,
-            log_file)
+            execution_task=execution_task,
+            agent_list=agent_list,
+            chat_llm_config=chat_llm_config,
+            builder=builder,
+            builder_llm_config=builder_llm_config,
+            code_library=code_library,
+            imports=imports,
+            log_file=log_file)
 
     if log_file is not None:
         redirector.disable(); yaml_dump(chat_messages, log_file)
@@ -147,10 +147,12 @@ def _start_task_captain_agent(
     captain_user_proxy = UserProxyAgent(
         name=proxy_agent_name,
         human_input_mode="NEVER",
-        code_execution_config=False)
+        code_execution_config=False,
+        default_auto_reply="",
+        is_termination_msg=lambda x: True)
     chat_result = captain_user_proxy.initiate_chat(captain_agent,
         message=execution_task)
-    # print(chat_result.summary)
+    print(chat_result.summary); time.sleep(100000)
 
     if log_file is not None:
         sys_msg_log_file = os.path.splitext(log_file)[0] + "_sys_msg.json"

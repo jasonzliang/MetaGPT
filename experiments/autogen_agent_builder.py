@@ -944,7 +944,8 @@ With following description: {function_description}
             .choices[0]
             .message.content
         )
-        agent_name_list = [agent_name.strip().replace(" ", "_") \
+
+        agent_name_list = [agent_name.strip().replace(' ', '_').replace('.', '') \
             for agent_name in resp_agent_name.split(",")]
         if len(agent_name_list) > max_agents:
             agent_name_list = agent_name_list[:max_agents]
