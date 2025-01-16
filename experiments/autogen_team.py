@@ -101,13 +101,14 @@ CHAT_TIMEOUT = 300
     dec_allow_eval=False, dec_hard_timeout=False, dec_mp_reset_signals=True)
 def start_task(execution_task: str,
     agent_list: list,
-    use_captain_agent: bool = False,
     chat_llm_config: dict = CHAT_LLM_CONFIG,
     builder: Optional[AgentBuilder] = None,
     builder_llm_config: dict = BUILDER_LLM_CONFIG,
+    executor: Optional[LocalCommandLineCodeExecutor] = None,
     code_library: Optional[list] = None,
     imports: Optional[str] = None,
-    log_file: Optional[str] = None):
+    log_file: Optional[str] = None,
+    use_captain_agent: bool = False):
 
     if log_file is not None:
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
@@ -117,6 +118,9 @@ def start_task(execution_task: str,
         chat_result, chat_messages = _start_task_captain_agent(
             execution_task=execution_task,
             agent_list=agent_list,
+            chat_llm_config=chat_llm_config,
+            executor=executor,
+            code_library=code_library,
             log_file=log_file)
     else:
         chat_result, chat_messages = _start_task_builder_agents(
@@ -137,12 +141,17 @@ def start_task(execution_task: str,
 def _start_task_captain_agent(
     execution_task: str,
     agent_list: list,
+    chat_llm_config: dict = CHAT_LLM_CONFIG,
+    executor: Optional[LocalCommandLineCodeExecutor] = None,
+    code_library: Optional[list] = None,
     captain_agent_name: str = 'captain_agent',
     proxy_agent_name: str = 'captain_user_proxy',
     log_file: Optional[str] = None):
 
     assert len(agent_list) == 1 and agent_list[0].name == captain_agent_name
     captain_agent = agent_list[0]
+
+    _register_functions_executor(code_library, executor)
 
     captain_user_proxy = UserProxyAgent(
         name=proxy_agent_name,
@@ -181,8 +190,7 @@ def _start_task_builder_agents(
             builder=builder,
             builder_llm_config=builder_llm_config)
 
-    orig_agent_sys_msgs = _register_functions(
-        agent_list, imports, code_library, log_file)
+    orig_agent_sys_msgs = _register_functions(agent_list, imports, code_library)
     if log_file is not None:
         sys_msgs = [agent.system_message for agent in agent_list]
         sys_msg_log_file = os.path.splitext(log_file)[0] + "_sys_msg.txt"
@@ -290,25 +298,15 @@ def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
         agent.update_system_message(orig_sys_msg)
 
 
-def _register_functions(agent_list,
-    imports,
+def _register_functions_executor(
     code_library,
-    log_file=None,
+    executor,
     work_dir=None):
 
-    agent_list_noproxy = []; orig_agent_sys_msgs = []; user_proxy = None
-    for agent in agent_list:
-        assert isinstance(agent, autogen.ConversableAgent)
-        if not isinstance(agent, autogen.UserProxyAgent):
-            agent_list_noproxy.append(agent)
-            orig_agent_sys_msgs.append(agent.system_message)
-        else:
-            assert user_proxy is None; user_proxy = agent
-    assert len(agent_list_noproxy) > 0; assert user_proxy is not None
-
+    if executor is None: return None
     if work_dir is None:
         work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
-    executor = user_proxy._code_executor; executor.reset(work_dir)
+    executor.reset(work_dir)
     if code_library is None or len(code_library) == 0:
         return None
 
@@ -339,6 +337,7 @@ def _register_functions(agent_list,
     func_list = [func_dict['code'] for func_dict in loaded_code_library]
     executor._setup_functions(imports=imports, func_list=func_list,
         overwrite_func_file=True)
+
     # function_msg = executor.format_functions_for_prompt(
     #     prompt_template=FUNCTION_PROMPT_TEMPLATE)
     # function_msg = FUNCTION_PROMPT_TEMPLATE_V2.format(
@@ -350,6 +349,26 @@ def _register_functions(agent_list,
 
     # return orig_agent_sys_msgs
     return None
+
+
+def _register_functions(
+    agent_list,
+    imports,
+    code_library,
+    work_dir=None):
+
+    agent_list_noproxy = []; orig_agent_sys_msgs = []; user_proxy = None
+    for agent in agent_list:
+        assert isinstance(agent, autogen.ConversableAgent)
+        if not isinstance(agent, autogen.UserProxyAgent):
+            agent_list_noproxy.append(agent)
+            orig_agent_sys_msgs.append(agent.system_message)
+        else:
+            assert user_proxy is None; user_proxy = agent
+    assert len(agent_list_noproxy) > 0; assert user_proxy is not None
+
+    executor = user_proxy._code_executor
+    return _register_functions_executor(code_library, executor, work_dir)
 
 
 def _build_from_library(
@@ -386,21 +405,23 @@ def init_captain_agent(
     chat_llm_config=CHAT_LLM_CONFIG,
     captain_llm_config=CAPTAIN_LLM_CONFIG):
 
+    executor = _code_executor(work_dir)
     _chat_llm_config = _filter_chat_llm_config(chat_llm_config)
     captain_llm_config['nested_config']['autobuild_build_config']['code_execution_config'] = \
-        {'executor': _code_executor(work_dir)}
+        {'executor': executor}
     captain_llm_config['nested_config']['group_chat_llm_config'] = _chat_llm_config
 
     ## build agents
-    # if base_dir is None: base_dir = "."; assert os.path.exists(base_dir)
+    transforms = _get_chat_transforms(chat_llm_config)
     captain_agent = CaptainAgent(
         name=agent_name,
         llm_config=_chat_llm_config,
         nested_config=captain_llm_config['nested_config'],
         update_default_nested_config=False,
-        code_execution_config={'executor': _code_executor(work_dir)},
-        agent_config_save_path=None)
-    return captain_agent
+        code_execution_config={'executor': executor},
+        agent_config_save_path=None,
+        transforms=transforms)
+    return captain_agent, executor
 
 
 def init_builder(
@@ -422,6 +443,7 @@ def init_builder(
         assert a > 0 and b > 0 and a <= b; max_agents = random.randint(a, b)
     else: assert max_agents > 0
 
+    executor = _code_executor(work_dir)
     builder = AgentBuilder(
         config_file_or_env=CONFIG_FILE_OR_ENV,
         builder_model=builder_llm_config['builder_model'],
@@ -429,7 +451,7 @@ def init_builder(
         max_agents=max_agents,
         custom_coding_instruct=builder_llm_config['custom_coding_instruct'],
         user_for_system_msg=builder_llm_config['user_for_system_msg'],
-        code_execution_config={'executor': _code_executor(work_dir)},
+        code_execution_config={'executor': executor},
         use_cache=False,
         debug_mode=debug_mode)
 
@@ -479,15 +501,15 @@ def init_builder(
 
     # overwrite code execution config to use executor for code blocks in future chat
     agent_list, agent_configs = builder.load(config_dict=builder_dict,
-        code_execution_config={'executor': _code_executor(work_dir)})
+        code_execution_config={'executor': executor})
 
     if use_builder_dict:
-        return agent_list, agent_configs, builder, builder_dict
+        return agent_list, agent_configs, builder, builder_dict, executor
     else:
         if builder_cfg is None:
             builder_cfg = os.path.join(work_dir, "autogen_builder_cfg.json")
         builder.save(builder_cfg)
-        return agent_list, agent_configs, builder, builder_cfg
+        return agent_list, agent_configs, builder, builder_cfg, executor
 
 
 def _parse_builder_cfgs(builder_cfgs, eval_mode=False):
@@ -587,7 +609,7 @@ def run_evalplus(
     if work_dir is None: work_dir = result_dir
     building_task = "Generate a team of agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities."
 
-    agent_list, agent_configs, builder, builder_cfg = \
+    agent_list, agent_configs, builder, builder_cfg, _ = \
         init_builder(building_task,
             work_dir=work_dir,
             builder_cfg=builder_cfg,

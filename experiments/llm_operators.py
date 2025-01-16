@@ -302,7 +302,7 @@ def llm_mutate_team(team_role, llm_config):
     assert isinstance(team_role, dict)
     if 'building_task' in team_role: team_role['building_task'] = ''
 
-    agent_list, agent_configs, builder, builder_dict = autogen_mutate(
+    _, _, builder, builder_dict, _ = autogen_mutate(
         builder_cfg=team_role,
         output_cfg=None,
         builder_llm_config=get_builder_llm_config(llm_config),
@@ -320,7 +320,7 @@ def llm_crossover_team(team_role, other_team_role, llm_config):
     assert isinstance(team_role, dict) and isinstance(other_team_role, dict)
 
     if 'building_task' in team_role: team_role['building_task'] = ''
-    agent_list, agent_configs, builder, builder_dict = autogen_crossover(
+    _, _, builder, builder_dict, _ = autogen_crossover(
         builder_cfgs=[team_role, other_team_role],
         output_cfg=None,
         builder_llm_config=get_builder_llm_config(llm_config),

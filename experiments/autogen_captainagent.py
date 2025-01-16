@@ -13,6 +13,7 @@ from termcolor import colored
 import autogen
 from autogen import UserProxyAgent
 from autogen.agentchat.conversable_agent import ConversableAgent
+from autogen.agentchat.contrib.capabilities import transform_messages, transforms
 
 # from autogen.agentchat.contrib.captainagent.agent_builder import AgentBuilder
 from autogen.agentchat.contrib.captainagent.tool_retriever import ToolBuilder, format_ag2_tool, get_full_tool_description
@@ -156,6 +157,7 @@ Note that the previous experts will forget everything after you obtain the respo
         tool_lib: Optional[str] = None,
         agent_config_save_path: Optional[str] = None,
         description: Optional[str] = DEFAULT_DESCRIPTION,
+        transforms: Optional[list] = None,
         **kwargs,
     ):
         """Args:
@@ -175,6 +177,7 @@ Note that the previous experts will forget everything after you obtain the respo
         nested_config (dict): the configuration for the nested chat instantiated by CaptainAgent.
             A full list of keys and their functionalities can be found in [docs](https://docs.ag2.ai/docs/topics/captainagent/configurations).
         agent_config_save_path (str): the path to save the generated or retrieved agent configuration.
+        transforms (list): list of transforms to apply to the agents to limit context length.
         **kwargs (dict): Please refer to other kwargs in
             [ConversableAgent](https://github.com/ag2ai/ag2/blob/main/autogen/agentchat/conversable_agent.py#L74).
         """
@@ -217,6 +220,7 @@ Note that the previous experts will forget everything after you obtain the respo
             is_termination_msg=lambda x: x.get("content", "") and "terminate" in x.get("content", "").lower(),
             code_execution_config=code_execution_config,
             human_input_mode="NEVER",
+            transforms=transforms
         )
 
         self.register_nested_chats(
@@ -314,6 +318,7 @@ Collect information from the general task, follow the suggestions from manager t
         llm_config: Optional[Union[dict, Literal[False]]] = False,
         system_message: Optional[Union[str, list]] = "",
         description: Optional[str] = None,
+        transforms: Optional[list] = None,
     ):
         """Args:
         name (str): name of the agent.
@@ -356,6 +361,7 @@ Collect information from the general task, follow the suggestions from manager t
             Only used when llm_config is not False. Use it to reprogram the agent.
         description (str): a short description of the agent. This description is used by other agents
             (e.g. the GroupChatManager) to decide when to call upon this agent. (Default: system_message)
+        transforms (list): list of transforms to apply to the agents to limit context length.
         """
         description = (
             description if description is not None else self.DEFAULT_USER_PROXY_AGENT_DESCRIPTIONS[human_input_mode]
@@ -379,6 +385,8 @@ Collect information from the general task, follow the suggestions from manager t
         self._agent_config_save_path = agent_config_save_path
         self._nested_config = nested_config.copy()
         self._code_execution_config = code_execution_config
+        self._transforms = transforms
+
         self.build_history = {}
         self.tool_history = {}
         self.build_times = 0
@@ -489,6 +497,12 @@ Collect information from the general task, follow the suggestions from manager t
                 json.dump(self.build_history, f, indent=4, cls=CustomJSONEncoder)
 
         self.build_times += 1
+
+        # apply transforms to limit context length
+        context_handling = transform_messages.TransformMessages(
+            transforms=self._transforms)
+        for agent in agent_list: context_handling.add_to_agent(agent)
+
         # start nested chat
         nested_group_chat = autogen.GroupChat(
             agents=agent_list,

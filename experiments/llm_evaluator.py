@@ -273,18 +273,19 @@ class EvalPlusEvaluator(object):
         builder_llm_config,
         captain_llm_config):
         if self.use_captain_agent:
-            captain_agent = init_captain_agent(
+            captain_agent, executor = init_captain_agent(
                 chat_llm_config=chat_llm_config,
                 captain_llm_config=captain_llm_config)
-            return [captain_agent], None, None, None
+            return [captain_agent], None, executor
         else:
-            return init_builder(
+            agent_list, _, builder, _, executor = init_builder(
                 building_task=None,
                 use_builder_dict=True,
                 builder_dict=team_role,
                 builder_llm_config=builder_llm_config,
                 clear_cache=True,
                 debug_mode=self.debug_mode > 0)
+            return agent_list, builder, executor
 
     def _setup_llm_configs(self, indv):
         builder_llm_config = copy.deepcopy(BUILDER_LLM_CONFIG)
@@ -302,16 +303,14 @@ class EvalPlusEvaluator(object):
 
     def _eval_indv_team_role(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
-        # if indv.evolve_mode != "both": main_role = DEFAULT_MAIN_ROLE
         assert team_role is not None
 
         chat_llm_config, builder_llm_config, captain_llm_config = \
             self._setup_llm_configs(indv)
-        agent_list, _, builder, _ = \
+        agent_list, builder, executor = \
             self._init_builder(team_role, chat_llm_config, builder_llm_config,
                 captain_llm_config)
         self.autogen_builder = builder
-        # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
         def eval_func(problem, result_dict):
@@ -322,11 +321,12 @@ class EvalPlusEvaluator(object):
             chat_result, groupchat_messages = start_task(
                 execution_task=prompt,
                 agent_list=agent_list,
-                use_captain_agent=self.use_captain_agent,
                 chat_llm_config=chat_llm_config,
-                builder=self.autogen_builder,
+                builder=builder,
                 builder_llm_config=builder_llm_config,
-                log_file=log_file)
+                executor=executor,
+                log_file=log_file,
+                use_captain_agent=self.use_captain_agent)
             time_elapsed = time.time() - start_time
 
             output = extract_code_from_chat(chat_result); assert len(output) > 0
@@ -399,16 +399,14 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
     def _eval_indv_team_role(self, indv):
         main_role, team_role, eval_id = indv.main_role, indv.team_role, indv.id
-        # if indv.evolve_mode != "both": main_role = DEFAULT_MAIN_ROLE
         assert team_role is not None
 
         chat_llm_config, builder_llm_config, captain_llm_config = \
             self._setup_llm_configs(indv)
-        agent_list, _, builder, _ = \
+        agent_list, builder, executor = \
             self._init_builder(team_role, chat_llm_config, builder_llm_config,
                 captain_llm_config)
-        self.autogen_builder = builder
-        # for agent in agent_list: pprint.pprint(agent.__dict__); print("\n")
+        self.autogen_builder = builder; self.autogen_executor = executor
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
         def eval_func(prob_id, prompt, result_dict):
@@ -418,13 +416,14 @@ class SciCodeEvaluator(EvalPlusEvaluator):
             chat_result, groupchat_messages = start_task(
                 execution_task=prompt,
                 agent_list=agent_list,
-                use_captain_agent=self.use_captain_agent,
                 chat_llm_config=chat_llm_config,
-                builder=self.autogen_builder,
+                builder=builder,
                 builder_llm_config=builder_llm_config,
+                executor=executor,
                 code_library=result_dict['code_library'],
                 imports=result_dict['imports'],
-                log_file=log_file)
+                log_file=log_file,
+                use_captain_agent=self.use_captain_agent)
             time_elapsed = time.time() - start_time
 
             # There is another extract code function in scicode_eval
