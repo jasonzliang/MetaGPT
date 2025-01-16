@@ -144,6 +144,7 @@ Note that the previous experts will forget everything after you obtain the respo
         human_input_mode: Optional[str] = "NEVER",
         code_execution_config: Optional[Union[dict, Literal[False]]] = False,
         nested_config: Optional[dict] = None,
+        update_default_nested_config: bool = True,
         agent_lib: Optional[str] = None,
         tool_lib: Optional[str] = None,
         agent_config_save_path: Optional[str] = None,
@@ -183,8 +184,12 @@ Note that the previous experts will forget everything after you obtain the respo
 
         if system_message is None:
             system_message = self.AUTOBUILD_SYSTEM_MESSAGE
-        # Not necessary since we provide full nested_config dict
-        # nested_config = self._update_config(self.DEFAULT_NESTED_CONFIG, nested_config)
+
+        if update_default_nested_config:
+            nested_config = self._update_config(self.DEFAULT_NESTED_CONFIG, nested_config)
+
+        # Not sure why but max_turns == 1 throws error
+        assert nested_config["max_turns"] > 1
         if nested_config["group_chat_llm_config"] is None:
             nested_config["group_chat_llm_config"] = llm_config.copy()
         if agent_lib:
@@ -364,14 +369,16 @@ Collect information from the general task, follow the suggestions from manager t
             }
         )
         self._agent_config_save_path = agent_config_save_path
-        if not os.path.exists(self._agent_config_save_path):
-            os.makedirs(self._agent_config_save_path, exist_ok=True)
         self._nested_config = nested_config.copy()
         self._code_execution_config = code_execution_config
         self.build_history = {}
         self.tool_history = {}
         self.build_times = 0
         self.complete_chat_history = []
+
+        if self._agent_config_save_path is not None and \
+            not os.path.exists(self._agent_config_save_path):
+            os.makedirs(self._agent_config_save_path, exist_ok=True)
 
     def _run_autobuild(self, group_name: str, execution_task: str, building_task: str = "") -> str:
         """Build a group of agents by AutoBuild to solve the task.
@@ -385,12 +392,14 @@ Collect information from the general task, follow the suggestions from manager t
         # if the group is already built, load from history
         if group_name in self.build_history.keys():
             agent_list, agent_configs = builder.load(config_dict=self.build_history[group_name])
-            if self._nested_config.get("autobuild_tool_config", None) and agent_configs["coding"] is True:
+            if self._nested_config.get("autobuild_tool_config", None) \
+                and agent_configs["coding"] is True:
                 # tool library is enabled, reload tools and bind them to the agents
                 tool_root_dir = self.tool_root_dir
                 tool_builder = ToolBuilder(
                     corpus_root=tool_root_dir,
-                    retriever=self._nested_config["autobuild_tool_config"].get("retriever", "all-mpnet-base-v2"),
+                    retriever=self._nested_config["autobuild_tool_config"].get(
+                        "retriever", "all-mpnet-base-v2"),
                     type=self.tool_type,
                 )
                 for idx, agent in enumerate(agent_list):
@@ -486,7 +495,8 @@ Collect information from the general task, follow the suggestions from manager t
         key = list(self.chat_messages.keys())[0]
         general_task = self.chat_messages[key][0]["content"]
         agent_list[0].initiate_chat(
-            self.manager, message=self.AUTOBUILD_TASK_DESC.format(general_task=general_task, manager_task=execution_task)
+            self.manager, message=self.AUTOBUILD_TASK_DESC.format(
+                general_task=general_task, manager_task=execution_task)
         )
         chat_history = []
         key = list(agent_list[0].chat_messages.keys())[0]

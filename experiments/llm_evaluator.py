@@ -274,7 +274,6 @@ class EvalPlusEvaluator(object):
         captain_llm_config):
         if self.use_captain_agent:
             captain_agent = init_captain_agent(
-                base_dir=self.evaluator_dir,
                 chat_llm_config=chat_llm_config,
                 captain_llm_config=captain_llm_config)
             return [captain_agent], None, None, None
@@ -334,7 +333,8 @@ class EvalPlusEvaluator(object):
             collect_stats_from_chat(result_dict,
                 groupchat_messages=groupchat_messages,
                 time_elapsed=time_elapsed)
-            builder.clear_all_agents(recycle_endpoint=False)
+            if builder is not None:
+                builder.clear_all_agents(recycle_endpoint=False)
             return output
 
         result_dir = self._setup_result_dir(indv)
@@ -433,7 +433,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
             collect_stats_from_chat(result_dict,
                 groupchat_messages=groupchat_messages,
                 time_elapsed=time_elapsed)
-            builder.clear_all_agents(recycle_endpoint=False)
+            if builder is not None:
+                builder.clear_all_agents(recycle_endpoint=False)
 
             return output
 
@@ -542,7 +543,7 @@ SCICODE_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'problems_all',
     'with_background': False,
-    'problem_list': [],
+    'problem_list': ['2'],
     'cleanup_code': False,
     'include_bg_comments': True,
     'debug_mode': 0,
@@ -576,8 +577,8 @@ EVAL_CAPTAIN_LLM_CONFIG = {
             "builder_model": LLM_MODEL,
             "agent_model": LLM_MODEL,
         },
-        "group_chat_config": {"max_round": 15},
-        "max_turns": 1
+        "group_chat_config": {"max_round": 5},
+        "max_turns": 2
     }
 }
 

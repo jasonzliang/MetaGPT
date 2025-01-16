@@ -26,7 +26,7 @@ from wrapt_timeout_decorator import *
 # from scicode.parse.parse import extract_function_name
 # import timeout_decorator
 
-from autogen_agent_builder import AgentBuilder
+from autogen_agent_builder import AgentBuilder, CustomJSONEncoder
 from autogen_captainagent import CaptainAgent
 from autogen_society_of_mind import SocietyOfMindAgent
 from autogen_executor import LocalCommandLineCodeExecutor
@@ -150,8 +150,10 @@ def _start_task_captain_agent(
         message=execution_task)
 
     if log_file is not None:
-        sys_msg_log_file = os.path.splitext(log_file)[0] + "_sys_msg.txt"
-        yaml_dump(captain_agent.executor.build_history, sys_msg_log_file)
+        sys_msg_log_file = os.path.splitext(log_file)[0] + "_sys_msg.json"
+        with open(sys_msg_log_file, "w") as f:
+            json.dump(captain_agent.executor.build_history, f, indent=4,
+                cls=CustomJSONEncoder)
     chat_messages = captain_agent.executor.complete_chat_history
     return chat_result, chat_messages
 
@@ -374,7 +376,6 @@ def _code_executor(executor_dir=None):
 
 
 def init_captain_agent(
-    base_dir=None,
     work_dir=None,
     agent_name="captain_agent",
     chat_llm_config=CHAT_LLM_CONFIG,
@@ -386,15 +387,14 @@ def init_captain_agent(
     captain_llm_config['nested_config']['group_chat_llm_config'] = _chat_llm_config
 
     ## build agents
-    if base_dir is None: base_dir = "."; assert os.path.exists(base_dir)
+    # if base_dir is None: base_dir = "."; assert os.path.exists(base_dir)
     captain_agent = CaptainAgent(
         name=agent_name,
         llm_config=_chat_llm_config,
         nested_config=captain_llm_config['nested_config'],
+        update_default_nested_config=False,
         code_execution_config={'executor': _code_executor(work_dir)},
-        # If you'd like to save the created agents in nested chat for further
-        # use, specify the save directory here
-        agent_config_save_path=os.path.join(base_dir, agent_name))
+        agent_config_save_path=None)
     return captain_agent
 
 
