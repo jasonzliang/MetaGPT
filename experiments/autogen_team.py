@@ -161,7 +161,7 @@ def _start_task_captain_agent(
         is_termination_msg=lambda x: True)
     chat_result = captain_user_proxy.initiate_chat(captain_agent,
         message=execution_task)
-    print(chat_result.summary); time.sleep(100000)
+    # chat_result = chat_result.summary
 
     if log_file is not None:
         sys_msg_log_file = os.path.splitext(log_file)[0] + "_sys_msg.json"

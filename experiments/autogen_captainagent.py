@@ -127,20 +127,20 @@ Note that the previous experts will forget everything after you obtain the respo
 - If the code's result indicates there is an error, fix the error and output the whole code again.
 - If the error can't be fixed or if the task is not solved even after the code is executed successfully, analyze the problem, revisit your assumption, collect additional info you need, and think of a different approach to try.
 - Include verifiable evidence in your response if possible.
-- After completing all tasks and verifications, you should conclude the operation and reply "TERMINATE"
+- After completing and verifying all tasks, you should conclude the operation and reply "TERMINATE"
 """
 
     DEFAULT_DESCRIPTION = "A helpful AI assistant that can build a group of agents at a proper time to solve a task."
 
     # This is used to prompt the LLM to summarize the conversation history between CaptainAgent's tool execution history
-    DEFAULT_SUMMARY_PROMPT = "Read the following conversation history between an expert and a group of agent experts, summarize the conversation history. Your summarization should include the initial task, the experts' plan and the attempt, finally the results of the conversation. If the experts arrived at a conclusion, state it as it is without any modification."
-#     DEFAULT_SUMMARY_PROMPT = \
-# """- An expert and a group of experts are working together to solve a coding problem.
-# - Read the following conversation history between the expert and group of agent experts.
-# - Extract the best working solution code from the discussion in the format of ```python```.
-# - Include only the essential implementation, removing any debugging, testing, or exploratory code.
-# - The solution should be complete, well-structured, and ready to use.
-# - Ensure the function name in the solution matches the function header name from the problem description."""
+    # DEFAULT_SUMMARY_PROMPT = "Read the following conversation history between an expert and a group of agent experts, summarize the conversation history. Your summarization should include the initial task, the experts' plan and the attempt, finally the results of the conversation. If the experts arrived at a conclusion, state it as it is without any modification."
+    DEFAULT_SUMMARY_PROMPT = """# Your task
+- An expert and a group of experts are working together to solve a coding problem.
+- Read the following conversation history between the expert and group of agent experts.
+- Extract the best working solution code from the discussion in the format of ```python```.
+- Include only the essential implementation, removing any debugging, testing, or exploratory code.
+- The solution should be complete, well-structured, and ready to use.
+- Ensure the function name in the solution matches the function header name from the problem description."""
 
     def __init__(
         self,
@@ -450,7 +450,7 @@ Collect information from the general task, follow the suggestions from manager t
                     self.tool_root_dir = tool_root_dir
                     self.tool_type = tool_type
 
-                    # Retrieve and build tools based on the smilarities between the skills and the tool description
+                    # Retrieve and build tools based on the similarities between the skills and the tool description
                     tool_builder = ToolBuilder(
                         corpus_root=tool_root_dir,
                         retriever=self._nested_config["autobuild_tool_config"].get("retriever", "all-mpnet-base-v2"),
