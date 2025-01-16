@@ -13,7 +13,7 @@ import time
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 
 import autogen
-from autogen import Cache
+from autogen import Cache, UserProxyAgent
 # from autogen.agentchat.contrib.agent_builder import AgentBuilder
 from autogen.agentchat.contrib.capabilities import transform_messages, transforms
 from autogen.agentchat.contrib.capabilities.text_compressors import LLMLingua
@@ -77,7 +77,7 @@ BUILDER_LLM_CONFIG = {"temperature": 0.9,
 CAPTAIN_LLM_CONFIG = {
     "nested_config": {
         "autobuild_init_config": {
-            "config_file_or_env": "OAI_CONFIG_LIST",
+            "config_file_or_env": CONFIG_FILE_OR_ENV,
             "builder_model": "gpt-4o",
             "agent_model": "gpt-4o",
         },
@@ -141,8 +141,10 @@ def _start_task_captain_agent(
     assert len(agent_list) == 1 and agent_list[0].name == "captain_agent"
     captain_agent = agent_list[0]
 
-    captain_user_proxy = UserProxyAgent(name="captain_user_proxy",
-        human_input_mode="NEVER")
+    captain_user_proxy = UserProxyAgent(
+        name="captain_user_proxy",
+        human_input_mode="NEVER",
+        code_execution_config=False)
     chat_result = captain_user_proxy.initiate_chat(captain_agent,
         message=execution_task)
 
@@ -378,7 +380,7 @@ def init_captain_agent(
 
     _chat_llm_config = _filter_chat_llm_config(chat_llm_config)
     captain_llm_config['nested_config']['autobuild_build_config']['code_execution_config'] = \
-        _code_executor(work_dir)
+        {'executor': _code_executor(work_dir)}
     captain_llm_config['nested_config']['group_chat_llm_config'] = _chat_llm_config
 
     ## build agents

@@ -4,6 +4,8 @@
 import hashlib
 import json
 import os
+import pprint
+import time
 from typing import Callable, Literal, Optional, Union
 
 from termcolor import colored
@@ -181,6 +183,7 @@ Note that the previous experts will forget everything after you obtain the respo
         if system_message is None:
             system_message = self.AUTOBUILD_SYSTEM_MESSAGE
         nested_config = self._update_config(self.DEFAULT_NESTED_CONFIG, nested_config)
+        # pprint.pprint(nested_config); time.sleep(100000)
         if nested_config["group_chat_llm_config"] is None:
             nested_config["group_chat_llm_config"] = llm_config.copy()
         if agent_lib:

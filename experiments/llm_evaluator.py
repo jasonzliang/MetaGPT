@@ -277,7 +277,7 @@ class EvalPlusEvaluator(object):
                 captain_agent_dir=os.path.join(self.evaluator_dir, "captain_agent"),
                 chat_llm_config=chat_llm_config,
                 captain_llm_config=captain_llm_config)
-            return captain_agent, None, None, None
+            return [captain_agent], None, None, None
         else:
             return init_builder(
                 building_task=None,
@@ -418,6 +418,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
             chat_result, groupchat_messages = start_task(
                 execution_task=prompt,
                 agent_list=agent_list,
+                use_captain_agent=self.use_captain_agent,
                 chat_llm_config=chat_llm_config,
                 builder=self.autogen_builder,
                 builder_llm_config=builder_llm_config,
@@ -545,11 +546,18 @@ SCICODE_EVAL_CONFIG = {
     'cleanup_code': False,
     'include_bg_comments': True,
     'debug_mode': 0,
-    'use_captain_agent': False,
+    'use_captain_agent': True,
 }
 
 EVAL_LLM_CONFIG = {
     'model': LLM_MODEL
+}
+
+EVAL_CHAT_LLM_CONFIG = {
+    'model': LLM_MODEL,
+    'max_round': 75,
+    'temperature': 0.01,
+    'use_llm_lingua': False,
 }
 
 EVAL_BUILDER_LLM_CONFIG = {
@@ -562,17 +570,9 @@ EVAL_BUILDER_LLM_CONFIG = {
     'temperature': 0.9
 }
 
-EVAL_CHAT_LLM_CONFIG = {
-    'model': LLM_MODEL,
-    'max_round': 75,
-    'temperature': 0.01,
-    'use_llm_lingua': False,
-}
-
 EVAL_CAPTAIN_LLM_CONFIG = {
     "nested_config": {
         "autobuild_init_config": {
-            "config_file_or_env": "OAI_CONFIG_LIST",
             "builder_model": LLM_MODEL,
             "agent_model": LLM_MODEL,
         },
