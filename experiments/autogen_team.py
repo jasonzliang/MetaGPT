@@ -80,6 +80,7 @@ CAPTAIN_LLM_CONFIG = {
             "config_file_or_env": CONFIG_FILE_OR_ENV,
             "builder_model": "gpt-4o",
             "agent_model": "gpt-4o",
+            "max_agents": 4
         },
         "autobuild_build_config": {
             "default_llm_config": {"temperature": 1, "top_p": 0.95, "max_tokens": 4096},

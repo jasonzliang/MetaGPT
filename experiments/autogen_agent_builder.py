@@ -65,6 +65,12 @@ def _cleanup_msg(message, include_key=True):
         return "\n".join(new_lines)
 
 
+class CustomJSONEncoder(json.JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, LocalCommandLineCodeExecutor):
+                    return None
+                return super().default(obj)
+
 class AgentBuilder:
     """
     AgentBuilder can help user build an automatic task solving process powered by multi-agent system.
@@ -1427,11 +1433,6 @@ With following description: {function_description}
         Return:
             filepath: path save.
         """
-        class CustomJSONEncoder(json.JSONEncoder):
-            def default(self, obj):
-                if isinstance(obj, LocalCommandLineCodeExecutor):
-                    return None
-                return super().default(obj)
 
         if filepath is None:
             filepath = f'./save_config_{hashlib.md5(self.building_task.encode("utf-8")).hexdigest()}.json'

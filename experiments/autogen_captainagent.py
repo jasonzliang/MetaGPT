@@ -14,9 +14,10 @@ import autogen
 from autogen import UserProxyAgent
 from autogen.agentchat.conversable_agent import ConversableAgent
 
-from autogen.agentchat.contrib.captainagent.agent_builder import AgentBuilder
+# from autogen.agentchat.contrib.captainagent.agent_builder import AgentBuilder
 from autogen.agentchat.contrib.captainagent.tool_retriever import ToolBuilder, format_ag2_tool, get_full_tool_description
 
+from autogen_agent_builder import AgentBuilder, CustomJSONEncoder
 
 class CaptainAgent(ConversableAgent):
     """(In preview) Captain agent, designed to solve a task with an agent or a group of agents."""
@@ -182,8 +183,8 @@ Note that the previous experts will forget everything after you obtain the respo
 
         if system_message is None:
             system_message = self.AUTOBUILD_SYSTEM_MESSAGE
-        nested_config = self._update_config(self.DEFAULT_NESTED_CONFIG, nested_config)
-        # pprint.pprint(nested_config); time.sleep(100000)
+        # Not necessary since we provide full nested config dict
+        # nested_config = self._update_config(self.DEFAULT_NESTED_CONFIG, nested_config)
         if nested_config["group_chat_llm_config"] is None:
             nested_config["group_chat_llm_config"] = llm_config.copy()
         if agent_lib:
@@ -383,7 +384,7 @@ Collect information from the general task, follow the suggestions from manager t
         builder = AgentBuilder(**self._nested_config["autobuild_init_config"])
         # if the group is already built, load from history
         if group_name in self.build_history.keys():
-            agent_list, agent_configs = builder.load(config_json=json.dumps(self.build_history[group_name]))
+            agent_list, agent_configs = builder.load(config_dict=self.build_history[group_name])
             if self._nested_config.get("autobuild_tool_config", None) and agent_configs["coding"] is True:
                 # tool library is enabled, reload tools and bind them to the agents
                 tool_root_dir = self.tool_root_dir
@@ -468,7 +469,7 @@ Collect information from the general task, follow the suggestions from manager t
             building_task_md5 = hashlib.md5(building_task.encode("utf-8")).hexdigest()
             with open(f"{self._agent_config_save_path}/build_history_{building_task_md5}.json",
                 "w") as f:
-                json.dump(self.build_history, f)
+                json.dump(self.build_history, f, indent=4, cls=CustomJSONEncoder)
 
         self.build_times += 1
         # start nested chat
