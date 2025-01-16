@@ -137,17 +137,20 @@ def start_task(execution_task: str,
 def _start_task_captain_agent(
     execution_task: str,
     agent_list: list,
+    captain_agent_name: str = 'captain_agent',
+    proxy_agent_name: str = 'captain_user_proxy',
     log_file: Optional[str] = None):
 
-    assert len(agent_list) == 1 and agent_list[0].name == "captain_agent"
+    assert len(agent_list) == 1 and agent_list[0].name == captain_agent_name
     captain_agent = agent_list[0]
 
     captain_user_proxy = UserProxyAgent(
-        name="captain_user_proxy",
+        name=proxy_agent_name,
         human_input_mode="NEVER",
         code_execution_config=False)
     chat_result = captain_user_proxy.initiate_chat(captain_agent,
         message=execution_task)
+    # print(chat_result.summary)
 
     if log_file is not None:
         sys_msg_log_file = os.path.splitext(log_file)[0] + "_sys_msg.json"

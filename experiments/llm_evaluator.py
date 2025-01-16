@@ -578,7 +578,7 @@ EVAL_CAPTAIN_LLM_CONFIG = {
             "agent_model": LLM_MODEL,
         },
         "group_chat_config": {"max_round": 5},
-        "max_turns": 2
+        "max_turns": 5
     }
 }
 

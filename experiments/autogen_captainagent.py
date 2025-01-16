@@ -132,7 +132,14 @@ Note that the previous experts will forget everything after you obtain the respo
     DEFAULT_DESCRIPTION = "A helpful AI assistant that can build a group of agents at a proper time to solve a task."
 
     # This is used to prompt the LLM to summarize the conversation history between CaptainAgent's tool execution history
-    DEFAULT_SUMMARY_PROMPT = "Read the following conversation history between an expert and a group of agent experts, summarize the conversation history. Your summarization should include the initial task, the experts' plan and the attempt, finally the results of the conversation. If the experts arrived at a conclusion, state it as it is without any modification."
+    # DEFAULT_SUMMARY_PROMPT = "Read the following conversation history between an expert and a group of agent experts, summarize the conversation history. Your summarization should include the initial task, the experts' plan and the attempt, finally the results of the conversation. If the experts arrived at a conclusion, state it as it is without any modification."
+    DEFAULT_SUMMARY_PROMPT = \
+"""- An expert and a group of experts are working together to solve a coding problem.
+- Read the following conversation history between the expert and group of agent experts.
+- Extract the best working solution code from the discussion in the format of ```python```.
+- Include only the essential implementation, removing any debugging, testing, or exploratory code.
+- The solution should be complete, well-structured, and ready to use.
+- Ensure the function name in the solution matches the function header name from the problem description."""
 
     def __init__(
         self,
@@ -189,7 +196,7 @@ Note that the previous experts will forget everything after you obtain the respo
             nested_config = self._update_config(self.DEFAULT_NESTED_CONFIG, nested_config)
 
         # Not sure why but max_turns == 1 throws error
-        assert nested_config["max_turns"] > 1
+        # assert nested_config["max_turns"] > 1
         if nested_config["group_chat_llm_config"] is None:
             nested_config["group_chat_llm_config"] = llm_config.copy()
         if agent_lib:
@@ -199,11 +206,12 @@ Note that the previous experts will forget everything after you obtain the respo
                 nested_config["autobuild_tool_config"] = {}
             nested_config["autobuild_tool_config"]["tool_root"] = tool_lib
 
-        self.assistant = ConversableAgent(name="CaptainAgent", system_message=system_message, llm_config=llm_config)
+        self.assistant = ConversableAgent(name="CaptainAgent_Expert",
+            system_message=system_message, llm_config=llm_config)
         self.assistant.update_tool_signature(self.AUTOBUILD_TOOL, is_remove=False)
 
         self.executor = CaptainUserProxyAgent(
-            name="Expert_summoner",
+            name="Summoner_Expert",
             nested_config=nested_config,
             agent_config_save_path=agent_config_save_path,
             is_termination_msg=lambda x: x.get("content", "") and "terminate" in x.get("content", "").lower(),
