@@ -274,7 +274,7 @@ class EvalPlusEvaluator(object):
         captain_llm_config):
         if self.use_captain_agent:
             captain_agent = init_captain_agent(
-                captain_agent_dir=os.path.join(self.evaluator_dir, "captain_agent"),
+                base_dir=self.evaluator_dir,
                 chat_llm_config=chat_llm_config,
                 captain_llm_config=captain_llm_config)
             return [captain_agent], None, None, None
@@ -576,7 +576,8 @@ EVAL_CAPTAIN_LLM_CONFIG = {
             "builder_model": LLM_MODEL,
             "agent_model": LLM_MODEL,
         },
-        "group_chat_config": {"max_round": 75},
+        "group_chat_config": {"max_round": 15},
+        "max_turns": 1
     }
 }
 

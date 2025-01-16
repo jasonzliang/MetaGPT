@@ -183,7 +183,7 @@ Note that the previous experts will forget everything after you obtain the respo
 
         if system_message is None:
             system_message = self.AUTOBUILD_SYSTEM_MESSAGE
-        # Not necessary since we provide full nested config dict
+        # Not necessary since we provide full nested_config dict
         # nested_config = self._update_config(self.DEFAULT_NESTED_CONFIG, nested_config)
         if nested_config["group_chat_llm_config"] is None:
             nested_config["group_chat_llm_config"] = llm_config.copy()

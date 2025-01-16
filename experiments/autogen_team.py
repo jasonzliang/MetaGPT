@@ -374,8 +374,9 @@ def _code_executor(executor_dir=None):
 
 
 def init_captain_agent(
-    captain_agent_dir=None,
+    base_dir=None,
     work_dir=None,
+    agent_name="captain_agent",
     chat_llm_config=CHAT_LLM_CONFIG,
     captain_llm_config=CAPTAIN_LLM_CONFIG):
 
@@ -385,14 +386,15 @@ def init_captain_agent(
     captain_llm_config['nested_config']['group_chat_llm_config'] = _chat_llm_config
 
     ## build agents
+    if base_dir is None: base_dir = "."; assert os.path.exists(base_dir)
     captain_agent = CaptainAgent(
-        name="captain_agent",
+        name=agent_name,
         llm_config=_chat_llm_config,
         nested_config=captain_llm_config['nested_config'],
         code_execution_config={'executor': _code_executor(work_dir)},
         # If you'd like to save the created agents in nested chat for further
         # use, specify the save directory here
-        agent_config_save_path=captain_agent_dir)
+        agent_config_save_path=os.path.join(base_dir, agent_name))
     return captain_agent
 
 
