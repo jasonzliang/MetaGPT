@@ -388,13 +388,13 @@ def _build_from_library(
     return agent_list
 
 
-def _code_executor(executor_dir=None):
-    if executor_dir is None:
-        executor_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
+def _code_executor(work_dir=None):
+    if work_dir is None:
+        work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
     executor = LocalCommandLineCodeExecutor(
         timeout=CODE_EXECUTION_CONFIG['exec_timeout'],
         max_output_len=CODE_EXECUTION_CONFIG['exec_max_output_len'],
-        work_dir=executor_dir,
+        work_dir=work_dir,
         functions_module=CODE_EXECUTION_CONFIG['exec_library_name'])
     return executor
 

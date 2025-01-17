@@ -723,9 +723,9 @@ if __name__ == "__main__":
         EVAL_BUILDER_LLM_CONFIG['use_agent_library'] = True
     if 'background' in sys.argv[2].lower():
         SCICODE_EVAL_CONFIG['with_background'] = True
-    if 'cleanup' in sys.argv[2]:
+    if 'cleanup' in sys.argv[2].lower():
         SCICODE_EVAL_CONFIG['cleanup_code'] = True
-    if 'captain' in sys.argv[2]:
+    if 'captain' in sys.argv[2].lower():
         SCICODE_EVAL_CONFIG['use_captain_agent'] = True
     test_evaluator(team_role_fp=sys.argv[1], eval_suffix=sys.argv[2])
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
