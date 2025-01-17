@@ -546,7 +546,7 @@ SCICODE_EVAL_CONFIG = {
     'cleanup_code': False,
     'include_bg_comments': True,
     'debug_mode': 0,
-    'use_captain_agent': True,
+    'use_captain_agent': False,
 }
 
 EVAL_LLM_CONFIG = {
@@ -725,6 +725,8 @@ if __name__ == "__main__":
         SCICODE_EVAL_CONFIG['with_background'] = True
     if 'cleanup' in sys.argv[2]:
         SCICODE_EVAL_CONFIG['cleanup_code'] = True
+    if 'captain' in sys.argv[2]:
+        SCICODE_EVAL_CONFIG['use_captain_agent'] = True
     test_evaluator(team_role_fp=sys.argv[1], eval_suffix=sys.argv[2])
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
     # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
