@@ -151,7 +151,7 @@ def _start_task_captain_agent(
     assert len(agent_list) == 1 and agent_list[0].name == captain_agent_name
     captain_agent = agent_list[0]
 
-    _register_functions_executor(code_library, executor)
+    _register_functions_executor(executor, imports, code_library, work_dir=None)
 
     captain_user_proxy = UserProxyAgent(
         name=proxy_agent_name,
@@ -299,8 +299,9 @@ def _restore_sys_msg(agent_list, orig_agent_sys_msgs):
 
 
 def _register_functions_executor(
-    code_library,
     executor,
+    imports,
+    code_library,
     work_dir=None):
 
     if executor is None: return None
@@ -368,7 +369,7 @@ def _register_functions(
     assert len(agent_list_noproxy) > 0; assert user_proxy is not None
 
     executor = user_proxy._code_executor
-    return _register_functions_executor(code_library, executor, work_dir)
+    return _register_functions_executor(executor, imports, code_library, work_dir)
 
 
 def _build_from_library(
