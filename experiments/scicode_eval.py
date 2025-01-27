@@ -10,7 +10,7 @@ import time
 
 import numpy as np
 
-from scicode.gen.models import extract_python_script, get_model_function
+from scicode.gen.models import get_model_function
 from scicode.parse.parse import extract_function_name, get_function_from_code, \
     read_from_jsonl
 
@@ -31,6 +31,18 @@ BACKGOUND_PROMPT_TEMPLATE = Path("scicode_data", "multistep_template_v2.txt").re
 H5PY_FILE = os.path.join("scicode_data/test_data.h5")
 CLEANUP_TMP_FILES = False
 TEST_TIMEOUT = 300
+
+
+def extract_python_script(response: str):
+    # We will extract the python script from the response
+    if '```' in response:
+        python_script = response.split("```python")[1].split("```")[0] if '```python' in response else response.split('```')[1].split('```')[0]
+    else:
+        print("scicode_eval.extract_python_script failed, code already extracted?")
+        # print(response + "\n")
+        python_script = response
+    python_script = re.sub(r'^\s*(import .*|from .*\s+import\s+.*)', '', python_script, flags=re.MULTILINE)
+    return python_script
 
 
 class Gencode:
