@@ -716,6 +716,9 @@ def _test_check_eval_progress(
     evaluator._check_eval_progress(n_indv)
 
 
+# TODO:
+# Fix executor (seperate one per seek expert help)
+# Have result from seek expert help have code
 if __name__ == "__main__":
     if 'lingua' in sys.argv[2].lower():
         EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
