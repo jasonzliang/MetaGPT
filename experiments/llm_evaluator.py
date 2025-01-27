@@ -542,7 +542,7 @@ SCICODE_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'problems_all',
     'with_background': False,
-    'problem_list': ['2'],
+    'problem_list': [],
     'cleanup_code': False,
     'include_bg_comments': True,
     'debug_mode': 0,
@@ -576,8 +576,8 @@ EVAL_CAPTAIN_LLM_CONFIG = {
             "builder_model": LLM_MODEL,
             "agent_model": LLM_MODEL,
         },
-        "group_chat_config": {"max_round": 5},
-        "max_turns": 1
+        "group_chat_config": {"max_round": 30},
+        "max_turns": 5
     }
 }
 
