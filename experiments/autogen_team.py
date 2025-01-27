@@ -121,6 +121,7 @@ def start_task(execution_task: str,
             chat_llm_config=chat_llm_config,
             executor=executor,
             code_library=code_library,
+            imports=imports,
             log_file=log_file)
     else:
         chat_result, chat_messages = _start_task_builder_agents(
@@ -144,6 +145,7 @@ def _start_task_captain_agent(
     chat_llm_config: dict = CHAT_LLM_CONFIG,
     executor: Optional[LocalCommandLineCodeExecutor] = None,
     code_library: Optional[list] = None,
+    imports: Optional[str] = None,
     captain_agent_name: str = 'captain_agent',
     proxy_agent_name: str = 'captain_user_proxy',
     log_file: Optional[str] = None):
