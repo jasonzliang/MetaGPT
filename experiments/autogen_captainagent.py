@@ -211,28 +211,28 @@ Note that the previous experts will forget everything after you obtain the respo
                 nested_config["autobuild_tool_config"] = {}
             nested_config["autobuild_tool_config"]["tool_root"] = tool_lib
 
-        self.system_message = system_message
-        self.llm_config = llm_config
-        self.nested_config = nested_config
-        self.agent_config_save_path = agent_config_save_path
-        self.code_execution_config = code_execution_config
-        self.transforms = transforms
+        self._system_message = system_message
+        self._llm_config = llm_config
+        self._nested_config = nested_config
+        self._agent_config_save_path = agent_config_save_path
+        self._code_execution_config = code_execution_config
+        self._transforms = transforms
         self.reset()
 
     def reset(self):
         self.assistant = ConversableAgent(name="CaptainAgent_Expert",
-            system_message=self.system_message, llm_config=self.llm_config)
+            system_message=self._system_message, llm_config=self._llm_config)
         self.assistant.update_tool_signature(self.AUTOBUILD_TOOL, is_remove=False)
 
         self.executor = CaptainUserProxyAgent(
             name="Summoner_Expert",
-            nested_config=self.nested_config,
-            agent_config_save_path=self.agent_config_save_path,
+            nested_config=self._nested_config,
+            agent_config_save_path=self._agent_config_save_path,
             is_termination_msg=lambda x: x.get("content", "") and \
                 "terminate" in x.get("content", "").lower(),
-            code_execution_config=self.code_execution_config,
+            code_execution_config=self._code_execution_config,
             human_input_mode="NEVER",
-            transforms=self.transforms
+            transforms=self._transforms
         )
 
         self.register_nested_chats(
@@ -240,7 +240,7 @@ Note that the previous experts will forget everything after you obtain the respo
                 {
                     "sender": self.executor,
                     "recipient": self.assistant,
-                    "max_turns": self.nested_config["max_turns"],
+                    "max_turns": self._nested_config["max_turns"],
                     "summary_method": "reflection_with_llm",
                     "summary_args": {
                         "summary_prompt": self.DEFAULT_SUMMARY_PROMPT,
