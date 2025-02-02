@@ -295,7 +295,7 @@ class CaptainUserProxyAgent(ConversableAgent):
 ## Errors or issues in the conversation
 ...
 
-## Final solution Code
+## Final solution code
 ```python ...```
 
 ## Need to double-check?
