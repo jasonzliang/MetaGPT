@@ -139,7 +139,7 @@ Note that the previous experts will forget everything after you obtain the respo
     DEFAULT_SUMMARY_PROMPT = """# Your task
 - A captain expert and a group of experts are working together to solve a coding problem.
 - Read the following conversation history between the captain expert and group of agent experts.
-- Extract the final working solution code from the discussion in the format of ```python```.
+- Extract the final best solution code from the discussion in the format of ```python```.
 - Include only the essential implementation, removing any debugging, testing, or exploratory code.
 - The solution should be complete, well-structured, and ready to use.
 - Ensure the function name in the solution matches the function header name from the problem description."""
@@ -264,10 +264,10 @@ class CaptainUserProxyAgent(ConversableAgent):
 
 ## Additional information (file path, code blocks, url, etc.)
     CONVERSATION_REVIEW_PROMPT = """# Your task
-Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
-If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, if you think it is worth further verification, mark the "Need double-check" as "Yes"
-If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No".
-You must make sure to output the experts' final best solution code using ```python``` format.
+- Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
+- If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, if you think it is worth further verification, mark the "Need double-check" as "Yes"
+- If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No".
+- You must make sure to output the experts' final best solution code using ```python``` format.
 
 # Conversation history:
 {chat_history}
