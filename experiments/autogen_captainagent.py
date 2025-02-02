@@ -76,9 +76,10 @@ When a task is assigned to you:
 1. Analysis of its constraints and conditions for completion.
 2. Respond with a specific plan of how to solve the task.
 
-After that, you can solve the task by:
+After that, you can solve the task in two ways:
 - Delegate the resolution of tasks to other experts created by seeking a group of experts for help and derive conclusive insights from their conversation summarization.
-- In other words, you can seek the help of these experts to solve the task.
+- Analysis and solve the task with your coding and language skills.
+- You are highly encouraged to solve the task by seeking help from a group of experts.
 
 # How to seek experts help
 The tool "seek_experts_help" can build a group of experts according to the building_task and let them chat with each other in a group chat to solve the execution_task you provided.
@@ -200,8 +201,6 @@ Note that the previous experts will forget everything after you obtain the respo
         if update_default_nested_config:
             nested_config = self._update_config(self.DEFAULT_NESTED_CONFIG, nested_config)
 
-        # Not sure why but max_turns == 1 throws error
-        # assert nested_config["max_turns"] > 1
         if nested_config["group_chat_llm_config"] is None:
             nested_config["group_chat_llm_config"] = llm_config.copy()
         if agent_lib:
