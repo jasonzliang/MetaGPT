@@ -558,7 +558,7 @@ EVAL_LLM_CONFIG = {
 
 EVAL_CHAT_LLM_CONFIG = {
     'model': LLM_MODEL,
-    'max_round': 50,
+    'max_round': 75,
     'temperature': 0.01,
     'use_llm_lingua': False,
 }
@@ -579,7 +579,7 @@ EVAL_CAPTAIN_LLM_CONFIG = {
             "agent_model": LLM_MODEL,
             "builder_model": BUILDER_LLM_MODEL,
         },
-        "group_chat_config": {"max_round": 30},
+        "group_chat_config": {"max_round": 75},
         "max_turns": 5
     }
 }
