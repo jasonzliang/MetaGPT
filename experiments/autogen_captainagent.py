@@ -113,7 +113,7 @@ You should Provide the following information in markdown format.
 
 # After seek_experts_help
 You will receive a comprehensive conclusion from the conversation, including the task information, results, reason for the results, conversation contradiction or issues, and additional information.
-You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (with the same group name) when:
+You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using "seek_experts_help" with the same group name) when:
 - The conversation has contradictions or issues (need double-check marked as yes), or
 - The result is different from the previous results.
 
