@@ -535,7 +535,7 @@ Collect information from the general task, follow the suggestions from manager t
 
         if self._executor:
             work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
-            self._executor.reset(work_dir)
+            self._executor.reset(work_dir, use_existing_func=True)
 
         agent_list[0].initiate_chat(
             self.manager, message=self.AUTOBUILD_TASK_DESC.format(
@@ -543,7 +543,7 @@ Collect information from the general task, follow the suggestions from manager t
 
         if self._executor:
             work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
-            self._executor.reset(work_dir)
+            self._executor.reset(work_dir, use_existing_func=True)
 
         chat_history = []
         key = list(agent_list[0].chat_messages.keys())[0]

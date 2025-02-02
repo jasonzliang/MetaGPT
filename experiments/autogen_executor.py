@@ -139,11 +139,12 @@ $functions"""
         if execution_policies is not None:
             self.execution_policies.update(execution_policies)
 
-    def reset(self, work_dir=None):
+    def reset(self, work_dir=None, use_existing_func=False):
         if work_dir is not None:
             self._work_dir = Path(work_dir)
 
-        self._create_func_file()
+        if use_existing_func:
+            self._create_func_file()
         self._setup_functions_complete = False
         self._functions = []
         self._code_history = []
