@@ -133,6 +133,7 @@ $functions"""
         else:
             self._setup_functions_complete = True
         self._code_history = []
+        self._func_file_content = None
 
         self.execution_policies = self.DEFAULT_EXECUTION_POLICY.copy()
         if execution_policies is not None:
@@ -142,6 +143,7 @@ $functions"""
         if work_dir is not None:
             self._work_dir = Path(work_dir)
 
+        self._create_func_file()
         self._setup_functions_complete = False
         self._functions = []
         self._code_history = []
@@ -214,10 +216,21 @@ $functions"""
                 if re.search(pattern, code):
                     raise ValueError(f"Potentially dangerous command detected: {message}")
 
+    def _create_func_file(self, func_file_content=None):
+        if func_file_content is not None:
+            self._func_file_content = func_file_content
+        if self._func_file_content is None or len(self._func_file_content) == 0:
+            return
+
+        self._work_dir.mkdir(exist_ok=True)
+        func_file = self._work_dir / f"{self._functions_module}.py"
+        func_file.write_text(self._func_file_content)
+
     def _setup_functions(self,
         imports=None,
         func_list=None,
         overwrite_func_file=False) -> None:
+
         if overwrite_func_file:
             func_file_content = ""
             if imports is not None and len(imports) > 0:
@@ -226,10 +239,7 @@ $functions"""
                 func_file_content += "\n\n".join(func_list)
         else:
             func_file_content = _build_python_functions_file(self._functions)
-
-        self._work_dir.mkdir(exist_ok=True)
-        func_file = self._work_dir / f"{self._functions_module}.py"
-        func_file.write_text(func_file_content)
+        self._create_func_file(func_file_content)
 
         # Collect requirements
         lists_of_packages = [x.python_packages for x in self._functions if isinstance(x, FunctionWithRequirements)]
