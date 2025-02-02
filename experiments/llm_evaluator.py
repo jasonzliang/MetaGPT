@@ -531,8 +531,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 if 'LLM_MODEL' in os.environ:
     LLM_MODEL = os.environ['LLM_MODEL']
 else:
-    LLM_MODEL = "gpt-4o-2024-11-20"
-BUILDER_LLM_MODEL = "gpt-4o-2024-11-20"
+    LLM_MODEL = "gpt-4o"
+BUILDER_LLM_MODEL = "gpt-4o"
 
 EVALPLUS_EVAL_CONFIG = {
     'max_problems': 999,

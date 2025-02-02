@@ -297,7 +297,7 @@ class CaptainUserProxyAgent(ConversableAgent):
 ## Final solution code
 ```python ...```
 
-## Need to double-check?
+### Need to double-check?
 [Yes or No]
 """
 
