@@ -78,8 +78,8 @@ When a task is assigned to you:
 
 After that, you can solve the task in the following way:
 - You are highly encouraged to solve the task by seeking help from a group of experts.
-- Delegate the resolution of tasks to other experts created by seeking a group of experts for help and derive conclusive insights from their conversation summarization.
-- Only analyze and solve the task with your coding and language skills if you are highly confident that you can find the solution without other experts' help.
+- Delegate the resolution of the task to a group of created experts and derive conclusive insights from their conversation summarization.
+- Only analyze and solve the task with your coding and language skills if you are highly confident that the solution can be found without the experts' help.
 
 # How to seek experts help
 The tool "seek_experts_help" can build a group of experts according to the building_task and let them chat with each other in a group chat to solve the execution_task you provided.
