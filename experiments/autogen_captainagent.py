@@ -18,6 +18,8 @@ from autogen.agentchat.contrib.capabilities import transform_messages, transform
 # from autogen.agentchat.contrib.captainagent.agent_builder import AgentBuilder
 from autogen.agentchat.contrib.captainagent.tool_retriever import ToolBuilder, format_ag2_tool, get_full_tool_description
 
+from alg_util import ID_LENGTH
+from alg_util import randomword
 from autogen_agent_builder import AgentBuilder, CustomJSONEncoder
 
 class CaptainAgent(ConversableAgent):
@@ -135,9 +137,9 @@ Note that the previous experts will forget everything after you obtain the respo
     # This is used to prompt the LLM to summarize the conversation history between CaptainAgent's tool execution history
     # DEFAULT_SUMMARY_PROMPT = "Read the following conversation history between an expert and a group of agent experts, summarize the conversation history. Your summarization should include the initial task, the experts' plan and the attempt, finally the results of the conversation. If the experts arrived at a conclusion, state it as it is without any modification."
     DEFAULT_SUMMARY_PROMPT = """# Your task
-- An expert and a group of experts are working together to solve a coding problem.
-- Read the following conversation history between the expert and group of agent experts.
-- Extract the best working solution code from the discussion in the format of ```python```.
+- A captain expert and a group of experts are working together to solve a coding problem.
+- Read the following conversation history between the captain expert and group of agent experts.
+- Extract the final working solution code from the discussion in the format of ```python```.
 - Include only the essential implementation, removing any debugging, testing, or exploratory code.
 - The solution should be complete, well-structured, and ready to use.
 - Ensure the function name in the solution matches the function header name from the problem description."""
@@ -260,10 +262,12 @@ Note that the previous experts will forget everything after you obtain the respo
 class CaptainUserProxyAgent(ConversableAgent):
     """(In preview) A proxy agent for the captain agent, that can execute code and provide feedback to the other agents."""
 
+## Additional information (file path, code blocks, url, etc.)
     CONVERSATION_REVIEW_PROMPT = """# Your task
 Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
 If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, if you think it is worth further verification, mark the "Need double-check" as "Yes"
 If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No".
+You must make sure to output the experts' final best solution code using ```python``` format.
 
 # Conversation history:
 {chat_history}
@@ -284,8 +288,8 @@ If you find the conversation ends with TERMINATE and the task is solved, this is
 ### Need to double-check?
 [Yes or No]
 
-## Additional information (file path, code blocks, url, etc.)
-...
+## Final solution Code
+```python ...```
 """
 
     AUTOBUILD_TASK_DESC = """You are given: (1) a task and advises from your manager with a specific plan and (2) a general task.
@@ -385,6 +389,7 @@ Collect information from the general task, follow the suggestions from manager t
         self._agent_config_save_path = agent_config_save_path
         self._nested_config = nested_config.copy()
         self._code_execution_config = code_execution_config
+        self._executor = code_execution_config.get('executor')
         self._transforms = transforms
 
         self.build_history = {}
@@ -519,10 +524,19 @@ Collect information from the general task, follow the suggestions from manager t
         )
         key = list(self.chat_messages.keys())[0]
         general_task = self.chat_messages[key][0]["content"]
+
+        if self._executor:
+            work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
+            self._executor.reset(work_dir)
+
         agent_list[0].initiate_chat(
             self.manager, message=self.AUTOBUILD_TASK_DESC.format(
-                general_task=general_task, manager_task=execution_task)
-        )
+                general_task=general_task, manager_task=execution_task))
+
+        if self._executor:
+            work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
+            self._executor.reset(work_dir)
+
         chat_history = []
         key = list(agent_list[0].chat_messages.keys())[0]
         chat_messages = agent_list[0].chat_messages[key]
