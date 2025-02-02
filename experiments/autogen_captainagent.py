@@ -294,11 +294,11 @@ class CaptainUserProxyAgent(ConversableAgent):
 ## Errors or issues in the conversation
 ...
 
+## Need to double-check?
+[Yes or No]
+
 ## Final solution code
 ```python ...```
-
-### Need to double-check?
-[Yes or No]
 """
 
     AUTOBUILD_TASK_DESC = """You are given: (1) a task and advises from your manager with a specific plan and (2) a general task.
