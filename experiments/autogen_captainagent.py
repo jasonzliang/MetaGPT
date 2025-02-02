@@ -78,7 +78,7 @@ When a task is assigned to you:
 
 After that, you can solve the task in the following way:
 - You are highly encouraged to seek expert help by delegating the resolution of the task to a group of relevant experts and derive conclusive insights from their conversation summarization.
-- Only analyze and solve the task with your coding and language skills if you are highly confident that the solution can be found without the experts' help.
+- Only analyze and solve the task with your coding and language skills if you are absolutely confident that the solution can be found without the experts' help.
 
 # How to seek experts help
 The tool "seek_experts_help" can build a group of experts according to the building_task and let them chat with each other in a group chat to solve the execution_task you provided.
@@ -273,8 +273,8 @@ class CaptainUserProxyAgent(ConversableAgent):
 ## Additional information (file path, code blocks, url, etc.)
     CONVERSATION_REVIEW_PROMPT = """# Your task
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
-- If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, if you think it is worth further verification, mark the "Need double-check" as "Yes"
-- If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No".
+- If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, if you think it is worth further verification, mark the "Need double-check" as "Yes".
+- If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No". Only mark "Yes" if you are highly certain the solution is correct.
 - You must output the final best solution code discovered by the experts using the ```python``` format.
 
 # Conversation history:
