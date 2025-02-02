@@ -151,7 +151,7 @@ def _start_task_captain_agent(
     log_file: Optional[str] = None):
 
     assert len(agent_list) == 1 and agent_list[0].name == captain_agent_name
-    captain_agent = agent_list[0]; captain_agent.reset()
+    captain_agent = agent_list[0]
 
     _register_functions_executor(executor, imports, code_library, work_dir=None)
 
