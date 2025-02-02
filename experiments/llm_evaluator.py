@@ -528,11 +528,10 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
 
 #### Unit tests ####
-if 'LLM_MODEL' in os.environ:
-    LLM_MODEL = os.environ['LLM_MODEL']
-else:
-    LLM_MODEL = "gpt-4o-2024-11-20"
+LLM_MODEL = "gpt-4o-2024-11-20"
+LLM_MODEL = os.environ.get('LLM_MODEL', LLM_MODEL)
 BUILDER_LLM_MODEL = "gpt-4o-2024-11-20"
+BUILDER_LLM_MODEL = os.environ.get('BUILDER_LLM_MODEL', BUILDER_LLM_MODEL)
 
 EVALPLUS_EVAL_CONFIG = {
     'max_problems': 999,
