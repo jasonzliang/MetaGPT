@@ -384,7 +384,7 @@ Collect information from the general task, follow the suggestions from manager t
             is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
-            # code_execution_config=code_execution_config,
+            code_execution_config=code_execution_config,
             llm_config=llm_config,
             default_auto_reply=default_auto_reply,
             description=description,
