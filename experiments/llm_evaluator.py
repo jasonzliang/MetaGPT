@@ -531,8 +531,8 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 if 'LLM_MODEL' in os.environ:
     LLM_MODEL = os.environ['LLM_MODEL']
 else:
-    LLM_MODEL = "gpt-4o-2024-11-20"
-# LLM_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct"
+    LLM_MODEL = "gpt-4o"
+BUILDER_LLM_MODEL = "gpt-4o"
 
 EVALPLUS_EVAL_CONFIG = {
     'max_problems': 999,
@@ -558,14 +558,14 @@ EVAL_LLM_CONFIG = {
 
 EVAL_CHAT_LLM_CONFIG = {
     'model': LLM_MODEL,
-    'max_round': 75,
+    'max_round': 50,
     'temperature': 0.01,
     'use_llm_lingua': False,
 }
 
 EVAL_BUILDER_LLM_CONFIG = {
     'agent_model': LLM_MODEL,
-    'builder_model': LLM_MODEL,
+    'builder_model': BUILDER_LLM_MODEL,
     'custom_coding_instruct': True,
     'use_agent_library': False,
     'agent_lib_include_coding_instruct': True,
@@ -576,8 +576,8 @@ EVAL_BUILDER_LLM_CONFIG = {
 EVAL_CAPTAIN_LLM_CONFIG = {
     "nested_config": {
         "autobuild_init_config": {
-            "builder_model": LLM_MODEL,
             "agent_model": LLM_MODEL,
+            "builder_model": BUILDER_LLM_MODEL,
         },
         "group_chat_config": {"max_round": 30},
         "max_turns": 5

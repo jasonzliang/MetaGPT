@@ -279,6 +279,9 @@ def _get_som_transforms(chat_llm_config):
 def _filter_builder_llm_config(builder_llm_config):
     _builder_llm_config = {'temperature': builder_llm_config['temperature'],
         'cache_seed': builder_llm_config['cache_seed']}
+
+    if builder_llm_config['builder_model'].startswith("o"):
+        del _builder_llm_config['temperature']
     return _builder_llm_config
 
 
@@ -289,6 +292,10 @@ def _filter_chat_llm_config(chat_llm_config):
     for key in chat_llm_config:
         if key in CHAT_LLM_CFG_KEYS:
             _chat_llm_config[key] = chat_llm_config[key]
+
+    if _chat_llm_config['model'].startswith("o") and \
+        'temperature' in _chat_llm_config:
+        del _chat_llm_config['temperature']
     return {"config_list": config_list, **_chat_llm_config}
 
 
@@ -490,6 +497,10 @@ def init_builder(
         agent_config["model"] = [builder_llm_config['agent_model']]
     # overwrite LLM config used by agents for code generation
     builder_dict["default_llm_config"].update(_builder_llm_config)
+    # Make sure temperature is removed for o1 or o3 models
+    if builder_llm_config['agent_model'].startswith('o') and \
+        "temperature" in builder_dict["default_llm_config"]:
+        del builder_dict["default_llm_config"]["temperature"]
     # for any agent with sys msg file, open file and update sys msg from file
     for agent_config in builder_dict["agent_configs"]:
         if 'system_message_file' in agent_config:
