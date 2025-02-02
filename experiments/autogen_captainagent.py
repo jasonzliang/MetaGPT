@@ -275,9 +275,9 @@ class CaptainUserProxyAgent(ConversableAgent):
 ## Additional information (file path, code blocks, url, etc.)
     CONVERSATION_REVIEW_PROMPT = """# Your task
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
+- You must output the final best solution code discovered by the experts using the ```python``` format.
 - If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, if you think it is worth further verification, mark the "Need double-check" as "Yes"
 - If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No".
-- You must make sure to output the experts' final best solution code using ```python``` format.
 
 # Conversation history:
 {chat_history}
