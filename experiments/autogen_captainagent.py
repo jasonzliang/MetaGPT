@@ -384,7 +384,7 @@ Collect information from the general task, follow the suggestions from manager t
             is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
-            code_execution_config=code_execution_config,
+            # code_execution_config=code_execution_config,
             llm_config=llm_config,
             default_auto_reply=default_auto_reply,
             description=description,
@@ -533,9 +533,9 @@ Collect information from the general task, follow the suggestions from manager t
         key = list(self.chat_messages.keys())[0]
         general_task = self.chat_messages[key][0]["content"]
 
-        if self._executor:
-            work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
-            self._executor.reset(work_dir, use_existing_func=True)
+        # if self._executor:
+        #     work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
+        #     self._executor.reset(work_dir, use_existing_func=True)
 
         agent_list[0].initiate_chat(
             self.manager, message=self.AUTOBUILD_TASK_DESC.format(
