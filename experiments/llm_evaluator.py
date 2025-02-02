@@ -528,7 +528,10 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
 
 #### Unit tests ####
-LLM_MODEL = "gpt-4o-2024-11-20"
+if 'LLM_MODEL' in os.environ:
+    LLM_MODEL = os.environ['LLM_MODEL']
+else:
+    LLM_MODEL = "gpt-4o-2024-11-20"
 # LLM_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct"
 
 EVALPLUS_EVAL_CONFIG = {
@@ -542,7 +545,7 @@ SCICODE_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'problems_all',
     'with_background': False,
-    'problem_list': ['2'],
+    'problem_list': [],
     'cleanup_code': False,
     'include_bg_comments': True,
     'debug_mode': 0,
