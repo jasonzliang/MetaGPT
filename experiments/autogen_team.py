@@ -83,7 +83,7 @@ CAPTAIN_LLM_CONFIG = {
             "max_agents": 4
         },
         "autobuild_build_config": {
-            "default_llm_config": {"temperature": 1, "top_p": 0.95, "max_tokens": 4096},
+            "default_llm_config": {"temperature": 1, "top_p": 0.95, "max_completion_tokens": 5000},
             "code_execution_config": "PUT_CODE_EXECUTOR_HERE",
             "coding": True,
         },
