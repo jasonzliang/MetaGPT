@@ -278,6 +278,8 @@ class CaptainUserProxyAgent(ConversableAgent):
 # ## Additional information (file path, code blocks, url, etc.)
 # - If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, and if you think it is worth further verification, mark the "Need to double-check" as "Yes".
 # - If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need to double-check" as "No". Only mark "No" if you are highly certain the solution is correct.
+# ## Need to double-check?
+# [Yes or No]
     CONVERSATION_REVIEW_PROMPT = """# Your task
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
 - You must output the final best solution code discovered by the experts using the ```python``` format.
@@ -540,9 +542,9 @@ Collect information from the general task, follow the suggestions from manager t
         key = list(self.chat_messages.keys())[0]
         general_task = self.chat_messages[key][0]["content"]
 
-        # if self._executor:
-        #     work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
-        #     self._executor.reset(work_dir, use_existing_func=True)
+        if self._executor:
+            work_dir='/tmp/eval_%s_%s' % (randomword(ID_LENGTH), time.time())
+            self._executor.reset(work_dir, use_existing_func=True)
 
         agent_list[0].initiate_chat(
             self.manager, message=self.AUTOBUILD_TASK_DESC.format(
