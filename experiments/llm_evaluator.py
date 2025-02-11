@@ -528,7 +528,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
 
 #### Unit tests ####
-LLM_MODEL = "gpt-4o"
+LLM_MODEL = "o3-mini"
 LLM_MODEL = os.environ.get('LLM_MODEL', LLM_MODEL)
 BUILDER_LLM_MODEL = "gpt-4o"
 BUILDER_LLM_MODEL = os.environ.get('BUILDER_LLM_MODEL', BUILDER_LLM_MODEL)
