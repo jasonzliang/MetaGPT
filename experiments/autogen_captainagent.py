@@ -270,16 +270,16 @@ Note that the previous experts will forget everything after you obtain the respo
 class CaptainUserProxyAgent(ConversableAgent):
     """(In preview) A proxy agent for the captain agent, that can execute code and provide feedback to the other agents."""
 
-## Additional information (file path, code blocks, url, etc.)
-# - If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, if you think it is worth further verification, mark the "Need double-check" as "Yes".
+# ## Additional information (file path, code blocks, url, etc.)
+# - If you found non-trivial errors or issues in the conversation, point it out with a detailed explanation, and if you think it is worth further verification, mark the "Need double-check" as "Yes".
 # - If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No". Only mark "No" if you are highly certain the solution is correct.
 # ## Need to double-check?
 # [Yes or No]
     CONVERSATION_REVIEW_PROMPT = """# Your task
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
 - You must output the final best solution code discovered by the experts using the ```python``` format.
-- If you find any non-trivial errors or issues in the conversation, point it out with a detailed reason.
-- Make sure to call "seek_experts_help" again to double check and verify that the solution is correct and that the task is fully solved.
+- If you find any non-trivial errors or issues in the conversation, point it out with a detailed explanation.
+- Make sure to call "seek_experts_help" again to check/verify that the solution is correct and that the task is fully solved.
 
 # Conversation history:
 {chat_history}
