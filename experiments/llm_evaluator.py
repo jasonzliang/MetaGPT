@@ -579,7 +579,8 @@ EVAL_CAPTAIN_LLM_CONFIG = {
             "builder_model": BUILDER_LLM_MODEL,
         },
         "group_chat_config": {"max_round": 75},
-        "max_turns": 10
+        "max_expert_calls": 5
+        "max_turns": 10,
     }
 }
 
