@@ -120,6 +120,7 @@ You will receive a comprehensive conclusion from the conversation, including the
 You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using the tool "seek_experts_help" again with the same group name) when:
 - The conversation has contradictions or issues ("Need to double-check" marked as "Yes"), or
 - The result is different from the previous results.
+You **must** use the tool "seek_experts_help"  again with same experts if previous result of "seek_experts_help" indicates that the answer need to be double-checked.
 
 Note that the previous experts will forget everything after you obtain the response from them. You should provide the results (including code blocks) you collected from the previous experts' response and put it in the new execution_task.
 
@@ -392,8 +393,8 @@ Collect information from the general task, follow the suggestions from manager t
             is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
-            # code_execution_config=False,
-            code_execution_config=code_execution_config,
+            code_execution_config=False,
+            # code_execution_config=code_execution_config,
             llm_config=llm_config,
             default_auto_reply=default_auto_reply,
             description=description,
