@@ -301,7 +301,7 @@ class CaptainUserProxyAgent(ConversableAgent):
 ## Errors or issues in the conversation
 ...
 
-## Need to double-check?
+## Need to double-check? (Use tool "seek_experts_help" again?)
 {double_check}
 
 ## Final solution code
