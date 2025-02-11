@@ -117,7 +117,7 @@ You should Provide the following information in markdown format.
 
 # After using "seek_experts_help"
 You will receive a comprehensive conclusion from the conversation, including the task information, results, reason for the results, conversation contradiction or issues, and additional information.
-You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using "seek_experts_help" with the same group name) when:
+You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using the tool "seek_experts_help" again with the same group name) when:
 - The conversation has contradictions or issues ("Need to double-check" marked as "Yes"), or
 - The result is different from the previous results.
 
@@ -125,7 +125,7 @@ Note that the previous experts will forget everything after you obtain the respo
 
 # Some useful instructions
 - You only have one tool called "seek_experts_help".
-- Provide a answer yourself after "seek_experts_help".
+- Provide an answer yourself after "seek_experts_help".
 - You should suggest python code in a python coding block (```python...```). If you need to get the value of a variable, you must use the print statement.
 - When using code, you must indicate the script type in the code block.
 - Do not suggest incomplete code which requires users to modify.
@@ -281,8 +281,9 @@ class CaptainUserProxyAgent(ConversableAgent):
 # [Yes or No]
     CONVERSATION_REVIEW_PROMPT = """# Your task
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
-- You must output the final best solution code discovered by the experts using the ```python``` format.
+- If you found non-trivial errors or issues in the conversation, point it out with a detailed reason.
 - Make sure "Need to double-check" is always marked as "Yes" with no extra text or explanation.
+- You must output the final best solution code discovered by the experts using the ```python``` format.
 
 # Conversation history:
 {chat_history}
