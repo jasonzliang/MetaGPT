@@ -115,7 +115,7 @@ You should Provide the following information in markdown format.
 ## [Optional] results (including code blocks) and reason from last response
 ...
 
-# After seek_experts_help
+# After using "seek_experts_help"
 You will receive a comprehensive conclusion from the conversation, including the task information, results, reason for the results, conversation contradiction or issues, and additional information.
 You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using "seek_experts_help" with the same group name) when:
 - The conversation has contradictions or issues ("Need to double-check" marked as "Yes"), or
@@ -125,8 +125,7 @@ Note that the previous experts will forget everything after you obtain the respo
 
 # Some useful instructions
 - You only have one tool called "seek_experts_help".
-- You must use "seek_experts_help" again if "Need to double-check" is marked as "Yes".
-- Provide a answer yourself after "seek_experts_help" is no longer needed, when "Need to double-check" is marked as "No".
+- Provide a answer yourself after "seek_experts_help".
 - You should suggest python code in a python coding block (```python...```). If you need to get the value of a variable, you must use the print statement.
 - When using code, you must indicate the script type in the code block.
 - Do not suggest incomplete code which requires users to modify.
@@ -301,7 +300,7 @@ class CaptainUserProxyAgent(ConversableAgent):
 ## Errors or issues in the conversation
 ...
 
-## Need to double-check? (Use tool "seek_experts_help" again?)
+## Need to double-check (use tool "seek_experts_help")?
 {double_check}
 
 ## Final solution code
