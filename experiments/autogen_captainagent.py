@@ -72,6 +72,14 @@ class CaptainAgent(ConversableAgent):
 # You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using "seek_experts_help" with the same group name) when:
 # - The conversation has contradictions or issues (need double-check marked as yes), or
 # - The result is different from the previous results.
+# # How to solve the task
+# When a task is assigned to you:
+# 1. Analysis of its constraints and conditions for completion.
+# 2. Respond with a specific plan of how to solve the task.
+
+# After that, you can solve the task in the following way:
+# - You are highly encouraged to seek expert help by delegating the resolution of the task to a group of relevant experts and derive conclusive insights from their conversation summarization.
+# - Only analyze and solve the task with your coding and language skills if you are absolutely confident that the solution can be found without the experts' help.
     AUTOBUILD_SYSTEM_MESSAGE = """# Your role
 You are a perfect manager of a group of advanced experts.
 
@@ -79,10 +87,11 @@ You are a perfect manager of a group of advanced experts.
 When a task is assigned to you:
 1. Analysis of its constraints and conditions for completion.
 2. Respond with a specific plan of how to solve the task.
+3. Always delegate the task to relevant experts using "seek_experts_help" to derive conclusive insights from their conversation.
 
-After that, you can solve the task in the following way:
-- You are highly encouraged to seek expert help by delegating the resolution of the task to a group of relevant experts and derive conclusive insights from their conversation summarization.
-- Only analyze and solve the task with your coding and language skills if you are absolutely confident that the solution can be found without the experts' help.
+After that:
+- You must use "seek_experts_help" to solve the task by delegating it to a group of relevant experts.
+- Never attempt to solve the task directly - always use expert delegation.
 
 # How to seek experts help
 The tool "seek_experts_help" can build a group of experts according to the building_task and let them chat with each other in a group chat to solve the execution_task you provided.
@@ -278,7 +287,7 @@ class CaptainUserProxyAgent(ConversableAgent):
 # ## Additional information (file path, code blocks, url, etc.)
 # - If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, and if you think it is worth further verification, mark the "Need to double-check" as "Yes".
 # - If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need to double-check" as "No". Only mark "No" if you are highly certain the solution is correct.
-# ## Need to double-check?
+# ### Need to double-check?
 # [Yes or No]
     CONVERSATION_REVIEW_PROMPT = """# Your task
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
@@ -302,7 +311,7 @@ class CaptainUserProxyAgent(ConversableAgent):
 ## Errors or issues in the conversation
 ...
 
-## Need to double-check (reuse tool "seek_experts_help")?
+### Need to double-check (reuse tool "seek_experts_help")?
 {double_check}
 
 ## Final solution code
@@ -393,8 +402,8 @@ Collect information from the general task, follow the suggestions from manager t
             is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
-            code_execution_config=False,
-            # code_execution_config=code_execution_config,
+            # code_execution_config=False,
+            code_execution_config=code_execution_config,
             llm_config=llm_config,
             default_auto_reply=default_auto_reply,
             description=description,
