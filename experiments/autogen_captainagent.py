@@ -43,8 +43,8 @@ class CaptainAgent(ConversableAgent):
         },
         "group_chat_config": {"max_round": 10},
         "group_chat_llm_config": None,
-        "max_expert_calls": 5,
-        "max_turns": 6,
+        "max_double_checks": 4,
+        "max_turns": 5,
     }
 
     AUTOBUILD_TOOL = {
@@ -630,8 +630,8 @@ Collect information from the general task, follow the suggestions from manager t
             chat_history.append(item)
         self.complete_chat_history.extend(chat_history)
 
-        double_check = "Yes" if self.build_times < \
-            self._nested_config["max_expert_calls"] else "No"
+        double_check = "Yes" if self.build_times <= \
+            self._nested_config["max_double_checks"] else "No"
 
         # Review the group chat history
         summary_model = builder.builder_model

@@ -540,7 +540,7 @@ EVALPLUS_EVAL_CONFIG = {
 }
 
 SCICODE_EVAL_CONFIG = {
-    'n_tries': 1,
+    'n_tries': 2,
     'max_problems': 999,
     'dataset': 'problems_all',
     'with_background': False,
@@ -579,8 +579,8 @@ EVAL_CAPTAIN_LLM_CONFIG = {
             "builder_model": BUILDER_LLM_MODEL,
         },
         "group_chat_config": {"max_round": 75},
-        "max_expert_calls": 5,
-        "max_turns": 6,
+        "max_double_checks": 4,
+        "max_turns": 5,
     }
 }
 
