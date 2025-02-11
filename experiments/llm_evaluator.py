@@ -580,7 +580,7 @@ EVAL_CAPTAIN_LLM_CONFIG = {
         },
         "group_chat_config": {"max_round": 75},
         "max_expert_calls": 5,
-        "max_turns": 10,
+        "max_turns": 6,
     }
 }
 

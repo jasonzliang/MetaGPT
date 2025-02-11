@@ -44,7 +44,7 @@ class CaptainAgent(ConversableAgent):
         "group_chat_config": {"max_round": 10},
         "group_chat_llm_config": None,
         "max_expert_calls": 5,
-        "max_turns": 10,
+        "max_turns": 6,
     }
 
     AUTOBUILD_TOOL = {
