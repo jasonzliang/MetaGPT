@@ -561,10 +561,8 @@ Collect information from the general task, follow the suggestions from manager t
             chat_history.append(item)
         self.complete_chat_history.extend(chat_history)
 
-        if self.build_times >= self._nested_config["max_expert_calls"]:
-            double_check = "No"
-        else:
-            double_check = "Yes"
+        double_check = "Yes" if self.build_times < \
+            self._nested_config["max_expert_calls"] else "No"
 
         # Review the group chat history
         summary_model = builder.builder_model
