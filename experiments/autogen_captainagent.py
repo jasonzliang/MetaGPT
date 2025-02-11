@@ -281,6 +281,7 @@ class CaptainUserProxyAgent(ConversableAgent):
     CONVERSATION_REVIEW_PROMPT = """# Your task
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
 - You must output the final best solution code discovered by the experts using the ```python``` format.
+- Make sure "Need to double-check" is always marked as "Yes".
 
 # Conversation history:
 {chat_history}
