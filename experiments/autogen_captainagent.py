@@ -115,14 +115,17 @@ You should Provide the following information in markdown format.
 ...
 
 # After seek_experts_help
-- You will receive a comprehensive conclusion from the conversation, including the task information, results, reason for the results, conversation contradiction or issues, and additional information.
-- You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using "seek_experts_help" again with the same group name).
+You will receive a comprehensive conclusion from the conversation, including the task information, results, reason for the results, conversation contradiction or issues, and additional information.
+You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using "seek_experts_help" with the same group name) when:
+- The conversation has contradictions or issues ("Need to double-check" marked as "Yes"), or
+- The result is different from the previous results.
 
-- Note that the previous experts will forget everything after you obtain the response from them. You should provide the results (including code blocks) you collected from the previous experts' response and put it in the new execution_task.
+Note that the previous experts will forget everything after you obtain the response from them. You should provide the results (including code blocks) you collected from the previous experts' response and put it in the new execution_task.
 
 # Some useful instructions
 - You only have one tool called "seek_experts_help".
-- Provide a answer yourself after "seek_experts_help".
+- You must use "seek_experts_help" again if "Need to double-check" is marked as "Yes".
+- Provide a answer yourself after "seek_experts_help" is no longer needed ("Need to double-check" is marked as "No").
 - You should suggest python code in a python coding block (```python...```). If you need to get the value of a variable, you must use the print statement.
 - When using code, you must indicate the script type in the code block.
 - Do not suggest incomplete code which requires users to modify.
@@ -272,14 +275,11 @@ class CaptainUserProxyAgent(ConversableAgent):
     """(In preview) A proxy agent for the captain agent, that can execute code and provide feedback to the other agents."""
 
 # ## Additional information (file path, code blocks, url, etc.)
-# - If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, and if you think it is worth further verification, mark the "Need double-check" as "Yes".
-# - If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No". Only mark "No" if you are highly certain the solution is correct.
-# ## Need to double-check?
-# [Yes or No]
+# - If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, and if you think it is worth further verification, mark the "Need to double-check" as "Yes".
+# - If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need to double-check" as "No". Only mark "No" if you are highly certain the solution is correct.
     CONVERSATION_REVIEW_PROMPT = """# Your task
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
 - You must output the final best solution code discovered by the experts using the ```python``` format.
-- If you find any non-trivial errors or issues in the conversation, point it out with a detailed reason.
 
 # Conversation history:
 {chat_history}
@@ -296,6 +296,9 @@ class CaptainUserProxyAgent(ConversableAgent):
 
 ## Errors or issues in the conversation
 ...
+
+## Need to double-check?
+{double_check}
 
 ## Final solution code
 ```python ...```
@@ -385,8 +388,8 @@ Collect information from the general task, follow the suggestions from manager t
             is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
-            code_execution_config=False,
-            # code_execution_config=code_execution_config,
+            # code_execution_config=False,
+            code_execution_config=code_execution_config,
             llm_config=llm_config,
             default_auto_reply=default_auto_reply,
             description=description,
@@ -554,6 +557,11 @@ Collect information from the general task, follow the suggestions from manager t
             chat_history.append(item)
         self.complete_chat_history.extend(chat_history)
 
+        if self.build_times >= self._nested_config["max_turns"]:
+            double_check = "No"
+        else:
+            double_check = "Yes"
+
         # Review the group chat history
         summary_model = builder.builder_model
         summarized_history = (
@@ -561,7 +569,9 @@ Collect information from the general task, follow the suggestions from manager t
                 messages=[
                     {
                         "role": "user",
-                        "content": self.CONVERSATION_REVIEW_PROMPT.format(chat_history=chat_history),
+                        "content": self.CONVERSATION_REVIEW_PROMPT.format(
+                            chat_history=chat_history,
+                            double_check=double_check),
                     }
                 ]
             )
