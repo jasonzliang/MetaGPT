@@ -68,6 +68,9 @@ class CaptainAgent(ConversableAgent):
         },
     }
 
+# You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using "seek_experts_help" with the same group name) when:
+# - The conversation has contradictions or issues (need double-check marked as yes), or
+# - The result is different from the previous results.
     AUTOBUILD_SYSTEM_MESSAGE = """# Your role
 You are a perfect manager of a group of advanced experts.
 
@@ -111,13 +114,11 @@ You should Provide the following information in markdown format.
 ## [Optional] results (including code blocks) and reason from last response
 ...
 
-# After "seek_experts_help"
-You will receive a comprehensive conclusion from the conversation, including the task information, results, reason for the results, conversation contradiction or issues, and additional information.
-You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using "seek_experts_help" with the same group name) when:
-- The conversation has contradictions or issues (need double-check marked as yes), or
-- The result is different from the previous results.
+# After seek_experts_help
+- You will receive a comprehensive conclusion from the conversation, including the task information, results, reason for the results, conversation contradiction or issues, and additional information.
+- You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using "seek_experts_help" again with the same group name).
 
-Note that the previous experts will forget everything after you obtain the response from them. You should provide the results (including code blocks) you collected from the previous experts' response and put it in the new execution_task.
+- Note that the previous experts will forget everything after you obtain the response from them. You should provide the results (including code blocks) you collected from the previous experts' response and put it in the new execution_task.
 
 # Some useful instructions
 - You only have one tool called "seek_experts_help".
@@ -279,7 +280,6 @@ class CaptainUserProxyAgent(ConversableAgent):
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
 - You must output the final best solution code discovered by the experts using the ```python``` format.
 - If you find any non-trivial errors or issues in the conversation, point it out with a detailed reason.
-- Make sure to call "seek_experts_help" again to check/verify that the solution is correct and that the task is fully solved.
 
 # Conversation history:
 {chat_history}
@@ -568,4 +568,4 @@ Collect information from the general task, follow the suggestions from manager t
             .message.content
         )
 
-        return f"# Response from seek_agent_help: \n{summarized_history}"
+        return f"# Response from seek_experts_help: \n{summarized_history}"
