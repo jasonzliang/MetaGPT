@@ -91,7 +91,7 @@ CAPTAIN_LLM_CONFIG = {
         "group_chat_config": {"max_round": 15},
         "group_chat_llm_config": "PUT_CHAT_LLM_CONFIG_HERE",
         "max_expert_calls": 5
-        "max_turns": 5,
+        "max_turns": 10,
     }
 }
 CHAT_TIMEOUT = 300

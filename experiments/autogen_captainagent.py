@@ -44,7 +44,7 @@ class CaptainAgent(ConversableAgent):
         "group_chat_config": {"max_round": 10},
         "group_chat_llm_config": None,
         "max_expert_calls": 5,
-        "max_turns": 5,
+        "max_turns": 10,
     }
 
     AUTOBUILD_TOOL = {
@@ -281,7 +281,7 @@ class CaptainUserProxyAgent(ConversableAgent):
     CONVERSATION_REVIEW_PROMPT = """# Your task
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
 - You must output the final best solution code discovered by the experts using the ```python``` format.
-- Make sure "Need to double-check" is always marked as "Yes".
+- Make sure "Need to double-check" is always marked as "Yes", with no extra text or explanation.
 
 # Conversation history:
 {chat_history}
