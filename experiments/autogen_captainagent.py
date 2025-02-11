@@ -111,7 +111,7 @@ You should Provide the following information in markdown format.
 ## [Optional] results (including code blocks) and reason from last response
 ...
 
-# After seek_experts_help
+# After "seek_experts_help"
 You will receive a comprehensive conclusion from the conversation, including the task information, results, reason for the results, conversation contradiction or issues, and additional information.
 You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using "seek_experts_help" with the same group name) when:
 - The conversation has contradictions or issues (need double-check marked as yes), or
@@ -271,11 +271,15 @@ class CaptainUserProxyAgent(ConversableAgent):
     """(In preview) A proxy agent for the captain agent, that can execute code and provide feedback to the other agents."""
 
 ## Additional information (file path, code blocks, url, etc.)
+# - If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, if you think it is worth further verification, mark the "Need double-check" as "Yes".
+# - If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No". Only mark "No" if you are highly certain the solution is correct.
+# ## Need to double-check?
+# [Yes or No]
     CONVERSATION_REVIEW_PROMPT = """# Your task
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
-- If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, if you think it is worth further verification, mark the "Need double-check" as "Yes".
-- If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No". Only mark "No" if you are highly certain the solution is correct.
 - You must output the final best solution code discovered by the experts using the ```python``` format.
+- If you find any non-trivial errors or issues in the conversation, point it out with a detailed reason.
+- Make sure to call "seek_experts_help" again to double check and verify that the solution is correct and that the task is fully solved.
 
 # Conversation history:
 {chat_history}
@@ -292,9 +296,6 @@ class CaptainUserProxyAgent(ConversableAgent):
 
 ## Errors or issues in the conversation
 ...
-
-## Need to double-check?
-[Yes or No]
 
 ## Final solution code
 ```python ...```
