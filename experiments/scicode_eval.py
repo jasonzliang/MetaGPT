@@ -469,15 +469,20 @@ from scicode.parse.parse import process_hdf5_to_tuple
     correct_prob_num = sum(1 for i in range(ALL_PROB_NUM) if
                            correct_prob[i] == tot_prob[i]
                            and tot_prob[i] != 0)
+    correct_step_num = len(correct_step)
+    total_prob = DEV_PROB_NUM if dev_set else PROB_NUM
+    total_step = DEV_STEP_NUM if dev_set else STEP_NUM
 
-    print(f'Correct problems: {correct_prob_num}/{DEV_PROB_NUM if dev_set else PROB_NUM}')
-    print(f'Correct steps: {len(correct_step)}/{DEV_STEP_NUM if dev_set else STEP_NUM}')
+    print(f'Correct problems: {correct_prob_num}/{total_prob}')
+    print(f'Correct steps: {correct_step_num}/{total_step}')
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     with open(f'{output_dir}/{model_name}_{_get_background_dir(with_background)}.txt', 'w') as f:
-        f.write(f'Correct problems: {correct_prob_num}/{DEV_PROB_NUM if dev_set else PROB_NUM}\n')
-        f.write(f'Correct steps: {len(correct_step)}/{DEV_STEP_NUM if dev_set else STEP_NUM}\n\n')
+        f.write(f'Correct problems: {correct_prob_num}/{total_prob}\n')
+        f.write(f'Correct steps: {correct_step_num}/{total_step}\n\n')
+        f.write(f'Correct problems (%): {round(100.0*correct_prob_num/total_prob, 1)}\n')
+        f.write(f'Correct steps (%): {round(100.0*correct_step_num/total_step, 1)}\n\n')
         f.write(f'Duration: {test_time} seconds\n')
         f.write('\nCorrect problems: ')
         f.write(f'\n\n{[i + 1 for i in range(ALL_PROB_NUM) if correct_prob[i] == tot_prob[i] and tot_prob[i] != 0]}\n')
