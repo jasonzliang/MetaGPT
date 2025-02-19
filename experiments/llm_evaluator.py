@@ -578,6 +578,11 @@ EVAL_CAPTAIN_LLM_CONFIG = {
             "agent_model": LLM_MODEL,
             "builder_model": BUILDER_LLM_MODEL,
         },
+        "autobuild_build_config": {
+            "library_list_or_json": None,
+            "include_insights": True,
+            "include_coding_instruct": True,
+        },
         "group_chat_config": {"max_round": 75},
         "max_double_checks": 4,
         "max_turns": 5,
@@ -729,6 +734,8 @@ if __name__ == "__main__":
         SCICODE_EVAL_CONFIG['cleanup_code'] = True
     if 'captain' in sys.argv[2].lower():
         SCICODE_EVAL_CONFIG['use_captain_agent'] = True
+    if 'captain_lib' in sys.argv[2].lower():
+        EVAL_CAPTAIN_LLM_CONFIG['autobuild_build_config']['library_list_or_json'] = sys.argv[1]
     if 'library' in sys.argv[2].lower():
         EVAL_BUILDER_LLM_CONFIG['use_agent_library'] = True
     if 'lingua' in sys.argv[2].lower():

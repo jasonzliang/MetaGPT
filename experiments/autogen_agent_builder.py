@@ -376,7 +376,7 @@ With following description: {function_description}
         elif include_coding_instruct: # and "coding_instruction" not in agent_config:
             agent_coding_instruct = self.CODING_AND_TASK_SKILL_INSTRUCTION
             if "coding_instruction" in agent_config:
-                print("%s has 'coding_instruction' entry, but using default instead." % name)
+                print("%s has 'coding_instruction' entry, but using default instead." % name, flush=True)
         # elif include_coding_instruct:
         #     raise Exception("If agents have 'coding_instruction' entry, "
         #         "set builder's custom_coding_instruct to True'")
@@ -1266,12 +1266,15 @@ With following description: {function_description}
 
         if isinstance(library_list_or_json, list):
             agent_library = library_list_or_json
+            print("Loaded library from list", flush=True)
         else:
             try:
                 agent_library = json.loads(library_list_or_json)
+                print("Loaded library from json", flush=True)
             except json.decoder.JSONDecodeError:
                 with open(library_list_or_json, "r") as f:
                     agent_library = json.load(f)
+                print("Loaded library from file: %s" % library_list_or_json, flush=True)
             except Exception as e:
                 raise e
 
@@ -1419,7 +1422,7 @@ With following description: {function_description}
                         )
                     )
 
-                    print(f"Function {func['name']} is registered to agent {resp}.")
+                    print(f"Function {func['name']} is registered to agent {resp}.", flush=True)
 
         return agent_list, self.cached_configs.copy()
 

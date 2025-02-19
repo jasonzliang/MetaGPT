@@ -69,18 +69,6 @@ class CaptainAgent(ConversableAgent):
         },
     }
 
-# You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using "seek_experts_help" with the same group name) when:
-# - The conversation has contradictions or issues (need double-check marked as yes), or
-# - The result is different from the previous results.
-
-# # How to solve the task
-# When a task is assigned to you:
-# 1. Analysis of its constraints and conditions for completion.
-# 2. Respond with a specific plan of how to solve the task.
-
-# After that, you can solve the task in the following way:
-# - You are highly encouraged to seek expert help by delegating the resolution of the task to a group of relevant experts and derive conclusive insights from their conversation summarization.
-# - Only analyze and solve the task with your coding and language skills if you are absolutely confident that the solution can be found without the experts' help.
     AUTOBUILD_SYSTEM_MESSAGE = """# Your role
 You are a perfect manager of a group of advanced experts.
 
@@ -88,11 +76,10 @@ You are a perfect manager of a group of advanced experts.
 When a task is assigned to you:
 1. Analysis of its constraints and conditions for completion.
 2. Respond with a specific plan of how to solve the task.
-3. Always delegate the task to relevant experts using "seek_experts_help" to derive conclusive insights from their conversation.
 
-After that:
-- You must use "seek_experts_help" to solve the task by delegating it to a group of relevant experts.
-- Never attempt to solve the task directly - always use expert delegation.
+After that, you can solve the task in two ways:
+- Delegate the resolution of tasks to other experts created by seeking a group of experts for help and derive conclusive insights from their conversation summarization.
+- Analysis and solve the task with your coding and language skills.
 
 # How to seek experts help
 The tool "seek_experts_help" can build a group of experts according to the building_task and let them chat with each other in a group chat to solve the execution_task you provided.
@@ -125,18 +112,17 @@ You should Provide the following information in markdown format.
 ## [Optional] results (including code blocks) and reason from last response
 ...
 
-# After using "seek_experts_help"
+# After seek_experts_help
 You will receive a comprehensive conclusion from the conversation, including the task information, results, reason for the results, conversation contradiction or issues, and additional information.
-You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (using the tool "seek_experts_help" again with the same group name) when:
-- The conversation has contradictions or issues ("Need to double-check" marked as "Yes"), or
+You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (with the same group name) when:
+- The conversation has contradictions or issues (need double-check marked as yes), or
 - The result is different from the previous results.
-Again, you **must** reuse the tool "seek_experts_help" with the same experts if the response from "seek_experts_help" indicates that the answer needs to be double-checked.
 
 Note that the previous experts will forget everything after you obtain the response from them. You should provide the results (including code blocks) you collected from the previous experts' response and put it in the new execution_task.
 
 # Some useful instructions
 - You only have one tool called "seek_experts_help".
-- Provide an answer yourself after "seek_experts_help".
+- Provide a answer yourself after "seek_experts_help".
 - You should suggest python code in a python coding block (```python...```). If you need to get the value of a variable, you must use the print statement.
 - When using code, you must indicate the script type in the code block.
 - Do not suggest incomplete code which requires users to modify.
@@ -144,7 +130,7 @@ Note that the previous experts will forget everything after you obtain the respo
 - If the code's result indicates there is an error, fix the error and output the whole code again.
 - If the error can't be fixed or if the task is not solved even after the code is executed successfully, analyze the problem, revisit your assumption, collect additional info you need, and think of a different approach to try.
 - Include verifiable evidence in your response if possible.
-- After completing and verifying all tasks, you should conclude the operation and reply "TERMINATE"
+- After completing all tasks and verifications, you should conclude the operation and reply "TERMINATE"
 """
 
     AUTOBUILD_SYSTEM_MESSAGE_V2 = """# Your role
@@ -344,14 +330,10 @@ class CaptainUserProxyAgent(ConversableAgent):
     """(In preview) A proxy agent for the captain agent, that can execute code and provide feedback to the other agents."""
 
 # ## Additional information (file path, code blocks, url, etc.)
-# - If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, and if you think it is worth further verification, mark the "Need to double-check" as "Yes".
-# - If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need to double-check" as "No". Only mark "No" if you are highly certain the solution is correct.
-# ### Need to double-check?
-# [Yes or No]
     CONVERSATION_REVIEW_PROMPT = """# Your task
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
-- If you found non-trivial errors or issues in the conversation, point it out with a detailed reason.
-- Make sure "Need to double-check" is always marked as "Yes" with no extra text or explanation.
+- If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, if you think it is worth further verification, mark the "Need double-check" as "Yes"
+- If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No".
 - You must output the final best solution code discovered by the experts using the ```python``` format.
 
 # Conversation history:
@@ -519,12 +501,12 @@ Collect information from the general task, follow the suggestions from manager t
         else:
             if self._nested_config["autobuild_build_config"].get("library_path_or_json", None):
                 # Build from retrieval
+                assert os.path.exists(self._nested_config["autobuild_build_config"]["library_path_or_json"])
                 agent_list, agent_configs = builder.build_from_library(
                     building_task, **self._nested_config["autobuild_build_config"]
                 )
                 self.build_history[group_name] = agent_configs.copy()
 
-                # Disable tool usage
                 if self._nested_config.get("autobuild_tool_config", None) and agent_configs["coding"] is True:
                     skills = building_task.split("\n")
                     if len(skills) == 0:
@@ -630,8 +612,10 @@ Collect information from the general task, follow the suggestions from manager t
             chat_history.append(item)
         self.complete_chat_history.extend(chat_history)
 
-        double_check = "Yes" if self.build_times <= \
-            self._nested_config["max_double_checks"] else "No"
+
+        double_check = "[Yes or No]"
+        # double_check = "Yes" if self.build_times <= \
+        #     self._nested_config["max_double_checks"] else "No"
 
         # Review the group chat history
         summary_model = builder.builder_model
