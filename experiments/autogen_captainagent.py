@@ -79,7 +79,7 @@ When a task is assigned to you:
 
 After that, you can solve the task in two ways:
 - Delegate the resolution of tasks to other experts created by seeking a group of experts for help and derive conclusive insights from their conversation summarization.
-- Analysis and solve the task with your coding and language skills.
+- Analysis and solve the task with your coding and language skills, but only if you are certain that expert help is not needed.
 
 # How to seek help from experts
 The tool "seek_experts_help" can build a group of experts according to the building_task and let them chat with each other in a group chat to solve the execution_task you provided.
@@ -117,6 +117,7 @@ You will receive a comprehensive conclusion from the conversation, including the
 You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (with the same group name) when:
 - The conversation has contradictions or issues (need double-check marked as yes), or
 - The result is different from the previous results.
+Again, you MUST ALWAYS reuse the tool "seek_experts_help" with the same experts if the response from "seek_experts_help" indicates that the answer needs to be double-checked.
 
 Note that the previous experts will forget everything after you obtain the response from them. You should provide the results (including code blocks) you collected from the previous experts' response and put it in the new execution_task.
 
@@ -611,7 +612,6 @@ Collect information from the general task, follow the suggestions from manager t
         for item in chat_messages:
             chat_history.append(item)
         self.complete_chat_history.extend(chat_history)
-
 
         double_check = "[Yes or No]"
         # double_check = "Yes" if self.build_times <= \
