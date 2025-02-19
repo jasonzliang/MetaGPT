@@ -202,7 +202,8 @@ Note that the previous experts will forget everything after you obtain the respo
 - Extract the final best solution code from the discussion in the format of ```python```.
 - Include only the essential implementation, removing any debugging, testing, or exploratory code.
 - The solution should be complete, well-structured, and ready to use.
-- Ensure the function name in the solution matches the function header name from the problem description."""
+- Ensure the function name in the solution matches the function header name from the problem description.
+"""
 
     def __init__(
         self,
