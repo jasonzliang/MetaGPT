@@ -1152,6 +1152,7 @@ With following description: {function_description}
         agent_library,
         max_agents,
         min_agents,
+        max_patience=69,
         **kwargs):
 
         def _desc(agent): return self._get_agent_desc(agent,
@@ -1171,8 +1172,8 @@ With following description: {function_description}
         for agent in agent_library:
             agent_dict[agent['name'].lower()] = agent
 
-        retrieved_agents = []
-        while True:
+        retrieved_agents = {}; counter = 0
+        while counter < max_patience:
             if len(retrieved_agents) >= min_agents: break
             agent_name_resp = (
                 self._builder_model_create(
@@ -1193,13 +1194,20 @@ With following description: {function_description}
             )
             agent_names = [agent.strip() for agent in agent_name_resp.split(",")]
             for agent_name in agent_names:
-                if agent_name.lower() in agent_dict:
-                    retrieved_agents.append(agent_dict[agent_name.lower()])
+                if agent_name.lower() in agent_dict and agent_name.lower() not in retrieved_agents:
+                    retrieved_agents[agent_name.lower()] = agent_dict[agent_name.lower()]
                 else:
-                    print(colored("Bad agent name, cannot find: %s" % agent_name,
-                        "green"), flush=True)
+                    print(colored("Selected agent not in library or duplicate: %s" % agent_name, "green"), flush=True)
+            counter += 1
 
-        return retrieved_agents[:max_agents]
+        if len(retrieved_agents) > 0:
+            retrieved_agent_list = list(retrieved_agents.values())
+        else:
+            print(colored("No agents selected from library, randomly choosing", "green"), flush=True)
+            retrieved_agent_list = list(agent_dict.values())
+        random.shuffle(retrieved_agent_list)
+
+        return retrieved_agent_list[:max_agents]
 
     def build_from_library(
         self,
@@ -1270,11 +1278,11 @@ With following description: {function_description}
         else:
             try:
                 agent_library = json.loads(library_list_or_json)
-                print("Loaded library from json", flush=True)
+                print("Loaded library from JSON string", flush=True)
             except json.decoder.JSONDecodeError:
                 with open(library_list_or_json, "r") as f:
                     agent_library = json.load(f)
-                print("Loaded library from file: %s" % library_list_or_json, flush=True)
+                print("Loaded library from JSON file: %s" % library_list_or_json, flush=True)
             except Exception as e:
                 raise e
 

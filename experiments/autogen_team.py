@@ -78,6 +78,7 @@ CAPTAIN_LLM_CONFIG = {
     "nested_config": {
         "autobuild_init_config": {
             "config_file_or_env": CONFIG_FILE_OR_ENV,
+            "custom_coding_instruct": True,
             "builder_model": "gpt-4o",
             "agent_model": "gpt-4o",
             "max_agents": 4
