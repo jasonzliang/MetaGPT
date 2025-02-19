@@ -81,7 +81,7 @@ After that, you can solve the task in two ways:
 - Delegate the resolution of tasks to other experts created by seeking a group of experts for help and derive conclusive insights from their conversation summarization.
 - Analysis and solve the task with your coding and language skills.
 
-# How to seek experts help
+# How to seek help from experts
 The tool "seek_experts_help" can build a group of experts according to the building_task and let them chat with each other in a group chat to solve the execution_task you provided.
 - This tool will summarize the essence of the experts' conversation and the derived conclusions.
 - You should not modify any task information from meta_user_proxy, including code blocks, but you can provide extra information.
@@ -98,7 +98,7 @@ You should suggest less then three roles (including a checker for verification) 
 
 ## execution_task
 This is the task that needs the experts to solve by conversation.
-You should Provide the following information in markdown format.
+You should provide the following information in markdown format.
 
 ### Format
 ## Task description
@@ -112,7 +112,7 @@ You should Provide the following information in markdown format.
 ## [Optional] results (including code blocks) and reason from last response
 ...
 
-# After seek_experts_help
+# After using "seek_experts_help" tool
 You will receive a comprehensive conclusion from the conversation, including the task information, results, reason for the results, conversation contradiction or issues, and additional information.
 You **must** conduct a thorough verification for the result and reason's logical compliance by leveraging the step-by-step backward reasoning with the same group of experts (with the same group name) when:
 - The conversation has contradictions or issues (need double-check marked as yes), or
