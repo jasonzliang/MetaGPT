@@ -262,7 +262,7 @@ Note that the previous experts will forget everything after you obtain the respo
         if nested_config["group_chat_llm_config"] is None:
             nested_config["group_chat_llm_config"] = llm_config.copy()
         if agent_lib:
-            nested_config["autobuild_build_config"]["library_path_or_json"] = agent_lib
+            nested_config["autobuild_build_config"]["library_list_or_json"] = agent_lib
         if tool_lib:
             if "autobuild_tool_config" not in nested_config:
                 nested_config["autobuild_tool_config"] = {}
@@ -499,9 +499,9 @@ Collect information from the general task, follow the suggestions from manager t
                     tool_builder.bind(agent, "\n\n".join(self.tool_history[group_name][idx]))
                 agent_list[-1] = tool_builder.bind_user_proxy(agent_list[-1], tool_root_dir)
         else:
-            if self._nested_config["autobuild_build_config"].get("library_path_or_json", None):
+            if self._nested_config["autobuild_build_config"].get("library_list_or_json", None):
                 # Build from retrieval
-                assert os.path.exists(self._nested_config["autobuild_build_config"]["library_path_or_json"])
+                assert os.path.exists(self._nested_config["autobuild_build_config"]["library_list_or_json"])
                 agent_list, agent_configs = builder.build_from_library(
                     building_task, **self._nested_config["autobuild_build_config"]
                 )
