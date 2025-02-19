@@ -255,7 +255,7 @@ Note that the previous experts will forget everything after you obtain the respo
         )
 
         if system_message is None:
-            system_message = self.AUTOBUILD_SYSTEM_MESSAGE
+            system_message = self.AUTOBUILD_SYSTEM_MESSAGE_V2
 
         if update_default_nested_config:
             nested_config = self._update_config(self.DEFAULT_NESTED_CONFIG, nested_config)
@@ -335,6 +335,35 @@ class CaptainUserProxyAgent(ConversableAgent):
 - Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
 - If you found non-trivial errors or issues in the conversation, point it out with a detailed reason, if you think it is worth further verification, mark the "Need double-check" as "Yes"
 - If you find the conversation ends with TERMINATE and the task is solved, this is normal situation, you can mark the "Need double-check" as "No".
+- You must output the final best solution code discovered by the experts using the ```python``` format.
+
+# Conversation history:
+{chat_history}
+
+# Answer format
+## Task
+...
+
+## Results
+...
+
+## Reason for the results
+...
+
+## Errors or issues in the conversation
+...
+
+### Need to double-check (reuse tool "seek_experts_help")?
+{double_check}
+
+## Final solution code
+```python ...```
+"""
+
+    CONVERSATION_REVIEW_PROMPT_V2 = """# Your task
+- Briefly summarize the conversation history derived from an experts' group chat by following the answer format.
+- If you found non-trivial errors or issues in the conversation, point it out with a detailed reason.
+- Make sure "Need to double-check" is always marked as "Yes" with no extra text or explanation.
 - You must output the final best solution code discovered by the experts using the ```python``` format.
 
 # Conversation history:
@@ -613,7 +642,8 @@ Collect information from the general task, follow the suggestions from manager t
             chat_history.append(item)
         self.complete_chat_history.extend(chat_history)
 
-        double_check = "[Yes or No]"
+        double_check = "Yes"
+        # double_check = "[Yes or No]"
         # double_check = "Yes" if self.build_times <= \
         #     self._nested_config["max_double_checks"] else "No"
 
@@ -624,7 +654,7 @@ Collect information from the general task, follow the suggestions from manager t
                 messages=[
                     {
                         "role": "user",
-                        "content": self.CONVERSATION_REVIEW_PROMPT.format(
+                        "content": self.CONVERSATION_REVIEW_PROMPT_V2.format(
                             chat_history=chat_history,
                             double_check=double_check),
                     }
