@@ -581,7 +581,7 @@ EVAL_CAPTAIN_LLM_CONFIG = {
         "autobuild_build_config": {
             "library_list_or_json": None,
             "include_insights": True,
-            "include_coding_instruct": True,
+            "include_coding_instruct": False,
         },
         "group_chat_config": {"max_round": 75},
         "max_double_checks": 4,
