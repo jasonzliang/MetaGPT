@@ -392,6 +392,9 @@ def test_code(model_name, code_dir, log_dir, output_dir,
     start_time = time.time()
 
     code_dir_ = Path(code_dir, model_name, _get_background_dir(with_background))
+    tmp_dir = Path('/tmp', f'tmp_{start_time}')
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+
     if not code_dir_.exists():
         print("scicode_eval.test_code error, code dir does not exist: %s" % code_dir_)
         return {'problem_acc': 0.0,
@@ -399,9 +402,6 @@ def test_code(model_name, code_dir, log_dir, output_dir,
             'correct_prob_num': 0,
             'correct_subprob_num': 0,
             'correct_dict': {}}
-
-    tmp_dir = Path('/tmp', f'tmp_{start_time}')
-    tmp_dir.mkdir(parents=True, exist_ok=True)
 
     for file_path in code_dir_.iterdir():
         # Add additional check if file is .py extension
