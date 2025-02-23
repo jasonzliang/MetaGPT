@@ -544,7 +544,7 @@ SCICODE_EVAL_CONFIG = {
     'max_problems': 999,
     'dataset': 'problems_all',
     'with_background': False,
-    'problem_list': [],
+    'problem_list': ['2.1'],
     'cleanup_code': False,
     'include_bg_comments': True,
     'debug_mode': 0,
@@ -581,7 +581,7 @@ EVAL_CAPTAIN_LLM_CONFIG = {
         "autobuild_build_config": {
             "library_list_or_json": None,
             "include_insights": True,
-            "include_coding_instruct": False,
+            "include_coding_instruct": True,
         },
         "group_chat_config": {"max_round": 75},
         "max_double_checks": 4,
