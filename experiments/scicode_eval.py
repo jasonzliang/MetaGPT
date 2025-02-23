@@ -40,7 +40,7 @@ def extract_python_script(response: str):
     if '```' in response:
         python_script = response.split("```python")[1].split("```")[0] if '```python' in response else response.split('```')[1].split('```')[0]
     else:
-        print("scicode_eval.extract_python_script failed, code already extracted?")
+        print("scicode_eval.extract_python_script error, code already extracted?")
         # print(response + "\n")
         python_script = response
     python_script = re.sub(r'^\s*(import .*|from .*\s+import\s+.*)', '', python_script, flags=re.MULTILINE)
@@ -392,6 +392,14 @@ def test_code(model_name, code_dir, log_dir, output_dir,
     start_time = time.time()
 
     code_dir_ = Path(code_dir, model_name, _get_background_dir(with_background))
+    if not code_dir_.exists():
+        print("scicode_eval.test_code error, code dir does not exist: %s" % code_dir_)
+        return {'problem_acc': 0.0,
+            'subproblem_acc': 0.0,
+            'correct_prob_num': 0,
+            'correct_subprob_num': 0,
+            'correct_dict': {}}
+
     tmp_dir = Path('/tmp', f'tmp_{start_time}')
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
