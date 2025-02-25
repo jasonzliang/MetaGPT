@@ -256,7 +256,7 @@ Note that the previous experts will forget everything after you obtain the respo
         )
 
         if system_message is None:
-            system_message = self.AUTOBUILD_SYSTEM_MESSAGE
+            system_message = self.AUTOBUILD_SYSTEM_MESSAGE_V2
 
         if update_default_nested_config:
             nested_config = self._update_config(self.DEFAULT_NESTED_CONFIG, nested_config)
@@ -655,7 +655,7 @@ Collect information from the general task, follow the suggestions from manager t
                 messages=[
                     {
                         "role": "user",
-                        "content": self.CONVERSATION_REVIEW_PROMPT.format(
+                        "content": self.CONVERSATION_REVIEW_PROMPT_V2.format(
                             chat_history=chat_history,
                             double_check=double_check),
                     }
