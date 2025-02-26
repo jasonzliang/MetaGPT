@@ -43,7 +43,7 @@ class CaptainAgent(ConversableAgent):
         },
         "group_chat_config": {"max_round": 10},
         "group_chat_llm_config": None,
-        "max_double_checks": 4,
+        "max_expert_calls": 5,
         "max_turns": 5,
     }
 
@@ -256,7 +256,7 @@ Note that the previous experts will forget everything after you obtain the respo
         )
 
         if system_message is None:
-            system_message = self.AUTOBUILD_SYSTEM_MESSAGE_V2
+            system_message = self.AUTOBUILD_SYSTEM_MESSAGE
 
         if update_default_nested_config:
             nested_config = self._update_config(self.DEFAULT_NESTED_CONFIG, nested_config)
@@ -645,8 +645,8 @@ Collect information from the general task, follow the suggestions from manager t
 
         # double_check = "Yes"
         double_check = "[Yes or No]"
-        # double_check = "Yes" if self.build_times <= \
-        #     self._nested_config["max_double_checks"] else "No"
+        # double_check = "Yes" if self.build_times < \
+        #     self._nested_config["max_expert_calls"] else "No"
 
         # Review the group chat history
         summary_model = builder.builder_model
