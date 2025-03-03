@@ -583,7 +583,7 @@ EVAL_CAPTAIN_LLM_CONFIG = {
             "include_coding_instruct": True,
         },
         "group_chat_config": {"max_round": 75},
-        "max_double_checks": 4,
+        "max_expert_calls": 5,
         "max_turns": 5,
     }
 }
