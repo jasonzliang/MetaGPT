@@ -54,7 +54,7 @@ CODE_EXECUTION_CONFIG = {
     "exec_library_name": "code_library"}
 CHAT_LLM_CFG_KEYS = ['api_key', 'base_url', 'cache', 'cache_seed', 'model', 'temperature']
 CHAT_LLM_CONFIG = {"temperature": 0.1,
-    "model": "gpt-4o-mini",
+    "model": "gpt-4o",
     "cache_seed": None,
     # "cache": None,
     "min_hist_len": 50000,
@@ -66,7 +66,7 @@ CHAT_LLM_CONFIG = {"temperature": 0.1,
     "max_speaker_select_retries": 9}
 BUILDER_LLM_CONFIG = {"temperature": 0.9,
     "builder_model": "gpt-4o",
-    "agent_model": "gpt-4o-mini",
+    "agent_model": "gpt-4o",
     "cache_seed": None,
     # "cache": None,
     "custom_coding_instruct": False,
@@ -110,7 +110,6 @@ def start_task(execution_task: str,
     chat_llm_config: dict = CHAT_LLM_CONFIG,
     builder: Optional[AgentBuilder] = None,
     builder_llm_config: dict = BUILDER_LLM_CONFIG,
-    executor: Optional[LocalCommandLineCodeExecutor] = None,
     code_library: Optional[list] = None,
     imports: Optional[str] = None,
     log_file: Optional[str] = None,
@@ -125,7 +124,6 @@ def start_task(execution_task: str,
             execution_task=execution_task,
             agent_list=agent_list,
             chat_llm_config=chat_llm_config,
-            executor=executor,
             code_library=code_library,
             imports=imports,
             log_file=log_file)
@@ -149,7 +147,6 @@ def _start_task_captain_agent(
     execution_task: str,
     agent_list: list,
     chat_llm_config: dict = CHAT_LLM_CONFIG,
-    executor: Optional[LocalCommandLineCodeExecutor] = None,
     code_library: Optional[list] = None,
     imports: Optional[str] = None,
     captain_agent_name: str = 'captain_agent',
@@ -159,6 +156,7 @@ def _start_task_captain_agent(
     assert len(agent_list) == 1 and agent_list[0].name == captain_agent_name
     captain_agent = agent_list[0]; captain_agent.reset()
 
+    executor = captain_agent.executor._executor; assert executor is not None
     _register_functions_executor(executor, imports, code_library, work_dir=None)
 
     captain_user_proxy = UserProxyAgent(

@@ -488,7 +488,7 @@ Collect information from the general task, follow the suggestions from manager t
         self._agent_config_save_path = agent_config_save_path
         self._nested_config = nested_config.copy()
         self._code_execution_config = code_execution_config
-        self._executor = code_execution_config.get('executor')
+        self._executor = code_execution_config.get('executor', None)
         self._transforms = transforms
 
         self.build_history = {}

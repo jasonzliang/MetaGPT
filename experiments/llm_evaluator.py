@@ -406,7 +406,7 @@ class SciCodeEvaluator(EvalPlusEvaluator):
         agent_list, builder, executor = \
             self._init_builder(team_role, chat_llm_config, builder_llm_config,
                 captain_llm_config)
-        self.autogen_builder = builder; self.autogen_executor = executor
+        self.autogen_builder = builder
 
         # @retry(Exception, tries=-1, delay=1, max_delay=32, backoff=2)
         def eval_func(prob_id, prompt, result_dict):
@@ -419,7 +419,6 @@ class SciCodeEvaluator(EvalPlusEvaluator):
                 chat_llm_config=chat_llm_config,
                 builder=builder,
                 builder_llm_config=builder_llm_config,
-                executor=executor,
                 code_library=result_dict['code_library'],
                 imports=result_dict['imports'],
                 log_file=log_file,
