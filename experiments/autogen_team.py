@@ -19,8 +19,6 @@ from autogen.agentchat.contrib.capabilities import transform_messages, transform
 from autogen.agentchat.contrib.capabilities.text_compressors import LLMLingua
 # from autogen.code_utils import extract_code
 
-from evalplus.data.humaneval import get_human_eval_plus
-from evalplus.data.mbpp import get_mbpp_plus
 from ruamel.yaml import YAML
 from wrapt_timeout_decorator import *
 # from scicode.parse.parse import extract_function_name
@@ -54,7 +52,7 @@ CODE_EXECUTION_CONFIG = {
     "exec_library_name": "code_library"}
 CHAT_LLM_CFG_KEYS = ['api_key', 'base_url', 'cache', 'cache_seed', 'model', 'temperature']
 CHAT_LLM_CONFIG = {"temperature": 0.1,
-    "model": "gpt-4o",
+    "model": "gpt-4o-mini",
     "cache_seed": None,
     # "cache": None,
     "min_hist_len": 50000,
@@ -66,7 +64,7 @@ CHAT_LLM_CONFIG = {"temperature": 0.1,
     "max_speaker_select_retries": 9}
 BUILDER_LLM_CONFIG = {"temperature": 0.9,
     "builder_model": "gpt-4o",
-    "agent_model": "gpt-4o",
+    "agent_model": "gpt-4o-mini",
     "cache_seed": None,
     # "cache": None,
     "custom_coding_instruct": False,
@@ -103,8 +101,8 @@ CHAT_TIMEOUT = 300
 
 
 # @timeout_decorator.timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError)
-@timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError,
-    dec_allow_eval=False, dec_hard_timeout=False, dec_mp_reset_signals=True)
+# @timeout(CHAT_TIMEOUT, timeout_exception=TimeoutError,
+#     dec_allow_eval=False, dec_hard_timeout=False, dec_mp_reset_signals=True)
 def start_task(execution_task: str,
     agent_list: list,
     chat_llm_config: dict = CHAT_LLM_CONFIG,
@@ -623,7 +621,10 @@ def run_evalplus(
     humaneval=True,
     max_agents=3,
 ):
+    from evalplus.data.humaneval import get_human_eval_plus
+    from evalplus.data.mbpp import get_mbpp_plus
     print(locals()); time.sleep(3)
+
     if work_dir is None: work_dir = result_dir
     building_task = "Generate a team of agents that can work together to generate code and solve programming problems. Each agent should have an interesting role and provide unique capabilities."
 
