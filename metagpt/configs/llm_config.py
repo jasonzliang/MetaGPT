@@ -11,6 +11,7 @@ from typing import Optional
 
 from pydantic import field_validator
 
+from metagpt.configs.compress_msg_config import CompressType
 from metagpt.const import CONFIG_ROOT, LLM_API_TIMEOUT, METAGPT_ROOT
 from metagpt.utils.yaml_model import YamlModel
 
@@ -35,7 +36,11 @@ class LLMType(Enum):
     MOONSHOT = "moonshot"
     MISTRAL = "mistral"
     YI = "yi"  # lingyiwanwu
+    OPEN_ROUTER = "open_router"
+    DEEPSEEK = "deepseek"
+    SILICONFLOW = "siliconflow"
     OPENROUTER = "openrouter"
+    OPENROUTER_REASONING = "openrouter_reasoning"
     BEDROCK = "bedrock"
     ARK = "ark"  # https://www.volcengine.com/docs/82379/1263482#python-sdk
 
@@ -97,8 +102,15 @@ class LLMConfig(YamlModel):
     # Cost Control
     calc_usage: bool = True
 
+    # Compress request messages under token limit
+    compress_type: CompressType = CompressType.NO_COMPRESS
+
     # For Messages Control
     use_system_prompt: bool = True
+
+    # reasoning / thinking switch
+    reasoning: bool = False
+    reasoning_max_token: int = 4000  # reasoning budget tokens to generate, usually smaller than max_token
 
     @field_validator("api_key")
     @classmethod

@@ -49,9 +49,9 @@ Pillow
 imap_tools # Used by metagpt/tools/libs/email_login.py
 qianfan
 dashscope
-rank-bm25 # for tool recommendation
+rank-bm25 # For tool recommendation
 jieba # for tool recommendation
-volcengine-python-sdk[ark] # Solution for installation error in Windows: https://github.com/volcengine/volcengine-python-sdk/issues/5
+volcengine-python-sdk[ark]
 # llama-index-vector-stores-elasticsearch # Used by `metagpt/memory/longterm_memory.py`
 # llama-index-vector-stores-chroma # Used by `metagpt/memory/longterm_memory.py`
 gymnasium

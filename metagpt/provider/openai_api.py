@@ -34,7 +34,7 @@ from metagpt.utils.common import CodeParser, decode_image, log_and_reraise
 from metagpt.utils.cost_manager import CostManager
 from metagpt.utils.exceptions import handle_exception
 from metagpt.utils.token_counter import (
-    count_input_tokens,
+    count_message_tokens,
     count_output_tokens,
     get_max_completion_tokens,
 )
@@ -48,6 +48,9 @@ from metagpt.utils.token_counter import (
         LLMType.MOONSHOT,
         LLMType.MISTRAL,
         LLMType.YI,
+        LLMType.OPEN_ROUTER,
+        LLMType.DEEPSEEK,
+        LLMType.SILICONFLOW,
         LLMType.OPENROUTER,
     ]
 )
@@ -79,7 +82,7 @@ class OpenAILLM(BaseLLM):
     def _get_proxy_params(self) -> dict:
         params = {}
         if self.config.proxy:
-            params = {"proxies": self.config.proxy}
+            params = {"proxy": self.config.proxy}
             if self.config.base_url:
                 params["base_url"] = self.config.base_url
 
@@ -91,12 +94,19 @@ class OpenAILLM(BaseLLM):
         )
         usage = None
         collected_messages = []
+        collected_reasoning_messages = []
         has_finished = False
         async for chunk in response:
-            chunk_message = chunk.choices[0].delta.content or "" if chunk.choices else ""  # extract the message
-            finish_reason = (
-                chunk.choices[0].finish_reason if chunk.choices and hasattr(chunk.choices[0], "finish_reason") else None
-            )
+            if not chunk.choices:
+                continue
+
+            choice0 = chunk.choices[0]
+            choice_delta = choice0.delta
+            if hasattr(choice_delta, "reasoning_content") and choice_delta.reasoning_content:
+                collected_reasoning_messages.append(choice_delta.reasoning_content)  # for deepseek
+                continue
+            chunk_message = choice_delta.content or ""  # extract the message
+            finish_reason = choice0.finish_reason if hasattr(choice0, "finish_reason") else None
             log_llm_stream(chunk_message)
             collected_messages.append(chunk_message)
             chunk_has_usage = hasattr(chunk, "usage") and chunk.usage
@@ -107,17 +117,16 @@ class OpenAILLM(BaseLLM):
             if finish_reason:
                 if chunk_has_usage:
                     # Some services have usage as an attribute of the chunk, such as Fireworks
-                    if isinstance(chunk.usage, CompletionUsage):
-                        usage = chunk.usage
-                    else:
-                        usage = CompletionUsage(**chunk.usage)
-                elif hasattr(chunk.choices[0], "usage"):
+                    usage = CompletionUsage(**chunk.usage) if isinstance(chunk.usage, dict) else chunk.usage
+                elif hasattr(choice0, "usage"):
                     # The usage of some services is an attribute of chunk.choices[0], such as Moonshot
-                    usage = CompletionUsage(**chunk.choices[0].usage)
+                    usage = CompletionUsage(**choice0.usage)
                 has_finished = True
 
         log_llm_stream("\n")
         full_reply_content = "".join(collected_messages)
+        if collected_reasoning_messages:
+            self.reasoning_content = "".join(collected_reasoning_messages)
         if not usage:
             # Some services do not provide the usage attribute, such as OpenAI or OpenLLM
             usage = self._calc_usage(messages, full_reply_content)
@@ -245,7 +254,7 @@ class OpenAILLM(BaseLLM):
             # The response content is `code``, but it appears in the content instead of the arguments.
             code_formats = "```"
             if message.content.startswith(code_formats) and message.content.endswith(code_formats):
-                code = CodeParser.parse_code(None, message.content)
+                code = CodeParser.parse_code(text=message.content)
                 return {"language": "python", "code": code}
             # reponse is message
             return {"language": "markdown", "code": self.get_choice_text(rsp)}
@@ -263,7 +272,7 @@ class OpenAILLM(BaseLLM):
             return usage
 
         try:
-            usage.prompt_tokens = count_input_tokens(messages, self.pricing_plan)
+            usage.prompt_tokens = count_message_tokens(messages, self.pricing_plan)
             usage.completion_tokens = count_output_tokens(rsp, self.pricing_plan)
         except Exception as e:
             logger.warning(f"usage calculation failed: {e}")
@@ -310,3 +319,9 @@ class OpenAILLM(BaseLLM):
             img_url_or_b64 = item.url if resp_format == "url" else item.b64_json
             imgs.append(decode_image(img_url_or_b64))
         return imgs
+
+    def count_tokens(self, messages: list[dict]) -> int:
+        try:
+            return count_message_tokens(messages, self.config.model)
+        except:
+            return super().count_tokens(messages)
