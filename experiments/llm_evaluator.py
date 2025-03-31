@@ -527,15 +527,17 @@ class SciCodeEvaluator(EvalPlusEvaluator):
 
 
 #### Unit tests ####
-LLM_MODEL = "gpt-4o-2024-11-20"
+LLM_MODEL = "gpt-4o"
 LLM_MODEL = os.environ.get('LLM_MODEL', LLM_MODEL)
-BUILDER_LLM_MODEL = "gpt-4o-2024-11-20"
+BUILDER_LLM_MODEL = "gpt-4o"
 BUILDER_LLM_MODEL = os.environ.get('BUILDER_LLM_MODEL', BUILDER_LLM_MODEL)
 
 EVALPLUS_EVAL_CONFIG = {
+    'n_tries': 2,
     'max_problems': 999,
     'dataset': 'humaneval',
-    'debug_mode': 0
+    'debug_mode': 0,
+    'use_captain_agent': False,
 }
 
 SCICODE_EVAL_CONFIG = {
@@ -732,6 +734,7 @@ if __name__ == "__main__":
     if 'cleanup' in sys.argv[2].lower():
         SCICODE_EVAL_CONFIG['cleanup_code'] = True
     if 'captain' in sys.argv[2].lower():
+        EVALPLUS_EVAL_CONFIG['use_captain_agent'] = True
         SCICODE_EVAL_CONFIG['use_captain_agent'] = True
     if 'captain_lib' in sys.argv[2].lower():
         EVAL_CAPTAIN_LLM_CONFIG['nested_config']['autobuild_build_config']\
