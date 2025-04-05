@@ -1,8 +1,14 @@
 aiohttp
+#azure_storage
 channels
+# Django
+# docx
+#faiss
 faiss_cpu
 fire
 typer
+# godot
+# google_api_python_client  # Used by search_engine.py
 lancedb
 loguru
 meilisearch
@@ -12,20 +18,37 @@ openpyxl
 beautifulsoup4
 pandas
 pydantic
+#pygame
+# pymilvus
+# pytest # test extras require
 python_docx
 PyYAML
+# sentence_transformers
 setuptools
 tenacity
 tiktoken
 tqdm
+#unstructured[local-inference]
+# selenium
+# webdriver_manager
 anthropic
 typing-inspect
 libcst
 qdrant-client
+grpcio
+grpcio-tools
+grpcio-status
+# pytest-mock  # test extras require
+# open-interpreter; python_version>"3.9" # Conflict with openai 1.x
 ta
 semantic-kernel
 wrapt
-aioredis # Used by metagpt/utils/redis.py
+#aiohttp_jinja2
+# azure-cognitiveservices-speech # Used by metagpt/tools/azure_tts.py
+#aioboto3  # Used by metagpt/utils/s3.py
+redis # Used by metagpt/utils/redis.py
+curl-cffi
+httplib2
 websocket-client
 aiofiles
 gitpython
@@ -39,25 +62,29 @@ scikit_learn
 typing-extensions
 socksio
 gitignore-parser
+# connexion[uvicorn] # Used by metagpt/tools/openapi_v3_hello.py
 websockets
 networkx
 google-generativeai
-playwright # Used at metagpt/tools/libs/web_scraping.py
+playwright
 anytree
 ipywidgets
 Pillow
-imap_tools # Used by metagpt/tools/libs/email_login.py
+imap_tools  # Used by metagpt/tools/libs/email_login.py
+pylint
+pygithub
+htmlmin
+fsspec
+grep-ast  # linter
+unidiff # used at metagpt/tools/libs/cr.py
 qianfan
 dashscope
-rank-bm25 # For tool recommendation
-jieba # for tool recommendation
-volcengine-python-sdk[ark]
-# llama-index-vector-stores-elasticsearch # Used by `metagpt/memory/longterm_memory.py`
-# llama-index-vector-stores-chroma # Used by `metagpt/memory/longterm_memory.py`
+rank-bm25  # for tool recommendation
+jieba  # for tool recommendation
+volcengine-python-sdk[ark] # Solution for installation error in Windows: https://github.com/volcengine/volcengine-python-sdk/issues/5
 gymnasium
 boto3
 spark_ai_python
-agentops
 tree_sitter
 tree_sitter_python
 httpx
