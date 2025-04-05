@@ -1285,6 +1285,7 @@ With following description: {function_description}
                 print("Loaded library from JSON file: %s" % library_list_or_json, flush=True)
             except Exception as e:
                 raise e
+        assert len(agent_library) > 0
 
         for agent in agent_library:
             assert isinstance(agent, dict)
