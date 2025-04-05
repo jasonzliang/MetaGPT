@@ -324,7 +324,6 @@ class EvalPlusEvaluator(object):
                 chat_llm_config=chat_llm_config,
                 builder=builder,
                 builder_llm_config=builder_llm_config,
-                executor=executor,
                 log_file=log_file,
                 use_captain_agent=self.use_captain_agent)
             time_elapsed = time.time() - start_time
@@ -729,6 +728,13 @@ def _test_check_eval_progress(
 # Fix executor (separate one per seek expert help)
 # Have result from seek_expert_help have code
 if __name__ == "__main__":
+    # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
+    # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
+    # _test_evaluator(team_role_fp='config/autogen_team3_init.json')
+    if len(sys.argv) != 3:
+        print("Usage: ./llm_evaluator.py [team config file] [exp suffix]")
+        exit()
+
     if 'background' in sys.argv[2].lower():
         SCICODE_EVAL_CONFIG['with_background'] = True
     if 'cleanup' in sys.argv[2].lower():
@@ -743,7 +749,7 @@ if __name__ == "__main__":
         EVAL_BUILDER_LLM_CONFIG['use_agent_library'] = True
     if 'lingua' in sys.argv[2].lower():
         EVAL_CHAT_LLM_CONFIG['use_llm_lingua'] = True
-    test_evaluator(team_role_fp=sys.argv[1], eval_suffix=sys.argv[2])
-    # _test_calc_weighted_evalplus_score(evalplus_weights="config/5_19_role_evo_weights.json")
-    # _test_calc_weighted_evalplus_score(evalplus_weights="config/8_6_multirole_weights.json")
-    # _test_evaluator(team_role_fp='config/autogen_team3_init.json')
+
+    scicode = False if 'humaneval' in sys.argv[2].lower() else True
+    test_evaluator(team_role_fp=sys.argv[1], eval_suffix=sys.argv[2],
+        scicode=scicode)

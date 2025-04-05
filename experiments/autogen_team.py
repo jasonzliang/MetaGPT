@@ -216,6 +216,7 @@ def _start_task_builder_agents(
         allow_repeat_speaker=agent_list[:-1]) #if coding is True else agent_list)
 
     som_llm_config = _filter_chat_llm_config(chat_llm_config)
+    # del som_llm_config['model']
 
     manager = autogen.GroupChatManager(
         groupchat=group_chat,
