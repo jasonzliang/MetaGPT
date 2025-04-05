@@ -478,7 +478,8 @@ def init_builder(
         agent_list = copy.deepcopy(builder_dict)
         assert agent_list is not None and isinstance(agent_list, list)
         assert isinstance(agent_list[0], dict)
-        return agent_list, None, builder, None
+        agent_configs = None; builder_dict = None
+        return agent_list, agent_configs, builder, builder_dict, executor
 
     # hack to prevent "builder_model" error msg when running start_task
     _builder_llm_config = _filter_builder_llm_config(builder_llm_config)

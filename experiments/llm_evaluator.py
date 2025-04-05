@@ -534,7 +534,7 @@ BUILDER_LLM_MODEL = os.environ.get('BUILDER_LLM_MODEL', BUILDER_LLM_MODEL)
 EVALPLUS_EVAL_CONFIG = {
     'n_tries': 2,
     'dataset': 'humaneval',
-    'max_problems': 1,
+    'max_problems': 999,
     'problem_list': [],
     'debug_mode': 0,
     'use_captain_agent': False,
