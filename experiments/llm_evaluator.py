@@ -533,18 +533,19 @@ BUILDER_LLM_MODEL = os.environ.get('BUILDER_LLM_MODEL', BUILDER_LLM_MODEL)
 
 EVALPLUS_EVAL_CONFIG = {
     'n_tries': 2,
-    'max_problems': 999,
     'dataset': 'humaneval',
+    'max_problems': 1,
+    'problem_list': [],
     'debug_mode': 0,
     'use_captain_agent': False,
 }
 
 SCICODE_EVAL_CONFIG = {
     'n_tries': 2,
-    'max_problems': 999,
     'dataset': 'problems_all',
-    'with_background': False,
+    'max_problems': 999,
     'problem_list': [],
+    'with_background': False,
     'cleanup_code': False,
     'include_bg_comments': True,
     'debug_mode': 0,

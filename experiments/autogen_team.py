@@ -216,7 +216,6 @@ def _start_task_builder_agents(
         allow_repeat_speaker=agent_list[:-1]) #if coding is True else agent_list)
 
     som_llm_config = _filter_chat_llm_config(chat_llm_config)
-    # del som_llm_config['model']
 
     manager = autogen.GroupChatManager(
         groupchat=group_chat,
@@ -289,16 +288,23 @@ def _filter_builder_llm_config(builder_llm_config):
 
 
 def _filter_chat_llm_config(chat_llm_config):
+    assert 'model' in chat_llm_config
     config_list = autogen.config_list_from_json(CONFIG_FILE_OR_ENV,
         filter_dict={"model": [chat_llm_config['model']]})
+    assert len(config_list) > 0
     _chat_llm_config = {}
     for key in chat_llm_config:
         if key in CHAT_LLM_CFG_KEYS:
             _chat_llm_config[key] = chat_llm_config[key]
 
+    # OpenAI O-class models do not need temperature
     if _chat_llm_config['model'].startswith("o") and \
         'temperature' in _chat_llm_config:
         del _chat_llm_config['temperature']
+
+    # Modifications to match latest ag2 (0.85) llm_config format
+    del _chat_llm_config['model']
+
     return {"config_list": config_list, **_chat_llm_config}
 
 
