@@ -51,7 +51,8 @@ CODE_EXECUTION_CONFIG = {
     'exec_timeout': 10,
     'exec_library_name': 'code_library'}
 CHAT_LLM_CFG_KEYS = ['api_key', 'base_url', 'cache', 'cache_seed', 'model', 'temperature']
-CHAT_LLM_CONFIG = {'temperature': 0.1,
+CHAT_LLM_CONFIG = {
+    'temperature': 0.1,
     'model': 'gpt-4o-mini',
     'cache_seed': None,
     # 'cache': None,
@@ -61,17 +62,21 @@ CHAT_LLM_CONFIG = {'temperature': 0.1,
     'use_llm_lingua': False,
     'llm_lingua_len': 20000,
     'max_round': 15,
-    'max_speaker_select_retries': 9}
-BUILDER_LLM_CONFIG = {'temperature': 0.1,
+    'max_speaker_select_retries': 9
+}
+BUILDER_LLM_CONFIG = {
+    'builder_temp': 0.8,
     'builder_model': 'gpt-4o',
+    'temperature': 0.1,
     'agent_model': 'gpt-4o-mini',
-    'cache_seed': None,
     # 'cache': None,
+    'cache_seed': None,
     'custom_coding_instruct': False,
     'user_for_system_msg': False,
     'min_agents': 3,
     'max_agents': 3,
-    'use_agent_library': False}
+    'use_agent_library': False
+}
 CAPTAIN_LLM_CONFIG = {
     'nested_config': {
         'autobuild_init_config': {
@@ -468,9 +473,10 @@ def init_builder(
     executor = _code_executor(work_dir)
     builder = AgentBuilder(
         config_file_or_env=CONFIG_FILE_OR_ENV,
-        builder_model=builder_llm_config['builder_model'],
-        agent_model=builder_llm_config['agent_model'],
         max_agents=max_agents,
+        agent_model=builder_llm_config['agent_model'],
+        builder_temp=builder_llm_config['builder_temp'],
+        builder_model=builder_llm_config['builder_model'],
         custom_coding_instruct=builder_llm_config['custom_coding_instruct'],
         user_for_system_msg=builder_llm_config['user_for_system_msg'],
         code_execution_config={'executor': executor},

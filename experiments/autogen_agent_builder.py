@@ -278,6 +278,7 @@ With following description: {function_description}
         self,
         config_file_or_env: Optional[str] = "OAI_CONFIG_LIST",
         config_file_location: Optional[str] = "",
+        builder_temp: Optional[float] = 1.0,
         builder_model: Optional[Union[str, list]] = [],
         agent_model: Optional[Union[str, list]] = [],
         builder_model_tags: Optional[list] = [],
@@ -310,7 +311,9 @@ With following description: {function_description}
                 f"Fail to initialize build manager: {builder_model}{builder_model_tags} does not exist in {config_file_or_env}. "
                 f'If you want to change this model, please specify the "builder_model" in the constructor.'
             )
+        self.builder_temp = builder_temp
         self.builder_model = autogen.OpenAIWrapper(
+            # temperature=builder_temp,
             config_list=builder_config_list,
             use_cache=use_cache)
 
@@ -528,7 +531,7 @@ With following description: {function_description}
                 # with open(msg_file, 'w') as f: json.dump(message, f, indent=4)
                 yaml_dump(message, msg_file)
 
-        return self.builder_model.create(messages=messages)
+        return self.builder_model.create(messages=messages, temperature=self.builder_temp)
 
     def cleanup_code(self, code_file):
         if code_file is None: return
