@@ -575,7 +575,7 @@ EVAL_LLM_CONFIG = {
 EVAL_CHAT_LLM_CONFIG = {
     'model': LLM_MODEL,
     'max_round': 75,
-    'temperature': 0.01,
+    'temperature': 0.1,
     'use_llm_lingua': False,
 }
 
@@ -586,7 +586,7 @@ EVAL_BUILDER_LLM_CONFIG = {
     'use_agent_library': False,
     'agent_lib_include_coding_instruct': True,
     'agent_lib_include_insights': True,
-    'temperature': 0.9
+    'temperature': 0.1
 }
 
 EVAL_CAPTAIN_LLM_CONFIG = {

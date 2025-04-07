@@ -62,7 +62,7 @@ CHAT_LLM_CONFIG = {'temperature': 0.1,
     'llm_lingua_len': 20000,
     'max_round': 15,
     'max_speaker_select_retries': 9}
-BUILDER_LLM_CONFIG = {'temperature': 0.9,
+BUILDER_LLM_CONFIG = {'temperature': 0.1,
     'builder_model': 'gpt-4o',
     'agent_model': 'gpt-4o-mini',
     'cache_seed': None,
@@ -83,7 +83,7 @@ CAPTAIN_LLM_CONFIG = {
         },
         'autobuild_build_config': {
             # 'default_llm_config': {'max_completion_tokens': 5000},
-            'default_llm_config': {'temperature': 1, 'top_p': 0.95, 'max_tokens': 4000},
+            'default_llm_config': {'temperature': 0.1, 'top_p': 0.95, 'max_tokens': 4000},
             'code_execution_config': 'PUT_CODE_EXECUTOR_HERE',
             'coding': True,
             'library_list_or_json': None,
@@ -283,6 +283,7 @@ def _filter_builder_llm_config(builder_llm_config):
     _builder_llm_config = {'temperature': builder_llm_config['temperature'],
         'cache_seed': builder_llm_config['cache_seed']}
 
+    # Hack to remove temperature from llm_config if agents use o-class models
     if (builder_llm_config['builder_model'].startswith('o') or \
         builder_llm_config['agent_model'].startswith('o')) and \
         'temperature' in _builder_llm_config:
