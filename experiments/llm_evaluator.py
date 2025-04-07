@@ -239,13 +239,16 @@ class EvalPlusEvaluator(object):
 
     def _sanitize(self, code_dir):
         if not self.sanitize: return
-
-        os.system("evalplus.sanitize --samples %s >/dev/null 2>&1" % code_dir)
+        ec = os.system("evalplus.sanitize --samples %s >/dev/null 2>&1" % code_dir)
         assert os.path.exists("%s-sanitized" % code_dir)
+        assert not os.path.exists(code_dir)
+
         os.system("rsync -avz %s-sanitized/ %s >/dev/null 2>&1" % \
             (code_dir, code_dir))
-        assert os.path.exists(code_dir)
         os.system("rm -rf %s-sanitized" % code_dir)
+        assert not os.path.exists("%s-sanitized" % code_dir)
+        assert os.path.exists(code_dir)
+
         mlogger.info("Evalplus.sanitize completed on %s" % code_dir)
 
     def _get_evalplus_results(self, result_dict):
