@@ -182,6 +182,11 @@ class EvalPlusEvaluator(object):
                 YAML().dump(self.config, f)
         return result_dir
 
+    def _get_code_dir(self, result_dir):
+        code_dir = os.path.join(result_dir, "generated_code", self.dataset)
+        os.makedirs(code_dir, exist_ok=True)
+        return code_dir
+
     def _run_evalplus(self, result_dir, eval_func):
         if self.dataset == 'humaneval':
             problems = get_human_eval_plus()
@@ -191,8 +196,9 @@ class EvalPlusEvaluator(object):
         result_dict = {'result_dir': result_dir}
         fail_flag = os.path.join(result_dir, "max_failures")
         n_failures = 0 if not os.path.exists(fail_flag) else self.max_failures
+        code_dir = self._get_code_dir(result_dir)
         for i, (task_id, problem) in enumerate(problems.items()):
-            task_id_dir = os.path.join(result_dir, task_id.replace("/", "_"))
+            task_id_dir = os.path.join(code_dir, task_id.replace("/", "_"))
             os.makedirs(task_id_dir, exist_ok=True)
             result_file = os.path.join(task_id_dir, "0.py")
 
@@ -231,21 +237,23 @@ class EvalPlusEvaluator(object):
         if n_failures >= self.max_failures: os.system("touch %s" % fail_flag)
         return result_dict
 
-    def _sanitize(self, result_dir):
+    def _sanitize(self, code_dir):
         if not self.sanitize: return
-        os.system("evalplus.sanitize --samples %s >/dev/null 2>&1" % result_dir)
+        os.system("evalplus.sanitize --samples %s >/dev/null 2>&1" % code_dir)
         os.system("rsync -avz %s-sanitized/ %s >/dev/null 2>&1" % \
-            (result_dir, result_dir))
-        os.system("rm -rf %s-sanitized" % result_dir)
+            (code_dir, code_dir))
+        os.system("rm -rf %s-sanitized" % code_dir)
 
     def _get_evalplus_results(self, result_dict):
         result_dir = result_dict['result_dir']
-        self._sanitize(result_dir)
+        code_dir = self._get_code_dir(result_dir)
+        self._sanitize(code_dir)
+
         flag = "-v" if platform.system() == 'Linux' else '-l' # Flag for MacOS
         evalplus_fp = os.path.join(result_dir, "evalplus.txt")
         os.system("/usr/bin/time %s evalplus.evaluate " \
             "--dataset %s --samples %s 2>&1 | tee %s" \
-            % (flag, self.dataset, result_dir, evalplus_fp))
+            % (flag, self.dataset, code_dir, evalplus_fp))
 
         evalplus_result = extract_evalplus(evalplus_fp, mlogger)
         if self.objective.startswith('weighted_'):
@@ -534,7 +542,7 @@ BUILDER_LLM_MODEL = os.environ.get('BUILDER_LLM_MODEL', BUILDER_LLM_MODEL)
 EVALPLUS_EVAL_CONFIG = {
     'n_tries': 2,
     'dataset': 'humaneval',
-    'max_problems': 999,
+    'max_problems': 1,
     'problem_list': [],
     'debug_mode': 0,
     'use_captain_agent': False,
