@@ -1333,7 +1333,6 @@ With following description: {function_description}
                 "code_execution_config": code_execution_config,
             }
         )
-
         _config_check(self.cached_configs)
         return self._build_agents(use_oai_assistant, user_proxy=user_proxy, **kwargs)
 
