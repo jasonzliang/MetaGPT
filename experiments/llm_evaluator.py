@@ -746,6 +746,7 @@ if __name__ == "__main__":
     if 'captain_lib' in sys.argv[2].lower():
         EVAL_CAPTAIN_LLM_CONFIG['nested_config']['autobuild_build_config']\
             ['library_list_or_json'] = sys.argv[1]
+        EVAL_BUILDER_LLM_CONFIG['use_agent_library'] = False
     if 'library' in sys.argv[2].lower():
         EVAL_BUILDER_LLM_CONFIG['use_agent_library'] = True
     if 'lingua' in sys.argv[2].lower():
