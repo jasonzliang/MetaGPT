@@ -573,14 +573,14 @@ EVAL_LLM_CONFIG = {
 }
 
 EVAL_CHAT_LLM_CONFIG = {
-    'temperature': 0.1,
+    'temperature': 0.02,
     'model': LLM_MODEL,
     'max_round': 75,
     'use_llm_lingua': False,
 }
 
 EVAL_BUILDER_LLM_CONFIG = {
-    'temperature': 0.1,
+    'temperature': 0.02,
     'agent_model': LLM_MODEL,
     'builder_temp': 0.8,
     'builder_model': BUILDER_LLM_MODEL,
