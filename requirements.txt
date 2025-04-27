@@ -103,6 +103,7 @@ retry
 wrapt_timeout_decorator
 gdown
 seaborn
-# git+https://github.com/jasonzliang/autogen.git
+ribs[visualize]
+# git+https://github.com/jasonzliang/ag2.git
 # git+https://github.com/jasonzliang/evalplus.git
 # git+https://github.com/jasonzliang/SciCode.git
