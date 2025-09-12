@@ -52,6 +52,7 @@ from metagpt.utils.token_counter import (
         LLMType.DEEPSEEK,
         LLMType.SILICONFLOW,
         LLMType.OPENROUTER,
+        LLMType.LLAMA_API,
     ]
 )
 class OpenAILLM(BaseLLM):
@@ -322,6 +323,6 @@ class OpenAILLM(BaseLLM):
 
     def count_tokens(self, messages: list[dict]) -> int:
         try:
-            return count_message_tokens(messages, self.config.model)
+            return count_message_tokens(messages, self.model)
         except:
             return super().count_tokens(messages)
